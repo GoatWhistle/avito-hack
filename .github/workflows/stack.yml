@@ -1,0 +1,68 @@
+name: Stack
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: stack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Docker compose smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=ci_password|' .env
+          sed -i 's|^JWT_SECRET=.*|JWT_SECRET=ci_secret_not_for_production|' .env
+          sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgres://avito:ci_password@postgres:5432/avito?sslmode=disable|' .env
+
+      - name: Start the stack
+        run: docker compose up -d --build --wait
+
+      - name: Backend health
+        run: |
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS http://localhost:8080/readyz
+
+      - name: Frontend responds
+        run: curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:3000/
+
+      - name: Auth and CRUD smoke
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST http://localhost:8080/api/v1/auth/register \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@example.com","password":"password123","display_name":"CI User"}' > /dev/null
+
+          token=$(curl -fsS -X POST http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@example.com","password":"password123"}' | jq -r .token)
+
+          curl -fsS http://localhost:8080/api/v1/users/me -H "Authorization: Bearer ${token}" > /dev/null
+
+          item=$(curl -fsS -X POST http://localhost:8080/api/v1/items \
+            -H "Authorization: Bearer ${token}" \
+            -H 'Content-Type: application/json' \
+            -d '{"title":"CI Resource","description":"created by CI","price":1000}' | jq -r .id)
+
+          curl -fsS -X POST "http://localhost:8080/api/v1/items/${item}/status" \
+            -H "Authorization: Bearer ${token}" \
+            -H 'Content-Type: application/json' \
+            -d '{"action":"submit"}' > /dev/null
+
+          echo "Smoke test passed"
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

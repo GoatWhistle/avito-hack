@@ -1,0 +1,14 @@
+.git
+.github
+**/node_modules
+**/dist
+**/coverage
+**/*_test.go
+**/.env
+**/.env.*
+!**/.env.example
+docs
+scripts
+tests
+*.md
+Makefile

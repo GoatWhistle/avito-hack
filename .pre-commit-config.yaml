@@ -1,0 +1,96 @@
+default_install_hook_types: [pre-commit, commit-msg]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: file-length
+        name: file length limit
+        entry: bash ./scripts/check-file-length.sh
+        language: system
+        pass_filenames: false
+
+      - id: locales-sync
+        name: locale sync
+        entry: node ./scripts/check-locales.mjs
+        language: system
+        files: ^src/frontend/src/shared/i18n/locales/.*\.json$
+        pass_filenames: false
+
+      - id: go-fmt
+        name: go fmt
+        entry: bash -c 'cd src/backend && golangci-lint fmt --config ../../.golangci.yaml ./...'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-lint
+        name: golangci-lint
+        entry: bash -c 'cd src/backend && golangci-lint run --config ../../.golangci.yaml --fast-only ./...'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-test
+        name: go test
+        entry: bash -c 'cd src/backend && go test -short ./...'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: bash -c 'cd src/backend && go mod tidy && git diff --exit-code go.mod go.sum'
+        language: system
+        files: ^src/backend/go\.(mod|sum)$
+        pass_filenames: false
+
+      - id: eslint
+        name: eslint
+        entry: bash -c 'cd src/frontend && npx eslint --fix --max-warnings=0 src'
+        language: system
+        files: ^src/frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: prettier
+        name: prettier
+        entry: bash -c 'cd src/frontend && npx prettier --write src'
+        language: system
+        files: ^src/frontend/.*\.(ts|tsx|css|json)$
+        pass_filenames: false
+
+      - id: tsc
+        name: typescript
+        entry: bash -c 'cd src/frontend && npx tsc --noEmit'
+        language: system
+        files: ^src/frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]

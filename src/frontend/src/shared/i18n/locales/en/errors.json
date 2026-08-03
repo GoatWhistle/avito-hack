@@ -1,0 +1,20 @@
+{
+  "not_found": "Nothing found",
+  "forbidden": "You do not have permission for this action",
+  "unauthorized": "Sign in required",
+  "conflict": "This action is not allowed in the current state",
+  "validation_error": "Please check the entered data",
+  "bad_request": "Malformed request",
+  "internal_error": "Something went wrong. Please try again later",
+  "network_error": "No connection to the server",
+  "field": {
+    "title": "Title",
+    "description": "Description",
+    "price": "Price",
+    "email": "Email",
+    "password": "Password",
+    "display_name": "Name",
+    "status": "Status",
+    "cursor": "Pagination"
+  }
+}

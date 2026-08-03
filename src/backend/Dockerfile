@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.7
+
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /build
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download && go mod verify
+
+COPY . .
+
+ARG VERSION=dev
+ARG COMMIT=unknown
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build \
+      -trimpath \
+      -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
+      -o /out/api ./cmd/api
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+      -o /out/migrate ./cmd/migrate
+
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /out/api /app/api
+COPY --from=builder /out/migrate /app/migrate
+
+USER nonroot:nonroot
+EXPOSE 8080
+
+ENTRYPOINT ["/app/api"]

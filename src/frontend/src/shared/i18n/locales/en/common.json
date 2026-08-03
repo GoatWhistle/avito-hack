@@ -1,0 +1,37 @@
+{
+  "app": {
+    "title": "Avito Hack",
+    "loading": "Loading",
+    "empty": "Nothing found",
+    "retry": "Retry"
+  },
+  "actions": {
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "reset": "Reset",
+    "back": "Back",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "nav": {
+    "items": "Listings",
+    "myItems": "My listings",
+    "profile": "Profile"
+  },
+  "theme": {
+    "light": "Light theme",
+    "dark": "Dark theme"
+  },
+  "language": {
+    "ru": "Русский",
+    "en": "English"
+  },
+  "pagination": {
+    "loadMore": "Load more"
+  }
+}

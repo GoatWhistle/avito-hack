@@ -1,0 +1,44 @@
+{
+  "list": {
+    "title": "Listings",
+    "myTitle": "My listings",
+    "empty": "No listings yet",
+    "searchPlaceholder": "Search by title",
+    "count_one": "{{count}} listing",
+    "count_other": "{{count}} listings"
+  },
+  "columns": {
+    "title": "Title",
+    "price": "Price",
+    "status": "Status",
+    "owner": "Author",
+    "createdAt": "Created"
+  },
+  "form": {
+    "createTitle": "New listing",
+    "editTitle": "Edit listing",
+    "title": "Title",
+    "titlePlaceholder": "For example, MacBook Pro 14",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the item",
+    "price": "Price",
+    "pricePlaceholder": "0"
+  },
+  "status": {
+    "draft": "Draft",
+    "moderation": "In moderation",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "actions": {
+    "submit": "Send to moderation",
+    "publish": "Publish",
+    "archive": "Archive",
+    "restore": "Move back to drafts"
+  },
+  "notifications": {
+    "created": "Listing created",
+    "updated": "Changes saved",
+    "statusChanged": "Status changed"
+  }
+}
