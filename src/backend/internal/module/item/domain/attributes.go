@@ -17,7 +17,7 @@ func (a Attributes) Clone() Attributes {
 		return Attributes{}
 	}
 
-	return Attributes(maps.Clone(a))
+	return maps.Clone(a)
 }
 
 func (a Attributes) Get(key string) (string, bool) {

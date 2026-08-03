@@ -87,14 +87,14 @@ func RestoreUser(p RestoreUserParams) *User {
 	}
 }
 
-func (u *User) ID() uuid.UUID                 { return u.id }
-func (u *User) Email() vo.Email               { return u.email }
-func (u *User) PasswordHash() password.Hash   { return u.passwordHash }
-func (u *User) DisplayName() string           { return u.displayName }
-func (u *User) Role() auth.Role               { return u.role }
-func (u *User) CreatedAt() time.Time          { return u.createdAt }
-func (u *User) UpdatedAt() time.Time          { return u.updatedAt }
-func (u *User) Actor() auth.Actor             { return auth.Actor{ID: u.id, Role: u.role} }
+func (u *User) ID() uuid.UUID                   { return u.id }
+func (u *User) Email() vo.Email                 { return u.email }
+func (u *User) PasswordHash() password.Hash     { return u.passwordHash }
+func (u *User) DisplayName() string             { return u.displayName }
+func (u *User) Role() auth.Role                 { return u.role }
+func (u *User) CreatedAt() time.Time            { return u.createdAt }
+func (u *User) UpdatedAt() time.Time            { return u.updatedAt }
+func (u *User) Actor() auth.Actor               { return auth.Actor{ID: u.id, Role: u.role} }
 func (u *User) Authenticate(plain string) error { return u.passwordHash.Compare(plain) }
 
 func (u *User) Rename(displayName string, now time.Time) error {

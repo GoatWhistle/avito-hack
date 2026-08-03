@@ -52,11 +52,8 @@ func (m *PgReadModel) List(ctx context.Context, f app.ListFilter) ([]app.ListIte
 	return items, nil
 }
 
-func buildListQuery(f app.ListFilter) (string, []any) {
-	var (
-		conditions = []string{"deleted_at IS NULL"}
-		args       []any
-	)
+func buildListQuery(f app.ListFilter) (query string, args []any) {
+	conditions := []string{"deleted_at IS NULL"}
 
 	next := func(value any) string {
 		args = append(args, value)
@@ -81,7 +78,7 @@ func buildListQuery(f app.ListFilter) (string, []any) {
 			"(created_at, id) < ("+next(f.Cursor.CreatedAt)+", "+next(f.Cursor.ID)+")")
 	}
 
-	query := `SELECT id, owner_id, title, price_kopeks, status, created_at
+	query = `SELECT id, owner_id, title, price_kopeks, status, created_at
 		FROM items
 		WHERE ` + strings.Join(conditions, " AND ") + `
 		ORDER BY created_at DESC, id DESC

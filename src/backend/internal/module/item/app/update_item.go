@@ -40,21 +40,21 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 	var updated *domain.Item
 
 	err = h.tx.WithTx(ctx, func(ctx context.Context) error {
-		item, err := h.items.ByIDForUpdate(ctx, cmd.ItemID)
-		if err != nil {
-			return fmt.Errorf("load item: %w", err)
+		item, loadErr := h.items.ByIDForUpdate(ctx, cmd.ItemID)
+		if loadErr != nil {
+			return fmt.Errorf("load item: %w", loadErr)
 		}
 
 		if !item.IsOwnedBy(cmd.ActorID) {
 			return domainerr.ErrForbidden
 		}
 
-		if err := item.Update(params); err != nil {
-			return err
+		if updateErr := item.Update(params); updateErr != nil {
+			return updateErr
 		}
 
-		if err := h.items.Save(ctx, item); err != nil {
-			return err
+		if saveErr := h.items.Save(ctx, item); saveErr != nil {
+			return saveErr
 		}
 
 		updated = item

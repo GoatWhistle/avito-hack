@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -26,6 +26,17 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
       -o /out/migrate ./cmd/migrate
+
+FROM golang:1.25-alpine AS dev
+
+WORKDIR /app
+
+RUN apk add --no-cache git ca-certificates tzdata wget \
+ && go install github.com/air-verse/air@v1.63.0
+
+EXPOSE 8080
+
+ENTRYPOINT ["air", "-c", ".air.toml"]
 
 FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 

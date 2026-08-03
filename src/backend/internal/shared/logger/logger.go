@@ -6,14 +6,52 @@ import (
 	"os"
 )
 
+const (
+	formatJSON   = "json"
+	formatPretty = "pretty"
+)
+
 type ctxKey struct{}
 
-func New(level slog.Level) *slog.Logger {
-	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	})
+type Options struct {
+	Level  slog.Level
+	Format string
+	Color  string
+}
 
-	return slog.New(handler)
+func New(opts Options) *slog.Logger {
+	if resolveFormat(opts.Format) == formatJSON {
+		return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: opts.Level}))
+	}
+
+	return slog.New(NewPrettyHandler(os.Stdout, PrettyOptions{
+		Level: opts.Level,
+		Color: resolveColor(opts.Color),
+	}))
+}
+
+func resolveFormat(format string) string {
+	switch format {
+	case formatJSON:
+		return formatJSON
+	case formatPretty, "text", "console":
+		return formatPretty
+	default:
+		return formatPretty
+	}
+}
+
+func resolveColor(mode string) bool {
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
+
+	switch mode {
+	case "never", "off", "false", "0":
+		return false
+	default:
+		return true
+	}
 }
 
 func ToContext(ctx context.Context, log *slog.Logger) context.Context {

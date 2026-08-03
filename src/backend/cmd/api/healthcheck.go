@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,13 +17,26 @@ func isHealthcheckMode() bool {
 }
 
 func runHealthcheck(addr string) error {
-	client := &http.Client{Timeout: healthcheckTimeout}
+	ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
+	defer cancel()
 
-	resp, err := client.Get(healthcheckURL(addr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthcheckURL(addr), http.NoBody)
 	if err != nil {
 		return fmt.Errorf("healthcheck request: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+
+	client := &http.Client{Timeout: healthcheckTimeout}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("healthcheck request: %w", err)
+	}
+
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "healthcheck: close body: %v\n", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("healthcheck status: %d", resp.StatusCode)

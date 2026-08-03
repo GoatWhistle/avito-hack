@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      target: dev
+    volumes:
+      - ./src/backend:/app
+      - gocache:/go/pkg/mod
+      - gobuild:/root/.cache/go-build
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 60s
+
+  frontend:
+    build:
+      target: dev
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_DEFAULT_LOCALE: ${VITE_DEFAULT_LOCALE:-ru}
+      VITE_USE_POLLING: 'true'
+      VITE_HMR_PORT: '3000'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  gocache:
+  gobuild:

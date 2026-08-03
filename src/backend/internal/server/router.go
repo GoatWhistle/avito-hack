@@ -32,7 +32,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
-	r.Use(chimw.RealIP)
 	r.Use(middleware.Recoverer(deps.Logger))
 	r.Use(middleware.AccessLog(deps.Logger))
 	r.Use(middleware.Metrics())
@@ -74,5 +73,8 @@ func readyHandler(pool *pgxpool.Pool) http.HandlerFunc {
 func writeStatus(w http.ResponseWriter, status int, body string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	_, _ = w.Write([]byte(body))
+
+	if _, err := w.Write([]byte(body)); err != nil {
+		slog.Error("write response", slog.String("error", err.Error()))
+	}
 }

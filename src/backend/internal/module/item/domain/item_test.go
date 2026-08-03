@@ -11,14 +11,16 @@ import (
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
+const defaultTitle = "MacBook Pro"
+
 var fixedTime = time.Date(2026, time.January, 1, 12, 0, 0, 0, time.UTC)
 
-func newItem(t *testing.T, title string) *domain.Item {
+func newItem(t *testing.T) *domain.Item {
 	t.Helper()
 
 	item, err := domain.NewItem(domain.NewItemParams{
 		OwnerID:     uuid.New(),
-		Title:       title,
+		Title:       defaultTitle,
 		Description: "description",
 		Price:       vo.MustMoney(10_000),
 		Attributes:  domain.NewAttributes(map[string]string{"color": "black"}),
@@ -38,10 +40,10 @@ func TestNewItem_Validation(t *testing.T) {
 		ownerID   uuid.UUID
 		wantField string
 	}{
-		{name: "valid", title: "MacBook Pro", ownerID: uuid.New()},
+		{name: "valid", title: defaultTitle, ownerID: uuid.New()},
 		{name: "title too short", title: "ab", ownerID: uuid.New(), wantField: "title"},
 		{name: "title blank", title: "   ", ownerID: uuid.New(), wantField: "title"},
-		{name: "missing owner", title: "MacBook Pro", ownerID: uuid.Nil, wantField: "owner_id"},
+		{name: "missing owner", title: defaultTitle, ownerID: uuid.Nil, wantField: "owner_id"},
 	}
 
 	for _, tt := range tests {
@@ -73,7 +75,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 	t.Run("draft cannot be published directly", func(t *testing.T) {
 		t.Parallel()
 
-		item := newItem(t, "MacBook Pro")
+		item := newItem(t)
 
 		require.Error(t, item.Publish(fixedTime))
 		require.Equal(t, domain.StatusDraft, item.Status())
@@ -82,7 +84,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 	t.Run("full happy path", func(t *testing.T) {
 		t.Parallel()
 
-		item := newItem(t, "MacBook Pro")
+		item := newItem(t)
 
 		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.Equal(t, domain.StatusModeration, item.Status())
@@ -97,7 +99,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 	t.Run("archived item cannot be updated", func(t *testing.T) {
 		t.Parallel()
 
-		item := newItem(t, "MacBook Pro")
+		item := newItem(t)
 		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.NoError(t, item.Publish(fixedTime))
 		require.NoError(t, item.Archive(fixedTime))
@@ -110,7 +112,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 func TestItem_AttributesAreIsolated(t *testing.T) {
 	t.Parallel()
 
-	item := newItem(t, "MacBook Pro")
+	item := newItem(t)
 
 	attrs := item.Attributes()
 	attrs["color"] = "white"

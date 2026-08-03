@@ -46,7 +46,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (Lo
 		return LoginUserResult{}, fmt.Errorf("load user: %w", err)
 	}
 
-	if err := user.Authenticate(cmd.Password); err != nil {
+	if authErr := user.Authenticate(cmd.Password); authErr != nil {
 		return LoginUserResult{}, domain.ErrInvalidCredential
 	}
 

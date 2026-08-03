@@ -55,9 +55,9 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 	}
 
 	err = h.tx.WithTx(ctx, func(ctx context.Context) error {
-		taken, err := h.users.ExistsByEmail(ctx, email)
-		if err != nil {
-			return fmt.Errorf("check email: %w", err)
+		taken, existsErr := h.users.ExistsByEmail(ctx, email)
+		if existsErr != nil {
+			return fmt.Errorf("check email: %w", existsErr)
 		}
 		if taken {
 			return domain.ErrEmailAlreadyTaken

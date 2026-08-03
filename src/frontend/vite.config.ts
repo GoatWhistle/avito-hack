@@ -4,8 +4,11 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
+import { createPrettyLogger, prettyAccessLog } from './vite.logger';
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), prettyAccessLog()],
+  customLogger: createPrettyLogger(),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -14,6 +17,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    ...(process.env.VITE_USE_POLLING === 'true' ? { watch: { usePolling: true, interval: 400 } } : {}),
+    ...(process.env.VITE_HMR_PORT ? { hmr: { clientPort: Number(process.env.VITE_HMR_PORT) } } : {}),
   },
   build: {
     outDir: 'dist',

@@ -55,7 +55,11 @@ func run() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	log := logger.New(cfg.SlogLevel())
+	log := logger.New(logger.Options{
+		Level:  cfg.SlogLevel(),
+		Format: cfg.LogFormat,
+		Color:  cfg.LogColor,
+	})
 	slog.SetDefault(log)
 
 	pool, err := postgres.NewPool(ctx, cfg.DatabaseURL)

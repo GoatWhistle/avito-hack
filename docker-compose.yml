@@ -4,6 +4,18 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - "log_line_prefix=\e[2m%t\e[0m \e[35m\e[1mPG \e[0m %q\e[2m%u@%d\e[0m "
+      - -c
+      - log_min_messages=warning
+      - -c
+      - log_min_duration_statement=200ms
+      - -c
+      - log_connections=off
+      - -c
+      - log_disconnections=off
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -23,7 +35,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command:
-      ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+      ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--loglevel", "warning"]
     volumes:
       - redisdata:/data
     healthcheck:
@@ -40,6 +52,8 @@ services:
     entrypoint: ["/app/migrate", "up"]
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      LOG_COLOR: ${LOG_COLOR:-always}
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,6 +76,8 @@ services:
       JWT_TTL: ${JWT_TTL:-15m}
       REFRESH_TTL: ${REFRESH_TTL:-720h}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      LOG_COLOR: ${LOG_COLOR:-always}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
       - "8080:8080"

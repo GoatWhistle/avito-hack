@@ -11,12 +11,19 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
+	"github.com/avito-hack/backend/internal/shared/logger"
 	"github.com/avito-hack/backend/migrations"
 )
 
 const dialect = "postgres"
 
 func main() {
+	slog.SetDefault(logger.New(logger.Options{
+		Level:  slog.LevelInfo,
+		Format: os.Getenv("LOG_FORMAT"),
+		Color:  os.Getenv("LOG_COLOR"),
+	}))
+
 	if err := run(); err != nil {
 		slog.Error("migration failed", slog.Any("error", err))
 		os.Exit(1)
@@ -45,6 +52,7 @@ func run() error {
 	}()
 
 	goose.SetBaseFS(migrations.FS)
+	goose.SetLogger(gooseLogger{})
 
 	if err := goose.SetDialect(dialect); err != nil {
 		return fmt.Errorf("set dialect: %w", err)

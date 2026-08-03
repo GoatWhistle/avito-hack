@@ -176,6 +176,9 @@ linters:
           - goconst
           - funlen
           - errcheck
+      - path: internal/module/.*/domain/.*_test\.go
+        linters:
+          - depguard
       - path: internal/module/.*/api/dto\.go
         linters:
           - dupl

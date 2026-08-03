@@ -51,7 +51,11 @@ func Recoverer(log *slog.Logger) func(http.Handler) http.Handler {
 
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(`{"error":{"code":"internal_error","message":"internal server error"}}`))
+
+				body := []byte(`{"error":{"code":"internal_error","message":"internal server error"}}`)
+				if _, err := w.Write(body); err != nil {
+					log.ErrorContext(r.Context(), "write response", slog.String("error", err.Error()))
+				}
 			}()
 
 			next.ServeHTTP(w, r)

@@ -6,7 +6,7 @@ FRONTEND_DIR := $(CURDIR)/src/frontend
 SERVICE ?=
 LOGS_TAIL ?=
 
-.PHONY: help init lint test build up down logs clean migrate
+.PHONY: help init lint test build up dev dev-down down logs clean migrate
 
 help:
 	@echo " "
@@ -17,6 +17,8 @@ help:
 	@echo " "
 	@echo "  build           - Build docker images (use SERVICE=... for a single service)"
 	@echo "  up              - Start the stack and wait until healthy (use SERVICE=...)"
+	@echo "  dev             - Start the stack with hot reload for backend and frontend"
+	@echo "  dev-down        - Stop the hot reload stack"
 	@echo "  down            - Stop and remove containers (use SERVICE=...)"
 	@echo "  logs            - Follow logs (use SERVICE=... and/or LOGS_TAIL=...)"
 	@echo "  clean           - Stop the stack and delete all volumes with data"
@@ -68,6 +70,19 @@ up:
 	@echo "  backend  -> http://localhost:8080/api/v1"
 	@echo "  metrics  -> http://localhost:8080/metrics"
 	@echo " "
+
+dev:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait --remove-orphans $(SERVICE)
+	@echo " "
+	@echo "  Hot reload is on: backend rebuilds on .go changes, frontend uses Vite HMR"
+	@echo "  frontend -> http://localhost:3000"
+	@echo "  backend  -> http://localhost:8080/api/v1"
+	@echo " "
+
+dev-down:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down --remove-orphans
+	@echo " "
+	@echo "Dev stack stopped!"
 
 down:
 	@if [ -n "$(SERVICE)" ]; then \

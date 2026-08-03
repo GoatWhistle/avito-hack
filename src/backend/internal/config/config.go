@@ -16,6 +16,8 @@ type Config struct {
 	RefreshTTL     time.Duration `env:"REFRESH_TTL"     envDefault:"720h"`
 	AllowedOrigins []string      `env:"ALLOWED_ORIGINS" envSeparator:","`
 	LogLevel       string        `env:"LOG_LEVEL"       envDefault:"info"`
+	LogFormat      string        `env:"LOG_FORMAT"      envDefault:"pretty"`
+	LogColor       string        `env:"LOG_COLOR"       envDefault:"auto"`
 
 	ReadHeaderTimeout time.Duration `env:"READ_HEADER_TIMEOUT" envDefault:"5s"`
 	ReadTimeout       time.Duration `env:"READ_TIMEOUT"        envDefault:"15s"`

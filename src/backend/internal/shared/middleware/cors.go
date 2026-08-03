@@ -15,8 +15,15 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 	}
 
 	return cors.Handler(cors.Options{
-		AllowedOrigins:   origins,
-		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowedOrigins: origins,
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPatch,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-Id", "Accept-Language"},
 		ExposedHeaders:   []string{"X-Request-Id"},
 		AllowCredentials: true,
