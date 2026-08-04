@@ -12,6 +12,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/config"
 	"github.com/avito-hack/backend/internal/module/item"
+	"github.com/avito-hack/backend/internal/module/raccoon"
 	"github.com/avito-hack/backend/internal/module/user"
 	"github.com/avito-hack/backend/internal/server"
 	"github.com/avito-hack/backend/internal/shared/auth"
@@ -107,8 +108,19 @@ func buildModules(cfg config.Config, pool *pgxpool.Pool) []server.ModuleRegistra
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 
+	raccoonModule := raccoon.New(raccoon.Options{
+		Pool:         pool,
+		Tx:           tx,
+		Clock:        appClock,
+		Validator:    validator,
+		Authenticate: authenticate,
+		OptionalAuth: optionalAuth,
+		MaxBodyBytes: cfg.MaxBodyBytes,
+	})
+
 	return []server.ModuleRegistrar{
 		userModule.Handlers,
 		itemModule.Handlers,
+		raccoonModule.Handlers,
 	}
 }
