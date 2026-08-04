@@ -22,10 +22,11 @@ type ModuleRegistrar interface {
 }
 
 type RouterDeps struct {
-	Config  config.Config
-	Pool    *pgxpool.Pool
-	Logger  *slog.Logger
-	Modules []ModuleRegistrar
+	Config    config.Config
+	Pool      *pgxpool.Pool
+	Logger    *slog.Logger
+	Modules   []ModuleRegistrar
+	WebSocket http.Handler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -35,7 +36,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Use(middleware.Recoverer(deps.Logger))
 	r.Use(middleware.AccessLog(deps.Logger))
 	r.Use(middleware.Metrics())
-	r.Use(chimw.Timeout(deps.Config.RequestTimeout))
 	r.Use(middleware.CORS(deps.Config.AllowedOrigins))
 
 	r.Get("/healthz", healthHandler)
@@ -43,9 +43,13 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Handle("/metrics", promhttp.Handler())
 
 	r.Route("/api/v1", func(v1 chi.Router) {
-		for _, module := range deps.Modules {
-			module.RegisterRoutes(v1)
-		}
+		v1.Handle("/ws", deps.WebSocket)
+		v1.Group(func(api chi.Router) {
+			api.Use(chimw.Timeout(deps.Config.RequestTimeout))
+			for _, module := range deps.Modules {
+				module.RegisterRoutes(api)
+			}
+		})
 	})
 
 	return r

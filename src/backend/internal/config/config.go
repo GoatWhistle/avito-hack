@@ -11,6 +11,7 @@ import (
 type Config struct {
 	HTTPAddr       string        `env:"HTTP_ADDR"       envDefault:":8080"`
 	DatabaseURL    string        `env:"DATABASE_URL,required"`
+	RedisAddr      string        `env:"REDIS_ADDR"      envDefault:"localhost:6379"`
 	JWTSecret      string        `env:"JWT_SECRET,required"`
 	JWTTTL         time.Duration `env:"JWT_TTL"         envDefault:"15m"`
 	RefreshTTL     time.Duration `env:"REFRESH_TTL"     envDefault:"720h"`

@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/avito-hack/backend/internal/config"
 	"github.com/avito-hack/backend/internal/module/item"
+	"github.com/avito-hack/backend/internal/module/pet"
 	"github.com/avito-hack/backend/internal/module/user"
 	"github.com/avito-hack/backend/internal/server"
 	"github.com/avito-hack/backend/internal/shared/auth"
@@ -68,17 +72,36 @@ func run() error {
 	}
 	defer pool.Close()
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         cfg.RedisAddr,
+		DialTimeout:  time.Second,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	defer func() {
+		if closeErr := redisClient.Close(); closeErr != nil {
+			log.Warn("close redis", slog.Any("error", closeErr))
+		}
+	}()
+
+	modules, webSocket := buildModules(cfg, pool, redisClient)
+
 	handler := server.NewRouter(server.RouterDeps{
-		Config:  cfg,
-		Pool:    pool,
-		Logger:  log,
-		Modules: buildModules(cfg, pool),
+		Config:    cfg,
+		Pool:      pool,
+		Logger:    log,
+		Modules:   modules,
+		WebSocket: webSocket,
 	})
 
 	return server.New(cfg, handler, log).Run(ctx)
 }
 
-func buildModules(cfg config.Config, pool *pgxpool.Pool) []server.ModuleRegistrar {
+func buildModules(
+	cfg config.Config,
+	pool *pgxpool.Pool,
+	redisClient *redis.Client,
+) ([]server.ModuleRegistrar, http.Handler) {
 	appClock := clock.New()
 	tx := postgres.NewTxManager(pool)
 	validator := validate.New()
@@ -106,9 +129,17 @@ func buildModules(cfg config.Config, pool *pgxpool.Pool) []server.ModuleRegistra
 		OptionalAuth: optionalAuth,
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
+	petModule := pet.New(pet.Options{
+		Pool:           pool,
+		Redis:          redisClient,
+		Tx:             tx,
+		Clock:          appClock,
+		Tokens:         tokens,
+		AllowedOrigins: cfg.AllowedOrigins,
+	})
 
 	return []server.ModuleRegistrar{
 		userModule.Handlers,
 		itemModule.Handlers,
-	}
+	}, petModule.WebSocket
 }
