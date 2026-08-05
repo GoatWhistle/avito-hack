@@ -14,7 +14,10 @@ const (
 	maxDescriptionLen = 5000
 )
 
-var ErrItemNotFound = fmt.Errorf("item not found: %w", domainerr.ErrNotFound)
+var (
+	ErrItemNotFound  = fmt.Errorf("item not found: %w", domainerr.ErrNotFound)
+	ErrPhotoNotFound = fmt.Errorf("photo not found: %w", domainerr.ErrNotFound)
+)
 
 func errTransition(from, to Status) error {
 	return domainerr.NewConflict(fmt.Sprintf("cannot change status from %s to %s", from, to))
@@ -22,6 +25,10 @@ func errTransition(from, to Status) error {
 
 func errInvalidOwner() error {
 	return domainerr.NewInvalid("owner_id", "field is required")
+}
+
+func ErrTooManyPhotos() error {
+	return domainerr.NewConflict(fmt.Sprintf("item cannot have more than %d photos", MaxPhotosPerItem))
 }
 
 func normalizeTitle(raw string) (string, error) {

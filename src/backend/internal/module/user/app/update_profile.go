@@ -11,7 +11,7 @@ import (
 
 type UpdateProfileCommand struct {
 	UserID      uuid.UUID
-	DisplayName string
+	FullName    string
 }
 
 type UpdateProfileHandler struct {
@@ -33,7 +33,7 @@ func (h *UpdateProfileHandler) Handle(ctx context.Context, cmd UpdateProfileComm
 			return fmt.Errorf("load user: %w", err)
 		}
 
-		if err := user.Rename(cmd.DisplayName, h.clock.Now()); err != nil {
+		if err := user.Rename(cmd.FullName, h.clock.Now()); err != nil {
 			return err
 		}
 

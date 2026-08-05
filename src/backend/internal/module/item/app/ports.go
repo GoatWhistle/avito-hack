@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,4 +23,16 @@ type OwnerView struct {
 
 type OwnerProvider interface {
 	ByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]OwnerView, error)
+}
+
+type StoredFile struct {
+	Name        string
+	ContentType string
+	Size        int64
+}
+
+type PhotoStorage interface {
+	Save(ctx context.Context, itemID uuid.UUID, content io.Reader, contentType string) (StoredFile, error)
+	URL(itemID uuid.UUID, name string) string
+	Delete(ctx context.Context, itemID uuid.UUID, name string) error
 }

@@ -1,0 +1,130 @@
+.pet-avatar {
+  --pet-breath-duration: 3.4s;
+  --pet-sway-duration: 6s;
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  cursor: pointer;
+  overflow: visible;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pet-avatar:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 6px;
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 479px) {
+  .pet-avatar {
+    max-width: 220px;
+  }
+}
+
+.pet-avatar__body {
+  transform-origin: 100px 150px;
+  animation: pet-breath var(--pet-breath-duration) ease-in-out infinite;
+}
+
+.pet-avatar__head {
+  transform-origin: 100px 92px;
+  animation: pet-sway var(--pet-sway-duration) ease-in-out infinite;
+}
+
+.pet-avatar__lid {
+  transform-origin: center;
+  animation: pet-blink 5.2s ease-in-out infinite;
+}
+
+.pet-avatar__tail {
+  transform-origin: 140px 148px;
+  animation: pet-tail 2.8s ease-in-out infinite;
+}
+
+.pet-avatar__pupil {
+  transition: transform var(--duration-fast) var(--easing-out-quart);
+}
+
+.pet-avatar__zzz {
+  animation: pet-zzz 3s ease-in-out infinite;
+  opacity: 0;
+}
+
+.pet-avatar__zzz--b {
+  animation-delay: 0.9s;
+}
+
+.pet-avatar__zzz--c {
+  animation-delay: 1.8s;
+}
+
+.pet-avatar__heart {
+  animation: pet-heart 1.1s var(--easing-out-quart) forwards;
+  opacity: 0;
+}
+
+.pet-avatar__heart--b {
+  animation-delay: 0.12s;
+}
+
+.pet-avatar__heart--c {
+  animation-delay: 0.24s;
+}
+
+.pet-avatar__spark {
+  animation: pet-spark 1.4s var(--easing-out-quart) infinite;
+  transform-origin: 100px 100px;
+}
+
+.pet-avatar__aura {
+  animation: pet-aura 2.6s ease-in-out infinite;
+  transform-origin: 100px 120px;
+}
+
+.pet-avatar--happy .pet-avatar__body {
+  animation: pet-bounce 1.4s ease-in-out infinite;
+}
+
+.pet-avatar--hungry .pet-avatar__body {
+  animation: pet-breath 4.6s ease-in-out infinite;
+}
+
+.pet-avatar--sad .pet-avatar__head {
+  animation: pet-sigh 4.2s ease-in-out infinite;
+}
+
+.pet-avatar--sleeping .pet-avatar__body {
+  animation: pet-breath 5.4s ease-in-out infinite;
+}
+
+.pet-avatar--sleeping .pet-avatar__lid,
+.pet-avatar--petted .pet-avatar__lid {
+  animation: none;
+}
+
+.pet-avatar--eating .pet-avatar__head {
+  animation: pet-chew 0.42s ease-in-out 6;
+}
+
+.pet-avatar--celebrate .pet-avatar__body {
+  animation: pet-jump 0.62s var(--easing-out-quart) 4;
+}
+
+.pet-avatar--levelup .pet-avatar__body {
+  animation: pet-flip 1.1s ease-in-out 2;
+}
+
+.pet-avatar--hatching .pet-avatar__body {
+  animation: pet-shake 0.34s ease-in-out 8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-avatar *,
+  .pet-avatar {
+    animation: none !important;
+    transition: none !important;
+  }
+}

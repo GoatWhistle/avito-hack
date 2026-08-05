@@ -1,12 +1,14 @@
-import { Button, Layout, Menu, Space, Typography } from 'antd';
+import { Button, Layout, Menu } from 'antd';
 import { useUnit } from 'effector-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { $isAuthenticated, $user, logoutRequested } from '@/entities/session';
 import { ROUTES } from '@/shared/config/routes';
-import { layout } from '@/shared/design';
 import { LanguageSwitcher, ThemeSwitcher } from '@/shared/ui';
+
+import './header.css';
+import { LevelBadge } from './LevelBadge';
 
 export function Header() {
   const { t } = useTranslation('common');
@@ -17,43 +19,47 @@ export function Header() {
   const items = [
     { key: ROUTES.items, label: <Link to={ROUTES.items}>{t('nav.items')}</Link> },
     ...(isAuthenticated
-      ? [{ key: ROUTES.myItems, label: <Link to={ROUTES.myItems}>{t('nav.myItems')}</Link> }]
+      ? [
+          { key: ROUTES.pet, label: <Link to={ROUTES.pet}>{t('nav.pet')}</Link> },
+          { key: ROUTES.rewards, label: <Link to={ROUTES.rewards}>{t('nav.rewards')}</Link> },
+          {
+            key: ROUTES.leaderboard,
+            label: <Link to={ROUTES.leaderboard}>{t('nav.leaderboard')}</Link>,
+          },
+          { key: ROUTES.myItems, label: <Link to={ROUTES.myItems}>{t('nav.myItems')}</Link> },
+        ]
       : []),
   ];
 
   return (
-    <Layout.Header
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-md)',
-        height: layout.headerHeight,
-        paddingInline: 'var(--spacing-md)',
-      }}
-    >
-      <Link to={ROUTES.home}>
-        <Typography.Text strong style={{ color: 'inherit' }}>
-          {t('app.title')}
-        </Typography.Text>
+    <Layout.Header className="app-header">
+      <Link className="app-header__brand" to={ROUTES.home}>
+        {t('app.title')}
       </Link>
 
-      <Menu
-        mode="horizontal"
-        theme="dark"
-        selectedKeys={[location.pathname]}
-        items={items}
-        style={{ flex: 1, minWidth: 0 }}
-      />
+      <nav className="app-header__nav" aria-label={t('nav.primary')}>
+        <Menu
+          mode="horizontal"
+          theme="dark"
+          selectedKeys={[location.pathname]}
+          items={items}
+          disabledOverflow
+        />
+      </nav>
 
-      <Space size="small">
+      <div className="app-header__side">
+        {isAuthenticated && <LevelBadge />}
+
         <LanguageSwitcher />
         <ThemeSwitcher />
 
         {isAuthenticated ? (
-          <Space size="small">
-            <Link to={ROUTES.profile}>
-              <Button type="text" style={{ color: 'inherit' }}>
-                {user?.displayName ?? t('nav.profile')}
+          <>
+            <Link className="app-header__profile" to={ROUTES.profile}>
+              <Button type="text">
+                {user?.fullName === undefined || user.fullName === ''
+                  ? t('nav.profile')
+                  : user.fullName}
               </Button>
             </Link>
             <Button
@@ -64,18 +70,18 @@ export function Header() {
             >
               {t('actions.logout')}
             </Button>
-          </Space>
+          </>
         ) : (
-          <Space size="small">
+          <>
             <Link to={ROUTES.login}>
               <Button>{t('actions.login')}</Button>
             </Link>
             <Link to={ROUTES.register}>
               <Button type="primary">{t('actions.register')}</Button>
             </Link>
-          </Space>
+          </>
         )}
-      </Space>
+      </div>
     </Layout.Header>
   );
 }

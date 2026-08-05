@@ -24,7 +24,15 @@ type updateItemRequest struct {
 }
 
 type changeStatusRequest struct {
-	Action string `json:"action" validate:"required,oneof=submit publish archive restore"`
+	Action string `json:"action" validate:"required,oneof=submit publish sell archive restore"`
+}
+
+type photoResponse struct {
+	ID        uuid.UUID `json:"id"`
+	ItemID    uuid.UUID `json:"item_id"`
+	URL       string    `json:"url"`
+	Position  int       `json:"position"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type itemResponse struct {
@@ -61,6 +69,25 @@ func toItemResponse(i *domain.Item) itemResponse {
 		CreatedAt:   i.CreatedAt(),
 		UpdatedAt:   i.UpdatedAt(),
 	}
+}
+
+func toPhotoResponse(p *domain.Photo) photoResponse {
+	return photoResponse{
+		ID:        p.ID(),
+		ItemID:    p.ItemID(),
+		URL:       p.URL(),
+		Position:  p.Position(),
+		CreatedAt: p.CreatedAt(),
+	}
+}
+
+func toPhotoListResponse(photos []*domain.Photo) []photoResponse {
+	result := make([]photoResponse, 0, len(photos))
+	for _, photo := range photos {
+		result = append(result, toPhotoResponse(photo))
+	}
+
+	return result
 }
 
 func toListResponse(items []app.ListItem) []itemListItemResponse {

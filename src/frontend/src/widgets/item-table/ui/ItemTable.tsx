@@ -16,6 +16,7 @@ interface ItemTableProps {
 }
 
 const VIRTUAL_SCROLL_HEIGHT = 600;
+const MIN_TABLE_WIDTH = 640;
 
 export function ItemTable({ items, loading, showOwner = false }: ItemTableProps) {
   const { t, i18n } = useTranslation('item');
@@ -35,7 +36,11 @@ export function ItemTable({ items, loading, showOwner = false }: ItemTableProps)
       loading={loading}
       pagination={false}
       virtual={isVirtual}
-      {...(isVirtual ? { scroll: { y: VIRTUAL_SCROLL_HEIGHT } } : {})}
+      scroll={
+        isVirtual
+          ? { y: VIRTUAL_SCROLL_HEIGHT, x: MIN_TABLE_WIDTH }
+          : { x: MIN_TABLE_WIDTH }
+      }
       locale={{ emptyText: <EmptyState description={t('list.empty')} /> }}
     />
   );

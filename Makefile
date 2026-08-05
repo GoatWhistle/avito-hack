@@ -6,7 +6,10 @@ FRONTEND_DIR := $(CURDIR)/src/frontend
 SERVICE ?=
 LOGS_TAIL ?=
 
-.PHONY: help init lint test build up dev dev-down down logs clean migrate
+PROD_COMPOSE := -f docker-compose.yml -f docker-compose.prod.yml
+
+.PHONY: help init lint test build up dev dev-down down logs clean migrate \
+        migrate-down migrate-status seed psql prod-up prod-down prod-logs prod-cert
 
 help:
 	@echo " "
@@ -24,6 +27,15 @@ help:
 	@echo "  clean           - Stop the stack and delete all volumes with data"
 	@echo " "
 	@echo "  migrate         - Apply pending database migrations"
+	@echo "  migrate-down    - Roll back the last migration"
+	@echo "  migrate-status  - Show which migrations are applied"
+	@echo "  seed            - Reapply the demo data seed (00010)"
+	@echo "  psql            - Open a psql shell in the database container"
+	@echo " "
+	@echo "  prod-up         - Start the production stack behind nginx (80/443)"
+	@echo "  prod-down       - Stop the production stack"
+	@echo "  prod-logs       - Follow production logs (use SERVICE=... and/or LOGS_TAIL=...)"
+	@echo "  prod-cert       - Issue a Let's Encrypt certificate (DOMAIN=... LETSENCRYPT_EMAIL=...)"
 	@echo " "
 
 init:
@@ -114,3 +126,49 @@ migrate:
 	docker compose run --rm migrate up
 	@echo " "
 	@echo "Migrations applied!"
+
+migrate-down:
+	docker compose run --rm --entrypoint /app/migrate migrate down
+	@echo " "
+	@echo "Last migration rolled back!"
+
+migrate-status:
+	docker compose run --rm --entrypoint /app/migrate migrate status
+
+seed:
+	docker compose run --rm --entrypoint /app/migrate migrate down
+	docker compose run --rm migrate up
+	@echo " "
+	@echo "Demo data reseeded. Every demo account uses the password: demo1234"
+	@echo " "
+
+psql:
+	docker compose exec postgres psql -U "$${POSTGRES_USER:-avito}" -d "$${POSTGRES_DB:-avito}"
+
+prod-up:
+	docker compose $(PROD_COMPOSE) up -d --build --remove-orphans
+	@echo " "
+	@echo "  Production stack is up behind nginx on ports 80 and 443"
+	@echo "  Next steps for HTTPS are in deploy/README.md"
+	@echo " "
+
+prod-down:
+	docker compose $(PROD_COMPOSE) down --remove-orphans
+	@echo " "
+	@echo "Production stack stopped!"
+
+prod-logs:
+	@if [ -n "$(SERVICE)" ]; then \
+		docker compose $(PROD_COMPOSE) logs -f --tail=$${LOGS_TAIL:-100} $(SERVICE); \
+	else \
+		docker compose $(PROD_COMPOSE) logs -f --tail=$${LOGS_TAIL:-100}; \
+	fi
+
+prod-cert:
+	@test -n "$(DOMAIN)" || { echo "DOMAIN is required: make prod-cert DOMAIN=example.com LETSENCRYPT_EMAIL=you@example.com"; exit 1; }
+	@test -n "$(LETSENCRYPT_EMAIL)" || { echo "LETSENCRYPT_EMAIL is required"; exit 1; }
+	DOMAIN=$(DOMAIN) LETSENCRYPT_EMAIL=$(LETSENCRYPT_EMAIL) \
+		docker compose $(PROD_COMPOSE) --profile certbot run --rm certbot
+	@echo " "
+	@echo "Certificate issued. Enable the HTTPS server block in deploy/nginx/conf.d/app.conf"
+	@echo " "

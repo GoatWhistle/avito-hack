@@ -29,7 +29,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '', displayName: '' },
+    defaultValues: { email: '', password: '', fullName: '' },
   });
 
   const submit = handleSubmit(async (values) => {
@@ -43,12 +43,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   return (
     <Form layout="vertical" onFinish={() => void submit()}>
-      <FormField name="displayName" label={t('fields.displayName')} error={errors.displayName?.message}>
+      <FormField name="fullName" label={t('fields.fullName')} error={errors.fullName?.message}>
         <Controller
-          name="displayName"
+          name="fullName"
           control={control}
           render={({ field }) => (
-            <Input id={field.name} {...field} placeholder={t('fields.displayNamePlaceholder')} />
+            <Input id={field.name} {...field} placeholder={t('fields.fullNamePlaceholder')} />
           )}
         />
       </FormField>
@@ -58,7 +58,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           name="email"
           control={control}
           render={({ field }) => (
-            <Input id={field.name} {...field} type="email" placeholder={t('fields.emailPlaceholder')} />
+            <Input
+              id={field.name}
+              {...field}
+              type="email"
+              placeholder={t('fields.emailPlaceholder')}
+            />
           )}
         />
       </FormField>
@@ -68,7 +73,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           name="password"
           control={control}
           render={({ field }) => (
-            <Input.Password id={field.name} {...field} placeholder={t('fields.passwordPlaceholder')} />
+            <Input.Password
+              id={field.name}
+              {...field}
+              placeholder={t('fields.passwordPlaceholder')}
+            />
           )}
         />
       </FormField>

@@ -4,19 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/avito-hack/backend/internal/config"
+	"github.com/avito-hack/backend/internal/module/favorite"
 	"github.com/avito-hack/backend/internal/module/item"
+	"github.com/avito-hack/backend/internal/module/pet"
 	"github.com/avito-hack/backend/internal/module/raccoon"
 	"github.com/avito-hack/backend/internal/module/user"
 	"github.com/avito-hack/backend/internal/server"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/clock"
+	"github.com/avito-hack/backend/internal/shared/events"
 	"github.com/avito-hack/backend/internal/shared/logger"
 	"github.com/avito-hack/backend/internal/shared/middleware"
 	"github.com/avito-hack/backend/internal/shared/postgres"
@@ -69,17 +75,39 @@ func run() error {
 	}
 	defer pool.Close()
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         cfg.RedisAddr,
+		DialTimeout:  time.Second,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	defer func() {
+		if closeErr := redisClient.Close(); closeErr != nil {
+			log.Warn("close redis", slog.Any("error", closeErr))
+		}
+	}()
+
+	modules, webSocket, err := buildModules(cfg, pool, redisClient)
+	if err != nil {
+		return fmt.Errorf("build modules: %w", err)
+	}
+
 	handler := server.NewRouter(server.RouterDeps{
-		Config:  cfg,
-		Pool:    pool,
-		Logger:  log,
-		Modules: buildModules(cfg, pool),
+		Config:    cfg,
+		Pool:      pool,
+		Logger:    log,
+		Modules:   modules,
+		WebSocket: webSocket,
 	})
 
 	return server.New(cfg, handler, log).Run(ctx)
 }
 
-func buildModules(cfg config.Config, pool *pgxpool.Pool) []server.ModuleRegistrar {
+func buildModules(
+	cfg config.Config,
+	pool *pgxpool.Pool,
+	redisClient *redis.Client,
+) ([]server.ModuleRegistrar, http.Handler, error) {
 	appClock := clock.New()
 	tx := postgres.NewTxManager(pool)
 	validator := validate.New()
@@ -88,39 +116,72 @@ func buildModules(cfg config.Config, pool *pgxpool.Pool) []server.ModuleRegistra
 	authenticate := middleware.Authenticate(tokens)
 	optionalAuth := middleware.OptionalAuthenticate(tokens)
 
+	bus := events.NewBus(slog.Default())
+
 	userModule := user.New(user.Options{
 		Pool:         pool,
 		Tx:           tx,
 		Clock:        appClock,
 		Tokens:       tokens,
+		Bus:          bus,
 		Validator:    validator,
 		Authenticate: authenticate,
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 
 	itemModule := item.New(item.Options{
+		Pool:          pool,
+		Tx:            tx,
+		Clock:         appClock,
+		Bus:           bus,
+		Validator:     validator,
+		Authenticate:  authenticate,
+		OptionalAuth:  optionalAuth,
+		MaxBodyBytes:  cfg.MaxBodyBytes,
+		MaxPhotoBytes: cfg.MaxPhotoBytes,
+		UploadDir:     cfg.UploadDir,
+		UploadURL:     cfg.UploadURL,
+	})
+
+	favoriteModule := favorite.New(favorite.Options{
 		Pool:         pool,
 		Tx:           tx,
 		Clock:        appClock,
-		Validator:    validator,
+		Bus:          bus,
 		Authenticate: authenticate,
-		OptionalAuth: optionalAuth,
-		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
+
+	petModule, err := pet.New(pet.Options{
+		Pool:             pool,
+		Redis:            redisClient,
+		Tx:               tx,
+		Clock:            appClock,
+		Tokens:           tokens,
+		Bus:              bus,
+		AllowedOrigins:   cfg.AllowedOrigins,
+		RewardHMACSecret: cfg.RewardHMACSecret,
+		Authenticate:     authenticate,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	raccoonModule := raccoon.New(raccoon.Options{
 		Pool:         pool,
-		Tx:           tx,
-		Clock:        appClock,
+		Pets:         petModule.Service,
+		Rewards:      petModule.Rewards,
 		Validator:    validator,
 		Authenticate: authenticate,
-		OptionalAuth: optionalAuth,
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 
 	return []server.ModuleRegistrar{
 		userModule.Handlers,
 		itemModule.Handlers,
+		favoriteModule.Handlers,
 		raccoonModule.Handlers,
-	}
+		petModule.Leaderboard,
+		petModule.Pet,
+		petModule.RewardAPI,
+	}, petModule.WebSocket, nil
 }

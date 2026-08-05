@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -27,6 +25,8 @@ FROM nginx:1.27-alpine AS runtime
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/app.conf
 RUN esc=$(printf '\033') && sed -i "s/\\\\x1b/${esc}/g" /etc/nginx/conf.d/app.conf
+RUN sed -i 's|^error_log .*|error_log /dev/stderr warn;|' /etc/nginx/nginx.conf \
+ && sed -i '/^user /d' /etc/nginx/nginx.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 RUN addgroup -S app && adduser -S app -G app \

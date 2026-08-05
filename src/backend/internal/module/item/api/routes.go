@@ -10,8 +10,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 		r.With(h.deps.Authenticate).Post("/", h.Create)
 		r.With(h.deps.Authenticate).Patch("/{id}", h.Update)
 		r.With(h.deps.Authenticate).Post("/{id}/status", h.ChangeStatus)
+		r.With(h.deps.Authenticate).Post("/{id}/photos", h.AddPhoto)
+		r.With(h.deps.Authenticate).Delete("/{id}/photos/{photoID}", h.DeletePhoto)
 
 		r.With(h.deps.OptionalAuth).Get("/", h.List)
 		r.With(h.deps.OptionalAuth).Get("/{id}", h.GetByID)
+		r.With(h.deps.OptionalAuth).Get("/{id}/photos", h.ListPhotos)
 	})
 }

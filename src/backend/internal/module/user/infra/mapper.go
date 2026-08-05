@@ -21,7 +21,7 @@ type userRow struct {
 	id           uuid.UUID
 	email        string
 	passwordHash string
-	displayName  string
+	fullName     string
 	role         string
 	createdAt    time.Time
 	updatedAt    time.Time
@@ -30,7 +30,7 @@ type userRow struct {
 func scanUser(row pgx.Row) (*domain.User, error) {
 	var r userRow
 
-	err := row.Scan(&r.id, &r.email, &r.passwordHash, &r.displayName, &r.role, &r.createdAt, &r.updatedAt)
+	err := row.Scan(&r.id, &r.email, &r.passwordHash, &r.fullName, &r.role, &r.createdAt, &r.updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func toDomain(r userRow) (*domain.User, error) {
 		ID:           r.id,
 		Email:        email,
 		PasswordHash: hash,
-		DisplayName:  r.displayName,
+		FullName:     r.fullName,
 		Role:         auth.Role(r.role),
 		CreatedAt:    r.createdAt,
 		UpdatedAt:    r.updatedAt,

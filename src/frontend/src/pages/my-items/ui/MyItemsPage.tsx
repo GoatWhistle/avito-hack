@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Space, Typography } from 'antd';
+import { Button } from 'antd';
 import { useUnit } from 'effector-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,8 +10,10 @@ import { $isAuthenticated } from '@/entities/session';
 import { $filters, ItemsFilterPanel } from '@/features/items-filter';
 import { ROUTES } from '@/shared/config/routes';
 import { useDebouncedValue } from '@/shared/lib/use-debounced-value';
-import { ErrorState } from '@/shared/ui';
+import { EmptyState, ErrorState, PageSkeleton } from '@/shared/ui';
 import { ItemTable } from '@/widgets/item-table';
+
+import './my-items-page.css';
 
 export function MyItemsPage() {
   const { t } = useTranslation(['item', 'common']);
@@ -41,22 +43,34 @@ export function MyItemsPage() {
   }
 
   return (
-    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-        <Typography.Title level={3} style={{ margin: 0 }}>
-          {t('item:list.myTitle')}
-        </Typography.Title>
+    <div className="app-stack">
+      <header className="my-items-head">
+        <h1 className="app-page-title">{t('item:list.myTitle')}</h1>
 
         <Link to={ROUTES.itemCreate}>
           <Button type="primary" icon={<PlusOutlined />}>
             {t('common:actions.create')}
           </Button>
         </Link>
-      </Space>
+      </header>
 
       <ItemsFilterPanel showStatusFilter />
 
-      <ItemTable items={items} loading={query.isPending} />
+      {query.isPending ? (
+        <PageSkeleton />
+      ) : items.length === 0 ? (
+        <EmptyState
+          description={t('item:list.empty')}
+          hint={t('item:list.emptyHint')}
+          action={
+            <Link to={ROUTES.itemCreate}>
+              <Button type="primary">{t('item:list.create')}</Button>
+            </Link>
+          }
+        />
+      ) : (
+        <ItemTable items={items} loading={false} />
+      )}
 
       {query.hasNextPage && (
         <Button
@@ -68,6 +82,6 @@ export function MyItemsPage() {
           {t('common:pagination.loadMore')}
         </Button>
       )}
-    </Space>
+    </div>
   );
 }

@@ -72,16 +72,16 @@ func TestNewItem_Validation(t *testing.T) {
 func TestItem_StatusTransitions(t *testing.T) {
 	t.Parallel()
 
-	t.Run("draft cannot be published directly", func(t *testing.T) {
+	t.Run("owner publishes draft directly", func(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
 
-		require.Error(t, item.Publish(fixedTime))
-		require.Equal(t, domain.StatusDraft, item.Status())
+		require.NoError(t, item.Publish(fixedTime))
+		require.Equal(t, domain.StatusPublished, item.Status())
 	})
 
-	t.Run("full happy path", func(t *testing.T) {
+	t.Run("moderation stays an optional path", func(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
@@ -94,6 +94,50 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		require.NoError(t, item.Archive(fixedTime))
 		require.Equal(t, domain.StatusArchived, item.Status())
+	})
+
+	t.Run("published item can be sold", func(t *testing.T) {
+		t.Parallel()
+
+		item := newItem(t)
+
+		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.MarkSold(fixedTime))
+		require.Equal(t, domain.StatusSold, item.Status())
+	})
+
+	t.Run("draft cannot be sold", func(t *testing.T) {
+		t.Parallel()
+
+		item := newItem(t)
+
+		require.Error(t, item.MarkSold(fixedTime))
+		require.Equal(t, domain.StatusDraft, item.Status())
+	})
+
+	t.Run("sold is terminal", func(t *testing.T) {
+		t.Parallel()
+
+		item := newItem(t)
+		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.MarkSold(fixedTime))
+
+		require.True(t, domain.StatusSold.IsTerminal())
+		require.Error(t, item.Archive(fixedTime))
+		require.Error(t, item.Restore(fixedTime))
+		require.Error(t, item.Publish(fixedTime))
+		require.Equal(t, domain.StatusSold, item.Status())
+	})
+
+	t.Run("sold item cannot be updated", func(t *testing.T) {
+		t.Parallel()
+
+		item := newItem(t)
+		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.MarkSold(fixedTime))
+
+		newTitle := "Another title"
+		require.Error(t, item.Update(domain.UpdateItemParams{Title: &newTitle, Now: fixedTime}))
 	})
 
 	t.Run("archived item cannot be updated", func(t *testing.T) {

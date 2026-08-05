@@ -8,13 +8,15 @@ const (
 	StatusDraft      Status = "draft"
 	StatusModeration Status = "moderation"
 	StatusPublished  Status = "published"
+	StatusSold       Status = "sold"
 	StatusArchived   Status = "archived"
 )
 
 var transitions = map[Status][]Status{
-	StatusDraft:      {StatusModeration, StatusArchived},
+	StatusDraft:      {StatusPublished, StatusModeration, StatusArchived},
 	StatusModeration: {StatusPublished, StatusDraft, StatusArchived},
-	StatusPublished:  {StatusArchived},
+	StatusPublished:  {StatusSold, StatusArchived},
+	StatusSold:       {},
 	StatusArchived:   {StatusDraft},
 }
 
@@ -26,6 +28,10 @@ func (s Status) Valid() bool {
 
 func (s Status) CanTransitionTo(target Status) bool {
 	return slices.Contains(transitions[s], target)
+}
+
+func (s Status) IsTerminal() bool {
+	return len(transitions[s]) == 0
 }
 
 func (s Status) String() string {

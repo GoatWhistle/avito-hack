@@ -8,14 +8,15 @@ import (
 	"github.com/avito-hack/backend/internal/module/user/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
+	"github.com/avito-hack/backend/internal/shared/events"
 	"github.com/avito-hack/backend/internal/shared/password"
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
 type RegisterUserCommand struct {
-	Email       string
-	Password    string
-	DisplayName string
+	Email    string
+	Password string
+	FullName string
 }
 
 type RegisterUserResult struct {
@@ -26,10 +27,20 @@ type RegisterUserHandler struct {
 	users domain.Repository
 	tx    TxManager
 	clock Clock
+	bus   events.Publisher
 }
 
-func NewRegisterUserHandler(users domain.Repository, tx TxManager, clock Clock) *RegisterUserHandler {
-	return &RegisterUserHandler{users: users, tx: tx, clock: clock}
+func NewRegisterUserHandler(
+	users domain.Repository,
+	tx TxManager,
+	clock Clock,
+	bus events.Publisher,
+) *RegisterUserHandler {
+	if bus == nil {
+		bus = events.NopPublisher{}
+	}
+
+	return &RegisterUserHandler{users: users, tx: tx, clock: clock, bus: bus}
 }
 
 func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (RegisterUserResult, error) {
@@ -46,7 +57,7 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 	user, err := domain.NewUser(domain.NewUserParams{
 		Email:        email,
 		PasswordHash: hash,
-		DisplayName:  cmd.DisplayName,
+		FullName:     cmd.FullName,
 		Role:         auth.RoleUser,
 		Now:          h.clock.Now(),
 	})
@@ -54,7 +65,7 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 		return RegisterUserResult{}, err
 	}
 
-	err = h.tx.WithTx(ctx, func(ctx context.Context) error {
+	err = events.PublishAfterCommit(ctx, h.bus, h.tx, func(ctx context.Context, out *events.Outbox) error {
 		taken, existsErr := h.users.ExistsByEmail(ctx, email)
 		if existsErr != nil {
 			return fmt.Errorf("check email: %w", existsErr)
@@ -63,7 +74,13 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 			return domain.ErrEmailAlreadyTaken
 		}
 
-		return h.users.Save(ctx, user)
+		if saveErr := h.users.Save(ctx, user); saveErr != nil {
+			return saveErr
+		}
+
+		out.Add(events.New(events.TypeUserRegistered, user.ID(), user.ID(), h.clock.Now()))
+
+		return nil
 	})
 	if err != nil {
 		return RegisterUserResult{}, err
@@ -74,10 +91,8 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 
 func mapPasswordError(err error) error {
 	switch {
-	case errors.Is(err, password.ErrTooShort):
-		return domainerr.NewInvalid("password", fmt.Sprintf("value is shorter than minimum: %d", password.MinLength))
-	case errors.Is(err, password.ErrTooLong):
-		return domainerr.NewInvalid("password", fmt.Sprintf("value is longer than maximum: %d", password.MaxLength))
+	case errors.Is(err, password.ErrTooShort), errors.Is(err, password.ErrTooLong):
+		return domainerr.NewInvalid("password", "field is required")
 	default:
 		return fmt.Errorf("hash password: %w", err)
 	}

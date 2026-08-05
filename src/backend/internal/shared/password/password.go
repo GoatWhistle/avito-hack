@@ -25,19 +25,25 @@ type Hash struct {
 }
 
 func NewHash(plain string) (Hash, error) {
-	if len(plain) < MinLength {
+	if plain == "" {
 		return Hash{}, ErrTooShort
 	}
-	if len(plain) > MaxLength {
-		return Hash{}, ErrTooLong
-	}
 
-	raw, err := bcrypt.GenerateFromPassword([]byte(plain), cost)
+	raw, err := bcrypt.GenerateFromPassword(truncate(plain), cost)
 	if err != nil {
 		return Hash{}, fmt.Errorf("hash password: %w", err)
 	}
 
 	return Hash{value: string(raw)}, nil
+}
+
+func truncate(plain string) []byte {
+	raw := []byte(plain)
+	if len(raw) > MaxLength {
+		return raw[:MaxLength]
+	}
+
+	return raw
 }
 
 func RestoreHash(stored string) (Hash, error) {
@@ -49,7 +55,7 @@ func RestoreHash(stored string) (Hash, error) {
 }
 
 func (h Hash) Compare(plain string) error {
-	if err := bcrypt.CompareHashAndPassword([]byte(h.value), []byte(plain)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(h.value), truncate(plain)); err != nil {
 		return ErrMismatch
 	}
 

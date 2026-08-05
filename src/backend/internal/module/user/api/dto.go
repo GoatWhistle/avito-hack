@@ -9,26 +9,26 @@ import (
 )
 
 type registerRequest struct {
-	Email       string `json:"email"        validate:"required,email,max=254"`
-	Password    string `json:"password"     validate:"required,min=8,max=72"`
-	DisplayName string `json:"display_name" validate:"required,min=2,max=100"`
+	Email    string `json:"email"     validate:"required,email"`
+	Password string `json:"password"  validate:"required"`
+	FullName string `json:"full_name" validate:"required"`
 }
 
 type loginRequest struct {
-	Email    string `json:"email"    validate:"required,email,max=254"`
-	Password string `json:"password" validate:"required,min=8,max=72"`
+	Email    string `json:"email"    validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type updateProfileRequest struct {
-	DisplayName string `json:"display_name" validate:"required,min=2,max=100"`
+	FullName string `json:"full_name" validate:"required"`
 }
 
 type userResponse struct {
-	ID          uuid.UUID `json:"id"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"display_name"`
-	Role        string    `json:"role"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	FullName  string    `json:"full_name"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type sessionResponse struct {
@@ -39,10 +39,10 @@ type sessionResponse struct {
 
 func toUserResponse(u *domain.User) userResponse {
 	return userResponse{
-		ID:          u.ID(),
-		Email:       u.Email().String(),
-		DisplayName: u.DisplayName(),
-		Role:        string(u.Role()),
-		CreatedAt:   u.CreatedAt(),
+		ID:        u.ID(),
+		Email:     u.Email().String(),
+		FullName:  u.FullName(),
+		Role:      string(u.Role()),
+		CreatedAt: u.CreatedAt(),
 	}
 }

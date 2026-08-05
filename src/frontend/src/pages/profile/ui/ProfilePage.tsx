@@ -15,7 +15,7 @@ export function ProfilePage() {
   const user = useUnit($user);
   const getErrorMessage = useApiErrorMessage();
 
-  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [fullName, setFullName] = useState(user?.fullName ?? '');
   const [isSaving, setIsSaving] = useState(false);
 
   if (user === null) {
@@ -26,7 +26,7 @@ export function ProfilePage() {
     setIsSaving(true);
 
     try {
-      const updated = await sessionApi.updateProfile({ displayName });
+      const updated = await sessionApi.updateProfile({ fullName });
       profileUpdated(updated);
       notification.success({ message: t('auth:profile.updated') });
     } catch (error) {
@@ -46,11 +46,11 @@ export function ProfilePage() {
             <Input value={user.email} disabled />
           </Form.Item>
 
-          <Form.Item label={t('auth:fields.displayName')}>
+          <Form.Item label={t('auth:fields.fullName')}>
             <Input
-              value={displayName}
+              value={fullName}
               onChange={(event) => {
-                setDisplayName(event.target.value);
+                setFullName(event.target.value);
               }}
             />
           </Form.Item>

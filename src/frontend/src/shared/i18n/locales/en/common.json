@@ -19,8 +19,12 @@
     "register": "Sign up"
   },
   "nav": {
+    "primary": "Primary navigation",
     "items": "Listings",
     "myItems": "My listings",
+    "pet": "Pet",
+    "rewards": "Rewards",
+    "leaderboard": "Leaderboard",
     "profile": "Profile"
   },
   "theme": {
@@ -28,6 +32,7 @@
     "dark": "Dark theme"
   },
   "language": {
+    "label": "Interface language",
     "ru": "Русский",
     "en": "English"
   },

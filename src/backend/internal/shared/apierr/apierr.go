@@ -21,6 +21,13 @@ const (
 	CodeInternal     = "internal_error"
 )
 
+const (
+	MessageNotFound     = "resource not found"
+	MessageForbidden    = "access forbidden"
+	MessageUnauthorized = "authentication required"
+	MessageConflict     = "state conflict"
+)
+
 type errorBody struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
@@ -35,8 +42,15 @@ type errorEnvelope struct {
 func Write(w http.ResponseWriter, r *http.Request, err error) {
 	status, body := classify(r, err)
 
-	if status == http.StatusInternalServerError {
+	switch {
+	case status == http.StatusInternalServerError:
 		slog.ErrorContext(r.Context(), "unhandled error",
+			slog.Any("error", err),
+			slog.String("request_id", body.RequestID),
+		)
+	case status >= http.StatusBadRequest:
+		slog.DebugContext(r.Context(), "request rejected",
+			slog.Int("status", status),
 			slog.Any("error", err),
 			slog.String("request_id", body.RequestID),
 		)
@@ -63,19 +77,19 @@ func classify(r *http.Request, err error) (int, errorBody) {
 		return http.StatusConflict, body
 
 	case errors.Is(err, domainerr.ErrNotFound):
-		body.Code, body.Message = CodeNotFound, err.Error()
+		body.Code, body.Message = CodeNotFound, MessageNotFound
 		return http.StatusNotFound, body
 
 	case errors.Is(err, domainerr.ErrForbidden):
-		body.Code, body.Message = CodeForbidden, err.Error()
+		body.Code, body.Message = CodeForbidden, MessageForbidden
 		return http.StatusForbidden, body
 
 	case errors.Is(err, domainerr.ErrUnauthorized):
-		body.Code, body.Message = CodeUnauthorized, err.Error()
+		body.Code, body.Message = CodeUnauthorized, MessageUnauthorized
 		return http.StatusUnauthorized, body
 
 	case errors.Is(err, domainerr.ErrConflict):
-		body.Code, body.Message = CodeConflict, err.Error()
+		body.Code, body.Message = CodeConflict, MessageConflict
 		return http.StatusConflict, body
 
 	default:

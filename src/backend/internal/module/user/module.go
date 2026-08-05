@@ -9,6 +9,7 @@ import (
 	"github.com/avito-hack/backend/internal/module/user/app"
 	"github.com/avito-hack/backend/internal/module/user/domain"
 	"github.com/avito-hack/backend/internal/module/user/infra"
+	"github.com/avito-hack/backend/internal/shared/events"
 )
 
 type Options struct {
@@ -16,6 +17,7 @@ type Options struct {
 	Tx           app.TxManager
 	Clock        app.Clock
 	Tokens       app.TokenIssuer
+	Bus          events.Publisher
 	Validator    interface{ Struct(dst any) error }
 	Authenticate func(http.Handler) http.Handler
 	MaxBodyBytes int64
@@ -30,7 +32,7 @@ func New(opts Options) *Module {
 	repo := infra.NewPgRepository(opts.Pool)
 
 	handlers := api.NewHandlers(api.Deps{
-		Register:      app.NewRegisterUserHandler(repo, opts.Tx, opts.Clock),
+		Register:      app.NewRegisterUserHandler(repo, opts.Tx, opts.Clock, opts.Bus),
 		Login:         app.NewLoginUserHandler(repo, opts.Tokens),
 		GetProfile:    app.NewGetProfileHandler(repo),
 		UpdateProfile: app.NewUpdateProfileHandler(repo, opts.Tx, opts.Clock),

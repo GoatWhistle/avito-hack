@@ -1,0 +1,125 @@
+.pet-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.pet-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(
+      ellipse 70% 55% at 50% 32%,
+      var(--color-primary-subtle) 0%,
+      transparent 70%
+    ),
+    var(--color-bg-container);
+  overflow: hidden;
+}
+
+.pet-stage__top {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.pet-stage__name {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  text-wrap: balance;
+}
+
+.pet-stage__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  width: 100%;
+}
+
+.pet-stage__hint {
+  max-width: 34ch;
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-snug);
+  text-wrap: pretty;
+}
+
+.pet-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 0;
+}
+
+.pet-vitals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.pet-next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.pet-next__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  min-height: var(--layout-touch-target);
+  padding: var(--spacing-sm) 0;
+}
+
+.pet-next__row + .pet-next__row {
+  border-top: 1px solid var(--color-border);
+}
+
+.pet-next__text {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-snug);
+  text-wrap: pretty;
+}
+
+@media (max-width: 991px) {
+  .pet-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pet-stage {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .pet-stage__avatar {
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 479px) {
+  .pet-stage {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  .pet-next__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+}

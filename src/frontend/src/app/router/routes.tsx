@@ -21,6 +21,13 @@ const ItemEditPage = lazy(() =>
 const MyItemsPage = lazy(() =>
   import('@/pages/my-items').then((module) => ({ default: module.MyItemsPage })),
 );
+const PetPage = lazy(() => import('@/pages/pet').then((module) => ({ default: module.PetPage })));
+const RewardsPage = lazy(() =>
+  import('@/pages/rewards').then((module) => ({ default: module.RewardsPage })),
+);
+const LeaderboardPage = lazy(() =>
+  import('@/pages/leaderboard').then((module) => ({ default: module.LeaderboardPage })),
+);
 const LoginPage = lazy(() =>
   import('@/pages/login').then((module) => ({ default: module.LoginPage })),
 );
@@ -63,6 +70,30 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <MyItemsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: ROUTES.pet,
+        element: (
+          <RequireAuth>
+            <PetPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: ROUTES.rewards,
+        element: (
+          <RequireAuth>
+            <RewardsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: ROUTES.leaderboard,
+        element: (
+          <RequireAuth>
+            <LeaderboardPage />
           </RequireAuth>
         ),
       },

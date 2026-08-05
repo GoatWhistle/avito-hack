@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
+
+	"github.com/avito-hack/backend/internal/shared/domainerr"
 )
 
 type ClaimRewardResult struct {
@@ -13,35 +14,29 @@ type ClaimRewardResult struct {
 }
 
 type ClaimRewardUseCase struct {
-	promocodes PromocodeGeneratorAdapter
-	notifs     NotificationAdapter
+	rewards RewardActivator
 }
 
-func NewClaimRewardUseCase(promocodes PromocodeGeneratorAdapter, notifs NotificationAdapter) *ClaimRewardUseCase {
-	return &ClaimRewardUseCase{
-		promocodes: promocodes,
-		notifs:     notifs,
-	}
+func NewClaimRewardUseCase(rewards RewardActivator) *ClaimRewardUseCase {
+	return &ClaimRewardUseCase{rewards: rewards}
 }
 
-func (uc *ClaimRewardUseCase) Execute(ctx context.Context, userID uuid.UUID, rewardID string) (*ClaimRewardResult, error) {
+func (uc *ClaimRewardUseCase) Execute(
+	ctx context.Context,
+	userID uuid.UUID,
+	rewardID string,
+) (ClaimRewardResult, error) {
 	if userID == uuid.Nil {
-		return nil, fmt.Errorf("invalid user id")
+		return ClaimRewardResult{}, domainerr.NewInvalid("user_id", "user id is required")
 	}
-
 	if rewardID == "" {
-		return nil, fmt.Errorf("invalid reward id")
+		return ClaimRewardResult{}, domainerr.NewInvalid("reward_id", "reward id is required")
 	}
 
-	promo, err := uc.promocodes.Generate(ctx, userID, rewardID)
+	code, err := uc.rewards.Activate(ctx, userID, rewardID)
 	if err != nil {
-		return nil, fmt.Errorf("generate promocode: %w", err)
+		return ClaimRewardResult{}, err
 	}
 
-	_ = uc.notifs.SendInAppPush(ctx, userID, "Reward Claimed!", fmt.Sprintf("Your promo code is %s", promo))
-
-	return &ClaimRewardResult{
-		RewardID:  rewardID,
-		Promocode: promo,
-	}, nil
+	return ClaimRewardResult{RewardID: rewardID, Promocode: code}, nil
 }

@@ -1,5 +1,7 @@
 package api
 
+const badgeTimeLayout = "2006-01-02T15:04:05Z"
+
 type BadgeResponse struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -16,6 +18,8 @@ type RaccoonProfileResponse struct {
 	XP            int             `json:"xp"`
 	XPToNextLevel int             `json:"xp_to_next_level"`
 	CurrentStreak int             `json:"current_streak"`
+	Stage         string          `json:"stage"`
+	State         string          `json:"state"`
 	Badges        []BadgeResponse `json:"badges"`
 }
 

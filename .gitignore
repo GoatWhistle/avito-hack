@@ -25,3 +25,12 @@ Thumbs.db
 tests/e2e/test-results/
 tests/e2e/playwright-report/
 tests/e2e/.auth/
+
+.playwright-mcp/
+Dockerfile.*
+!Dockerfile
+*.tmp
+*.bak
+*.orig
+coverage.out
+cover.out

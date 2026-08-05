@@ -3,7 +3,7 @@ export type UserRole = 'user' | 'moderator' | 'admin';
 export interface User {
   id: string;
   email: string;
-  displayName: string;
+  fullName: string;
   role: UserRole;
   createdAt: string;
 }
@@ -17,7 +17,8 @@ export interface Session {
 export interface UserDto {
   id: string;
   email: string;
-  display_name: string;
+  full_name?: string;
+  display_name?: string;
   role: UserRole;
   created_at: string;
 }
@@ -32,7 +33,7 @@ export function toUser(dto: UserDto): User {
   return {
     id: dto.id,
     email: dto.email,
-    displayName: dto.display_name,
+    fullName: dto.full_name ?? dto.display_name ?? '',
     role: dto.role,
     createdAt: dto.created_at,
   };

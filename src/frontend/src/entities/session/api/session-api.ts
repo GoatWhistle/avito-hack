@@ -1,6 +1,13 @@
 import { apiClient } from '@/shared/api';
 
-import { toSession, toUser, type Session, type SessionDto, type User, type UserDto } from '../model/types';
+import {
+  toSession,
+  toUser,
+  type Session,
+  type SessionDto,
+  type User,
+  type UserDto,
+} from '../model/types';
 
 export interface LoginPayload {
   email: string;
@@ -10,11 +17,11 @@ export interface LoginPayload {
 export interface RegisterPayload {
   email: string;
   password: string;
-  displayName: string;
+  fullName: string;
 }
 
 export interface UpdateProfilePayload {
-  displayName: string;
+  fullName: string;
 }
 
 export const sessionApi = {
@@ -28,7 +35,7 @@ export const sessionApi = {
       .post<UserDto>('/auth/register', {
         email: payload.email,
         password: payload.password,
-        display_name: payload.displayName,
+        full_name: payload.fullName,
       })
       .then((response) => toUser(response.data)),
 
@@ -39,6 +46,6 @@ export const sessionApi = {
 
   updateProfile: (payload: UpdateProfilePayload): Promise<User> =>
     apiClient
-      .patch<UserDto>('/users/me', { display_name: payload.displayName })
+      .patch<UserDto>('/users/me', { full_name: payload.fullName })
       .then((response) => toUser(response.data)),
 };

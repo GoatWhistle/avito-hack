@@ -40,7 +40,7 @@ func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 	result, err := h.deps.Register.Handle(r.Context(), app.RegisterUserCommand{
 		Email:       req.Email,
 		Password:    req.Password,
-		DisplayName: req.DisplayName,
+		FullName: req.FullName,
 	})
 	if err != nil {
 		apierr.Write(w, r, err)
@@ -101,8 +101,8 @@ func (h *Handlers) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.deps.UpdateProfile.Handle(r.Context(), app.UpdateProfileCommand{
-		UserID:      actor.ID,
-		DisplayName: req.DisplayName,
+		UserID:   actor.ID,
+		FullName: req.FullName,
 	})
 	if err != nil {
 		apierr.Write(w, r, err)

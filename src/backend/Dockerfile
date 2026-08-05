@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
@@ -27,6 +25,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
       -o /out/migrate ./cmd/migrate
 
+RUN mkdir -p /out/uploads
+
 FROM golang:1.25-alpine AS dev
 
 WORKDIR /app
@@ -44,6 +44,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /out/api /app/api
 COPY --from=builder /out/migrate /app/migrate
+COPY --from=builder --chown=nonroot:nonroot /out/uploads /data/uploads
 
 USER nonroot:nonroot
 EXPOSE 8080

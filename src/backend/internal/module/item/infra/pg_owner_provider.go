@@ -24,7 +24,7 @@ func (p *PgOwnerProvider) ByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.
 		return map[uuid.UUID]app.OwnerView{}, nil
 	}
 
-	const query = `SELECT id, display_name FROM users WHERE id = ANY($1)`
+	const query = `SELECT id, full_name FROM users WHERE id = ANY($1)`
 
 	rows, err := postgres.QuerierFrom(ctx, p.pool).Query(ctx, query, ids)
 	if err != nil {

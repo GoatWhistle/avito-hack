@@ -9,15 +9,18 @@ import (
 )
 
 type Config struct {
-	HTTPAddr       string        `env:"HTTP_ADDR"       envDefault:":8080"`
-	DatabaseURL    string        `env:"DATABASE_URL,required"`
-	JWTSecret      string        `env:"JWT_SECRET,required"`
-	JWTTTL         time.Duration `env:"JWT_TTL"         envDefault:"15m"`
-	RefreshTTL     time.Duration `env:"REFRESH_TTL"     envDefault:"720h"`
-	AllowedOrigins []string      `env:"ALLOWED_ORIGINS" envSeparator:","`
-	LogLevel       string        `env:"LOG_LEVEL"       envDefault:"info"`
-	LogFormat      string        `env:"LOG_FORMAT"      envDefault:"pretty"`
-	LogColor       string        `env:"LOG_COLOR"       envDefault:"auto"`
+	HTTPAddr    string        `env:"HTTP_ADDR"       envDefault:":8080"`
+	DatabaseURL string        `env:"DATABASE_URL,required"`
+	RedisAddr   string        `env:"REDIS_ADDR"      envDefault:"localhost:6379"`
+	JWTSecret   string        `env:"JWT_SECRET,required"`
+	JWTTTL      time.Duration `env:"JWT_TTL"         envDefault:"15m"`
+
+	RewardHMACSecret string `env:"REWARD_HMAC_SECRET,required"`
+
+	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envSeparator:","`
+	LogLevel       string   `env:"LOG_LEVEL"       envDefault:"info"`
+	LogFormat      string   `env:"LOG_FORMAT"      envDefault:"pretty"`
+	LogColor       string   `env:"LOG_COLOR"       envDefault:"auto"`
 
 	ReadHeaderTimeout time.Duration `env:"READ_HEADER_TIMEOUT" envDefault:"5s"`
 	ReadTimeout       time.Duration `env:"READ_TIMEOUT"        envDefault:"15s"`
@@ -26,7 +29,10 @@ type Config struct {
 	ShutdownTimeout   time.Duration `env:"SHUTDOWN_TIMEOUT"    envDefault:"15s"`
 	RequestTimeout    time.Duration `env:"REQUEST_TIMEOUT"     envDefault:"30s"`
 
-	MaxBodyBytes int64 `env:"MAX_BODY_BYTES" envDefault:"1048576"`
+	MaxBodyBytes  int64  `env:"MAX_BODY_BYTES"  envDefault:"1048576"`
+	MaxPhotoBytes int64  `env:"MAX_PHOTO_BYTES" envDefault:"5242880"`
+	UploadDir     string `env:"UPLOAD_DIR"      envDefault:"/data/uploads"`
+	UploadURL     string `env:"UPLOAD_URL"      envDefault:"/uploads"`
 }
 
 func Load() (Config, error) {
@@ -55,11 +61,17 @@ func (c Config) SlogLevel() slog.Level {
 	}
 }
 
-const minJWTSecretLen = 16
+const (
+	minJWTSecretLen    = 16
+	minRewardSecretLen = 16
+)
 
 func (c Config) validate() error {
 	if len(c.JWTSecret) < minJWTSecretLen {
 		return fmt.Errorf("JWT_SECRET must be at least %d characters long", minJWTSecretLen)
+	}
+	if len(c.RewardHMACSecret) < minRewardSecretLen {
+		return fmt.Errorf("REWARD_HMAC_SECRET must be at least %d characters long", minRewardSecretLen)
 	}
 	if c.JWTTTL <= 0 {
 		return fmt.Errorf("JWT_TTL must be positive, got %s", c.JWTTTL)

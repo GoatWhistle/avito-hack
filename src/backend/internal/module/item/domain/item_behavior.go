@@ -32,6 +32,17 @@ func (i *Item) Publish(now time.Time) error {
 	return nil
 }
 
+func (i *Item) MarkSold(now time.Time) error {
+	if !i.status.CanTransitionTo(StatusSold) {
+		return errTransition(i.status, StatusSold)
+	}
+
+	i.status = StatusSold
+	i.updatedAt = now
+
+	return nil
+}
+
 func (i *Item) Archive(now time.Time) error {
 	if !i.status.CanTransitionTo(StatusArchived) {
 		return errTransition(i.status, StatusArchived)
@@ -65,6 +76,10 @@ type UpdateItemParams struct {
 func (i *Item) Update(p UpdateItemParams) error {
 	if i.status == StatusArchived {
 		return domainerr.NewConflict("archived item cannot be modified")
+	}
+
+	if i.status == StatusSold {
+		return domainerr.NewConflict("sold item cannot be modified")
 	}
 
 	if p.Title != nil {

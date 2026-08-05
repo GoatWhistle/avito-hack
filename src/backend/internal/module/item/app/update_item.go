@@ -9,6 +9,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
+	"github.com/avito-hack/backend/internal/shared/events"
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
@@ -22,13 +23,21 @@ type UpdateItemCommand struct {
 }
 
 type UpdateItemHandler struct {
-	items domain.Repository
-	tx    TxManager
-	clock Clock
+	items  domain.Repository
+	photos domain.PhotoRepository
+	tx     TxManager
+	clock  Clock
+	bus    events.Publisher
 }
 
-func NewUpdateItemHandler(items domain.Repository, tx TxManager, clock Clock) *UpdateItemHandler {
-	return &UpdateItemHandler{items: items, tx: tx, clock: clock}
+func NewUpdateItemHandler(
+	items domain.Repository,
+	photos domain.PhotoRepository,
+	tx TxManager,
+	clock Clock,
+	bus events.Publisher,
+) *UpdateItemHandler {
+	return &UpdateItemHandler{items: items, photos: photos, tx: tx, clock: clock, bus: bus}
 }
 
 func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (*domain.Item, error) {
@@ -39,7 +48,7 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 
 	var updated *domain.Item
 
-	err = h.tx.WithTx(ctx, func(ctx context.Context) error {
+	err = events.PublishAfterCommit(ctx, h.bus, h.tx, func(ctx context.Context, out *events.Outbox) error {
 		item, loadErr := h.items.ByIDForUpdate(ctx, cmd.ItemID)
 		if loadErr != nil {
 			return fmt.Errorf("load item: %w", loadErr)
@@ -56,6 +65,9 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 		if saveErr := h.items.Save(ctx, item); saveErr != nil {
 			return saveErr
 		}
+
+		out.Add(events.New(events.TypeItemUpdated, item.OwnerID(), item.ID(), h.clock.Now()).
+			WithPayload(itemPayload(item, photoCount(ctx, h.photos, item.ID()))))
 
 		updated = item
 

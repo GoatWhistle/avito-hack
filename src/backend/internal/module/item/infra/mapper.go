@@ -63,6 +63,21 @@ func toDomain(r itemRow) (*domain.Item, error) {
 	}), nil
 }
 
+func scanPhoto(row pgx.Row) (*domain.Photo, error) {
+	var (
+		id, itemID uuid.UUID
+		url        string
+		position   int
+		createdAt  time.Time
+	)
+
+	if err := row.Scan(&id, &itemID, &url, &position, &createdAt); err != nil {
+		return nil, fmt.Errorf("scan photo: %w", err)
+	}
+
+	return domain.RestorePhoto(id, itemID, url, position, createdAt), nil
+}
+
 func statusFrom(raw string) domain.Status {
 	status := domain.Status(raw)
 	if !status.Valid() {

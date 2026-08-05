@@ -14,7 +14,7 @@ import (
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
-const userColumns = `id, email, password_hash, display_name, role, created_at, updated_at`
+const userColumns = `id, email, password_hash, full_name, role, created_at, updated_at`
 
 type PgRepository struct {
 	pool *pgxpool.Pool
@@ -26,12 +26,12 @@ func NewPgRepository(pool *pgxpool.Pool) *PgRepository {
 
 func (r *PgRepository) Save(ctx context.Context, user *domain.User) error {
 	const query = `
-		INSERT INTO users (id, email, password_hash, display_name, role, created_at, updated_at)
+		INSERT INTO users (id, email, password_hash, full_name, role, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (id) DO UPDATE SET
 			email = EXCLUDED.email,
 			password_hash = EXCLUDED.password_hash,
-			display_name = EXCLUDED.display_name,
+			full_name = EXCLUDED.full_name,
 			role = EXCLUDED.role,
 			updated_at = EXCLUDED.updated_at`
 
@@ -39,7 +39,7 @@ func (r *PgRepository) Save(ctx context.Context, user *domain.User) error {
 		user.ID(),
 		user.Email().String(),
 		user.PasswordHash().String(),
-		user.DisplayName(),
+		user.FullName(),
 		string(user.Role()),
 		user.CreatedAt(),
 		user.UpdatedAt(),

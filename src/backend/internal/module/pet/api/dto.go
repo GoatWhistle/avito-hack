@@ -1,0 +1,119 @@
+package api
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/avito-hack/backend/internal/module/pet/app"
+	"github.com/avito-hack/backend/internal/module/pet/domain"
+)
+
+type clientMessage struct {
+	Type      string `json:"type"`
+	RequestID string `json:"request_id,omitempty"`
+}
+
+type serverMessage struct {
+	Type      string `json:"type"`
+	RequestID string `json:"request_id,omitempty"`
+	Payload   any    `json:"payload,omitempty"`
+}
+
+type errorPayload struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type petPayload struct {
+	ID              uuid.UUID    `json:"id"`
+	UserID          uuid.UUID    `json:"user_id"`
+	Name            string       `json:"name"`
+	Stage           domain.Stage `json:"stage"`
+	State           domain.State `json:"state"`
+	Level           int          `json:"level"`
+	XP              int          `json:"xp"`
+	NextLevelXP     int          `json:"next_level_xp"`
+	Satiety         int          `json:"satiety"`
+	Happiness       int          `json:"happiness"`
+	Energy          int          `json:"energy"`
+	StreakDays      int          `json:"streak_days"`
+	Freezes         int          `json:"freezes"`
+	IsHatched       bool         `json:"is_hatched"`
+	HatchedAt       *time.Time   `json:"hatched_at,omitempty"`
+	LastCheckInDate *time.Time   `json:"last_checkin_date,omitempty"`
+	LastDecayTime   time.Time    `json:"last_decay_time"`
+	UpdatedAt       time.Time    `json:"updated_at"`
+}
+
+func toPetPayload(p *domain.Pet) petPayload {
+	return petPayload{
+		ID: p.ID(), UserID: p.UserID(), Name: p.Name(), Stage: p.Stage(), State: p.State(),
+		Level: p.Level(), XP: p.XP(), NextLevelXP: p.NextLevelXP(),
+		Satiety: p.Satiety(), Happiness: p.Happiness(), Energy: p.Energy(),
+		StreakDays: p.StreakDays(), Freezes: p.Freezes(),
+		IsHatched: p.IsHatched(), HatchedAt: p.HatchedAt(), LastCheckInDate: p.LastCheckInDate(),
+		LastDecayTime: p.LastDecayTime(), UpdatedAt: p.UpdatedAt(),
+	}
+}
+
+type progressPayload struct {
+	Level       int          `json:"level"`
+	XP          int          `json:"xp"`
+	NextLevelXP int          `json:"next_level_xp"`
+	XPToNext    int          `json:"xp_to_next_level"`
+	IsMaxLevel  bool         `json:"is_max_level"`
+	Stage       domain.Stage `json:"stage"`
+	StreakDays  int          `json:"streak_days"`
+	Freezes     int          `json:"freezes"`
+}
+
+func toProgressPayload(p app.ProgressView) progressPayload {
+	return progressPayload{
+		Level: p.Level, XP: p.XP, NextLevelXP: p.NextLevelXP, XPToNext: p.XPToNext,
+		IsMaxLevel: p.IsMaxLevel, Stage: p.Stage, StreakDays: p.StreakDays, Freezes: p.Freezes,
+	}
+}
+
+type streakPayload struct {
+	Days             int  `json:"days"`
+	Continued        bool `json:"continued"`
+	FreezeUsed       bool `json:"freeze_used"`
+	Reset            bool `json:"reset"`
+	MilestoneBonus   int  `json:"milestone_bonus"`
+	MilestoneReached int  `json:"milestone_reached"`
+	FreezesLeft      int  `json:"freezes_left"`
+}
+
+type checkInPayload struct {
+	Pet             petPayload    `json:"pet"`
+	XPGranted       int           `json:"xp_granted"`
+	Level           int           `json:"level"`
+	PreviousLevel   int           `json:"previous_level"`
+	NextLevelXP     int           `json:"next_level_xp"`
+	UnlockedRewards []string      `json:"unlocked_rewards"`
+	Streak          streakPayload `json:"streak"`
+}
+
+func toCheckInPayload(result app.ActionResult) checkInPayload {
+	unlocked := result.Progress.UnlockedRewards
+	if unlocked == nil {
+		unlocked = []string{}
+	}
+
+	return checkInPayload{
+		Pet:             toPetPayload(result.Pet),
+		XPGranted:       result.Progress.XPGranted,
+		Level:           result.Progress.Level,
+		PreviousLevel:   result.Progress.PreviousLevel,
+		NextLevelXP:     result.Progress.NextLevelXP,
+		UnlockedRewards: unlocked,
+		Streak: streakPayload{
+			Days: result.Streak.Days, Continued: result.Streak.Continued,
+			FreezeUsed: result.Streak.FreezeUsed, Reset: result.Streak.Reset,
+			MilestoneBonus: result.Streak.MilestoneBonus,
+			MilestoneReached: result.Streak.MilestoneReached,
+			FreezesLeft:      result.Streak.FreezesLeft,
+		},
+	}
+}

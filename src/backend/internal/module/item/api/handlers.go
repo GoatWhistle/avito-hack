@@ -13,15 +13,19 @@ type validator interface {
 }
 
 type Deps struct {
-	CreateItem   *app.CreateItemHandler
-	UpdateItem   *app.UpdateItemHandler
-	ChangeStatus *app.ChangeStatusHandler
-	GetItem      *app.GetItemHandler
-	ListItems    *app.ListItemsHandler
-	Validator    validator
-	Authenticate func(http.Handler) http.Handler
-	OptionalAuth func(http.Handler) http.Handler
-	MaxBodyBytes int64
+	CreateItem    *app.CreateItemHandler
+	UpdateItem    *app.UpdateItemHandler
+	ChangeStatus  *app.ChangeStatusHandler
+	GetItem       *app.GetItemHandler
+	ListItems     *app.ListItemsHandler
+	AddPhoto      *app.AddPhotoHandler
+	ListPhotos    *app.ListPhotosHandler
+	DeletePhoto   *app.DeletePhotoHandler
+	Validator     validator
+	Authenticate  func(http.Handler) http.Handler
+	OptionalAuth  func(http.Handler) http.Handler
+	MaxBodyBytes  int64
+	MaxPhotoBytes int64
 }
 
 type Handlers struct {

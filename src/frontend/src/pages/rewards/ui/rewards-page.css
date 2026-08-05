@@ -1,0 +1,18 @@
+.rewards-subtitle {
+  margin: var(--spacing-xs) 0 0;
+  max-width: var(--measure-prose);
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+.rewards-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--spacing-md);
+}

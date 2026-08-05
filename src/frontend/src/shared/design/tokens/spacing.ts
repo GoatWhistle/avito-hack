@@ -7,9 +7,11 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  xxxl: 64,
 } as const;
 
 export const breakpoints = {
+  xs: 360,
   mobile: 480,
   tablet: 768,
   desktop: 1024,
@@ -19,4 +21,5 @@ export const breakpoints = {
 export const layout = {
   containerMaxWidth: 1200,
   headerHeight: 64,
+  touchTarget: 44,
 } as const;

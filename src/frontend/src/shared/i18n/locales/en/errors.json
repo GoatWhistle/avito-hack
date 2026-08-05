@@ -13,7 +13,7 @@
     "price": "Price",
     "email": "Email",
     "password": "Password",
-    "display_name": "Name",
+    "full_name": "Full name",
     "status": "Status",
     "cursor": "Pagination"
   }

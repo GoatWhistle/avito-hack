@@ -48,7 +48,7 @@ export function useApiFieldLabel(): (field: string | undefined) => string | unde
         price: t('field.price'),
         email: t('field.email'),
         password: t('field.password'),
-        display_name: t('field.display_name'),
+        full_name: t('field.full_name'),
         status: t('field.status'),
         cursor: t('field.cursor'),
       };

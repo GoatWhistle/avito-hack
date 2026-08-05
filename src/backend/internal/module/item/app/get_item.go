@@ -30,7 +30,7 @@ func (h *GetItemHandler) Handle(ctx context.Context, q GetItemQuery) (*domain.It
 		return nil, fmt.Errorf("load item: %w", err)
 	}
 
-	if item.Status() == domain.StatusPublished {
+	if item.Status() == domain.StatusPublished || item.Status() == domain.StatusSold {
 		return item, nil
 	}
 

@@ -4,7 +4,6 @@ import { tokenStorage } from '@/shared/api';
 
 import { sessionApi, type LoginPayload } from '../api/session-api';
 
-
 import type { Session, User } from './types';
 
 export const sessionExpired = createEvent();
