@@ -5,13 +5,11 @@ export class SignInUseCase {
   constructor(private readonly repository: AuthRepository) {}
 
   async execute(request: SignInRequest) {
-    const { token, user } = await this.repository.auth(request, 'sign-in')
+    const session = await this.repository.auth(request, 'sign-in')
 
-    if (token) {
-      localStorage.setItem('accessToken', token)
-    }
+    localStorage.setItem('accessToken', session.token)
 
-    return user
+    return session
   }
 }
 
