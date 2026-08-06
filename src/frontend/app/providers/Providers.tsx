@@ -1,4 +1,4 @@
-import { QueryProvider } from '#/providers/QueryProvider'
+import { QueryProvider } from './QueryProvider'
 import type { PropsWithChildren } from 'react'
 
 export function Providers({ children }: PropsWithChildren) {
