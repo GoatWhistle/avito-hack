@@ -11,7 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@fontsource-variable/geist": "^5.3.0",
-    "@lottiefiles/dotlottie-web": "^0.79.0",
+    "@lottiefiles/dotlottie-react": "^0.19.13",
     "@react-router/node": "^8.3.0",
     "@react-router/serve": "^8.3.0",
     "@tanstack/react-form": "^1.33.3",
