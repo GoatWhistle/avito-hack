@@ -7,7 +7,7 @@ import {
   ScrollRestoration,
 } from 'react-router'
 import { Providers } from '#/providers'
-import { Devtools } from '#/devtools'
+import { Devtools } from '#/shared/devtools'
 import type { PropsWithChildren } from 'react'
 
 import './app.css'
