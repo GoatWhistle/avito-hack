@@ -7,7 +7,7 @@ import {
   FieldGroup,
   FieldLabel,
   Input,
-} from '#/components/ui'
+} from '#/shared/components/ui'
 
 export function SignUpForm() {
   const form = useSignUpForm()

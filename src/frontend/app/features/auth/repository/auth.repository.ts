@@ -1,6 +1,6 @@
-import { httpClient } from '#/api'
+import { httpClient } from '#/shared/api'
 import type { SignInRequest, SignUpRequest } from '#/features/auth/types'
-import type { Session } from '#/types'
+import type { Session } from '#/shared/types'
 import type { AxiosInstance } from 'axios'
 
 export type AuthRequest = SignUpRequest | SignInRequest
