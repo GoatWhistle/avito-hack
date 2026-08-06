@@ -1,2 +1,2 @@
-export { Button, buttonVariants } from './Button'
-export { Label } from './Label'
+export { Button, buttonVariants } from './button'
+export { Label } from './label'
