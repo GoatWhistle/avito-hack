@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query'
-import { signUpUseCase } from '#/features/auth/use-cases'
 import type { SignUpRequest } from '#/features/auth/types'
+import { signUpUseCase } from '#/features/auth/use-cases'
+import { useMutation } from '@tanstack/react-query'
 
 export const useSignUp = () =>
   useMutation({

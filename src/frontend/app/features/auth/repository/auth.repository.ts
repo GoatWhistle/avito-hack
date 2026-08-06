@@ -1,5 +1,5 @@
-import { httpClient } from '#/shared/api'
 import type { SignInRequest, SignUpRequest } from '#/features/auth/types'
+import { httpClient } from '#/shared/api'
 import type { Session } from '#/shared/types'
 import type { AxiosInstance } from 'axios'
 

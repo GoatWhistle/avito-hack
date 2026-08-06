@@ -14,7 +14,7 @@ export function SignInForm() {
 
   return (
     <form
-      onSubmit={async (e) => {
+      onSubmit={async e => {
         e.preventDefault()
         e.stopPropagation()
         await form.handleSubmit()
@@ -24,7 +24,7 @@ export function SignInForm() {
         <FieldGroup>
           <form.Field
             name="email"
-            children={(field) => {
+            children={field => {
               return (
                 <Field>
                   <FieldLabel htmlFor={field.name}>
@@ -34,7 +34,7 @@ export function SignInForm() {
                     id={field.name}
                     name={field.name}
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={e => field.handleChange(e.target.value)}
                   />
                 </Field>
               )
@@ -43,7 +43,7 @@ export function SignInForm() {
 
           <form.Field
             name="password"
-            children={(field) => {
+            children={field => {
               return (
                 <Field>
                   <FieldLabel htmlFor={field.name}>Пароль</FieldLabel>
@@ -51,7 +51,7 @@ export function SignInForm() {
                     id={field.name}
                     name={field.name}
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={e => field.handleChange(e.target.value)}
                   />
                 </Field>
               )
@@ -62,7 +62,7 @@ export function SignInForm() {
 
       <CardFooter>
         <form.Subscribe
-          selector={(state) => [state.canSubmit]}
+          selector={state => [state.canSubmit]}
           children={([canSubmit]) => (
             <Button type="submit" disabled={!canSubmit}>
               Войти

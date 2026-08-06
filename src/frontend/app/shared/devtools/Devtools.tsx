@@ -1,6 +1,6 @@
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import { formDevtoolsPlugin } from '@tanstack/react-form-devtools'
+import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 
 export function Devtools() {
   return (

@@ -1,3 +1,7 @@
+import { Providers } from '#/providers'
+import { Devtools } from '#/shared/devtools'
+import './app.css'
+import type { PropsWithChildren } from 'react'
 import {
   Links,
   type LinksFunction,
@@ -6,11 +10,6 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router'
-import { Providers } from '#/providers'
-import { Devtools } from '#/shared/devtools'
-import type { PropsWithChildren } from 'react'
-
-import './app.css'
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
