@@ -1,3 +1,4 @@
+import { localTokenStorage } from '#/shared/storage'
 import axios, { type CreateAxiosDefaults } from 'axios'
 
 const config: CreateAxiosDefaults = {
@@ -11,7 +12,7 @@ const config: CreateAxiosDefaults = {
 export const httpClient = axios.create(config)
 
 httpClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken')
+  const token = localTokenStorage.get()
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
