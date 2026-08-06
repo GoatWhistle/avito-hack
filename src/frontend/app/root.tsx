@@ -6,6 +6,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router'
+import { Providers } from '#/providers'
+import { Devtools } from '#/devtools'
 import type { PropsWithChildren } from 'react'
 
 import './app.css'
@@ -33,7 +35,10 @@ export function Layout({ children }: PropsWithChildren) {
         <Links />
       </head>
       <body>
-        {children}
+        <Providers>
+          {children}
+          <Devtools />
+        </Providers>
         <ScrollRestoration />
         <Scripts />
       </body>
