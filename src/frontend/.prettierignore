@@ -1,0 +1,7 @@
+.idea/
+.react-router/
+build/
+node_modules/
+.env*
+bun.lock
+.gitignore
