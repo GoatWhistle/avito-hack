@@ -9,10 +9,10 @@ export type UrlRequest = 'sign-in' | 'sign-up'
 export class AuthRepository {
   constructor(private readonly httpClient: AxiosInstance) {}
 
-  async auth(user: AuthRequest, url: UrlRequest) {
-    const response = await this.httpClient.post<Session>(url, user)
+  async auth(request: AuthRequest, url: UrlRequest) {
+    const { data } = await this.httpClient.post<Session>(url, request)
 
-    return response.data
+    return data
   }
 }
 

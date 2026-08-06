@@ -4,14 +4,14 @@ import type { SignUpRequest } from '#/features/auth/types'
 export class SignUpUseCase {
   constructor(private readonly repository: AuthRepository) {}
 
-  async execute(user: SignUpRequest) {
-    const response = await this.repository.auth(user, 'sign-up')
+  async execute(request: SignUpRequest) {
+    const { token, user } = await this.repository.auth(request, 'sign-up')
 
-    if (response.token) {
-      localStorage.setItem('accessToken', response.token)
+    if (token) {
+      localStorage.setItem('accessToken', token)
     }
 
-    return response.user
+    return user
   }
 }
 

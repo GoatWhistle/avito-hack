@@ -5,5 +5,5 @@ import { useMutation } from '@tanstack/react-query'
 export const useSignUp = () =>
   useMutation({
     mutationKey: ['signUp'],
-    mutationFn: (user: SignUpRequest) => signUpUseCase.execute(user),
+    mutationFn: (request: SignUpRequest) => signUpUseCase.execute(request),
   })

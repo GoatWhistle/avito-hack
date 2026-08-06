@@ -4,14 +4,14 @@ import type { SignInRequest } from '#/features/auth/types'
 export class SignInUseCase {
   constructor(private readonly repository: AuthRepository) {}
 
-  async execute(user: SignInRequest) {
-    const response = await this.repository.auth(user, 'sign-in')
+  async execute(request: SignInRequest) {
+    const { token, user } = await this.repository.auth(request, 'sign-in')
 
-    if (response.token) {
-      localStorage.setItem('accessToken', response.token)
+    if (token) {
+      localStorage.setItem('accessToken', token)
     }
 
-    return response.user
+    return user
   }
 }
 
