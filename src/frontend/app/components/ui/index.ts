@@ -14,3 +14,12 @@ export {
   FieldTitle,
 } from './field'
 export { Separator } from './separator'
+export {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from './card'
