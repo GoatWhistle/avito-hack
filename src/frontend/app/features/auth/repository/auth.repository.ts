@@ -3,14 +3,14 @@ import { httpClient } from '#/shared/api'
 import type { Session } from '#/shared/types'
 import type { AxiosInstance } from 'axios'
 
-export type AuthRequest = SignUpRequest | SignInRequest
-export type AuthMode = 'sign-in' | 'sign-up'
+type AuthRequest = SignUpRequest | SignInRequest
+type AuthMode = 'sign-in' | 'sign-up'
 
 export class AuthRepository {
   constructor(private readonly httpClient: AxiosInstance) {}
 
-  async auth(request: AuthRequest, url: AuthMode) {
-    const { data } = await this.httpClient.post<Session>(url, request)
+  async auth(request: AuthRequest, mode: AuthMode) {
+    const { data } = await this.httpClient.post<Session>(mode, request)
 
     return data
   }
