@@ -13,3 +13,4 @@ export {
   FieldSet,
   FieldTitle,
 } from './field'
+export { Separator } from './separator'
