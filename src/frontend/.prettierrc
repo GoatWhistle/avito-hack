@@ -2,6 +2,7 @@
   "semi": false,
   "singleQuote": true,
   "trailingComma": "all",
+  "arrowParens": "avoid",
   "printWidth": 80,
   "plugins": [
     "@trivago/prettier-plugin-sort-imports"
