@@ -1,6 +1,12 @@
-import { authRepository, type AuthRepository } from '#/features/auth/repository'
-import type { SignUpRequest } from '#/features/auth/types'
-import { localTokenStorage, type LocalTokenStorage } from '#/shared/storage'
+import {
+  authRepository,
+  type AuthRepository,
+} from '#/features/auth/repository/auth.repository'
+import type { SignUpRequest } from '#/features/auth/types/sign-up.request.type'
+import {
+  localTokenStorage,
+  type LocalTokenStorage,
+} from '#/shared/storage/local-token.storage'
 
 export class SignUpUseCase {
   constructor(

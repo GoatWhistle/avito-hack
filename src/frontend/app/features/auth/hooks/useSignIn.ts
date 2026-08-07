@@ -1,5 +1,5 @@
-import type { SignInRequest } from '#/features/auth/types'
-import { signInUseCase } from '#/features/auth/use-cases'
+import type { SignInRequest } from '#/features/auth/types/sign-in.request.type'
+import { signInUseCase } from '#/features/auth/use-cases/sign-in.usecase'
 import { useMutation } from '@tanstack/react-query'
 
 export const useSignIn = () =>

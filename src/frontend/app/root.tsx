@@ -1,5 +1,5 @@
-import { Providers } from '#/providers'
-import { Devtools } from '#/shared/devtools'
+import { Providers } from '#/providers/Providers'
+import { Devtools } from '#/shared/devtools/Devtools'
 import './app.css'
 import type { PropsWithChildren } from 'react'
 import {

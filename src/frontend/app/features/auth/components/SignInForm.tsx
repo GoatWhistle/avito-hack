@@ -1,13 +1,8 @@
-import { useSignInForm } from '#/features/auth/forms'
-import {
-  Button,
-  CardContent,
-  CardFooter,
-  Field,
-  FieldGroup,
-  FieldLabel,
-  Input,
-} from '#/shared/components/ui'
+import { useSignInForm } from '#/features/auth/forms/useSignInForm'
+import { Button } from '#/shared/components/ui/button'
+import { CardContent, CardFooter } from '#/shared/components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '#/shared/components/ui/field'
+import { Input } from '#/shared/components/ui/input'
 
 export function SignInForm() {
   const form = useSignInForm()

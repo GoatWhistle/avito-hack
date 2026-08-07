@@ -1,4 +1,4 @@
-import { localTokenStorage } from '#/shared/storage'
+import { localTokenStorage } from '#/shared/storage/local-token.storage'
 import axios, { type CreateAxiosDefaults } from 'axios'
 
 const config: CreateAxiosDefaults = {

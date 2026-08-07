@@ -1,6 +1,7 @@
-import type { SignInRequest, SignUpRequest } from '#/features/auth/types'
-import { httpClient } from '#/shared/api'
-import type { Session } from '#/shared/types'
+import type { SignInRequest } from '#/features/auth/types/sign-in.request.type'
+import type { SignUpRequest } from '#/features/auth/types/sign-up.request.type'
+import { httpClient } from '#/shared/api/http-client.api'
+import type { Session } from '#/shared/types/session.type'
 import type { AxiosInstance } from 'axios'
 
 type AuthRequest = SignUpRequest | SignInRequest

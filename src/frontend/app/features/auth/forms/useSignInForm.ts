@@ -1,6 +1,6 @@
-import { useSignIn } from '#/features/auth/hooks'
-import { SignInSchema } from '#/features/auth/schemas'
-import type { SignInRequest } from '#/features/auth/types'
+import { useSignIn } from '#/features/auth/hooks/useSignIn'
+import { SignInSchema } from '#/features/auth/schemas/sign-in.schema'
+import type { SignInRequest } from '#/features/auth/types/sign-in.request.type'
 import { useForm } from '@tanstack/react-form'
 
 const defaultValues: SignInRequest = {
