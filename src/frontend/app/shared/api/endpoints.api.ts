@@ -1,5 +1,6 @@
 const AUTH = 'auth'
 const USER = 'users'
+const ITEM = 'items'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -8,5 +9,8 @@ export const API_ENDPOINTS = {
   },
   user: {
     me: `${USER}/me`,
+  },
+  item: {
+    me: `${ITEM}/mine`,
   },
 } as const
