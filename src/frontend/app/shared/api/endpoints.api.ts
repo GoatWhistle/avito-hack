@@ -1,6 +1,7 @@
 const AUTH = 'auth'
 const USER = 'users'
 const ITEM = 'items'
+const FAVORITE = 'favorites'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -12,5 +13,8 @@ export const API_ENDPOINTS = {
   },
   item: {
     me: `${ITEM}/mine`,
+  },
+  favorite: {
+    me: `${FAVORITE}`,
   },
 } as const
