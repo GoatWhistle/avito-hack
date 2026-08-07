@@ -1,6 +1,6 @@
 import type { Item } from '#/shared/types/item.type'
 
 export interface ItemResponse {
-  item: Item[]
+  items: Item[]
   nextCursor: string
 }
