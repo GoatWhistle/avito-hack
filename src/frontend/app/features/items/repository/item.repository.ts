@@ -9,7 +9,7 @@ export class ItemRepository {
 
   async findMy(params: ItemRequest) {
     const response = await this.httpClient.get<ItemResponse[]>(
-      API_ENDPOINTS.item.my,
+      API_ENDPOINTS.items.my,
       { params },
     )
 
