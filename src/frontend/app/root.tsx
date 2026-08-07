@@ -1,7 +1,6 @@
 import { Providers } from '#/providers/Providers'
 import { Devtools } from '#/shared/devtools/Devtools'
 import './app.css'
-import type { PropsWithChildren } from 'react'
 import {
   Links,
   type LinksFunction,
@@ -24,7 +23,7 @@ export const links: LinksFunction = () => [
   },
 ]
 
-export function Layout({ children }: PropsWithChildren) {
+export function Layout() {
   return (
     <html lang="ru">
       <head>
@@ -35,7 +34,7 @@ export function Layout({ children }: PropsWithChildren) {
       </head>
       <body>
         <Providers>
-          {children}
+          <Outlet />
           <Devtools />
         </Providers>
         <ScrollRestoration />
