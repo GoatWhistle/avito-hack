@@ -16,18 +16,18 @@ export const API_ENDPOINTS = {
     me: `${USER}/me`,
   },
   item: {
-    me: `${ITEM}/mine`,
+    my: `${ITEM}/mine`,
   },
   favorite: {
-    me: `${FAVORITE}`,
+    my: `${FAVORITE}`,
   },
   pet: {
-    me: `${PET}/me`,
+    my: `${PET}/me`,
     checkin: `${PET}/checkin`,
     stroke: `${PET}/actions/stroke`,
   },
   rewards: {
-    me: `${REWARD}/my`,
+    my: `${REWARD}/my`,
     all: `${REWARD}`,
     activate: (id: string) => `${REWARD}/${id}/activate`,
   },
