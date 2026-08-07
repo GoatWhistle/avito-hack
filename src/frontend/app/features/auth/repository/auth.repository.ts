@@ -1,11 +1,12 @@
 import type { SignInRequest } from '#/features/auth/types/sign-in.request.type'
 import type { SignUpRequest } from '#/features/auth/types/sign-up.request.type'
+import { API_ENDPOINTS } from '#/shared/api/endpoints.api'
 import { httpClient } from '#/shared/api/http-client.api'
 import type { Session } from '#/shared/types/session.type'
 import type { AxiosInstance } from 'axios'
 
 type AuthRequest = SignUpRequest | SignInRequest
-type AuthMode = 'login' | 'register'
+type AuthMode = keyof typeof API_ENDPOINTS.auth
 
 export class AuthRepository {
   constructor(private readonly httpClient: AxiosInstance) {}
