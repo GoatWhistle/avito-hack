@@ -5,7 +5,7 @@ import type { Session } from '#/shared/types/session.type'
 import type { AxiosInstance } from 'axios'
 
 type AuthRequest = SignUpRequest | SignInRequest
-type AuthMode = 'sign-in' | 'sign-up'
+type AuthMode = 'login' | 'register'
 
 export class AuthRepository {
   constructor(private readonly httpClient: AxiosInstance) {}

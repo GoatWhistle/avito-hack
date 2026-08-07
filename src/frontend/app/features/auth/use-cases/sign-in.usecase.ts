@@ -15,7 +15,7 @@ export class SignInUseCase {
   ) {}
 
   async execute(request: SignInRequest) {
-    const session = await this.repository.auth(request, 'sign-in')
+    const session = await this.repository.auth(request, 'login')
 
     this.tokenStorage.set(session.token)
 
