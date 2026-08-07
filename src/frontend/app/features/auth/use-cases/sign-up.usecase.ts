@@ -2,7 +2,7 @@ import {
   authRepository,
   type AuthRepository,
 } from '#/features/auth/repository/auth.repository'
-import type { SignUpRequest } from '#/features/auth/types/sign-up.request.type'
+import type { SignUpRequest } from '#/features/auth/types/sign-up.request'
 import {
   localTokenStorage,
   type LocalTokenStorage,

@@ -1,5 +1,5 @@
-import type { SignInRequest } from '#/features/auth/types/sign-in.request.type'
-import type { SignUpRequest } from '#/features/auth/types/sign-up.request.type'
+import type { SignInRequest } from '#/features/auth/types/sign-in.request'
+import type { SignUpRequest } from '#/features/auth/types/sign-up.request'
 import { API_ENDPOINTS } from '#/shared/api/endpoints.api'
 import { httpClient } from '#/shared/api/http-client.api'
 import type { Session } from '#/shared/types/session.type'
