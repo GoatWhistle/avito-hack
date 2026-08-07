@@ -3,6 +3,7 @@ const USER = 'users'
 const ITEM = 'items'
 const FAVORITE = 'favorites'
 const PET = 'pet'
+const REWARD = 'rewards'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -22,5 +23,10 @@ export const API_ENDPOINTS = {
     checkin: `${PET}/checkin`,
     me: `${PET}/me`,
     stroke: `${PET}/actions/stroke`,
+  },
+  rewards: {
+    me: `${REWARD}/my`,
+    all: `${REWARD}`,
+    activate: (id: string) => `${REWARD}/${id}/activate`,
   },
 } as const
