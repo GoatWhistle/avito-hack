@@ -4,6 +4,7 @@ const ITEM = 'items'
 const FAVORITE = 'favorites'
 const PET = 'pet'
 const REWARD = 'rewards'
+const LEADERBOARD = 'leaderboard'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -28,5 +29,8 @@ export const API_ENDPOINTS = {
     me: `${REWARD}/my`,
     all: `${REWARD}`,
     activate: (id: string) => `${REWARD}/${id}/activate`,
+  },
+  leaderboard: {
+    all: `${LEADERBOARD}`,
   },
 } as const
