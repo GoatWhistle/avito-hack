@@ -1,9 +1,9 @@
 const AUTH = 'auth'
 const USER = 'users'
-const ITEM = 'items'
-const FAVORITE = 'favorites'
+const ITEMS = 'items'
+const FAVORITES = 'favorites'
 const PET = 'pet'
-const REWARD = 'rewards'
+const REWARDS = 'rewards'
 const LEADERBOARD = 'leaderboard'
 const SUMMARY = 'summary'
 
@@ -15,11 +15,11 @@ export const API_ENDPOINTS = {
   user: {
     me: `${USER}/me`,
   },
-  item: {
-    my: `${ITEM}/mine`,
+  items: {
+    my: `${ITEMS}/mine`,
   },
-  favorite: {
-    my: `${FAVORITE}`,
+  favorites: {
+    my: `${FAVORITES}`,
   },
   pet: {
     my: `${PET}/me`,
@@ -27,9 +27,9 @@ export const API_ENDPOINTS = {
     stroke: `${PET}/actions/stroke`,
   },
   rewards: {
-    my: `${REWARD}/my`,
-    all: `${REWARD}`,
-    activate: (id: string) => `${REWARD}/${id}/activate`,
+    my: `${REWARDS}/my`,
+    all: `${REWARDS}`,
+    activate: (id: string) => `${REWARDS}/${id}/activate`,
   },
   leaderboard: {
     all: `${LEADERBOARD}`,
