@@ -5,6 +5,7 @@ const FAVORITE = 'favorites'
 const PET = 'pet'
 const REWARD = 'rewards'
 const LEADERBOARD = 'leaderboard'
+const SUMMARY = 'summary'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -32,5 +33,9 @@ export const API_ENDPOINTS = {
   },
   leaderboard: {
     all: `${LEADERBOARD}`,
+  },
+  summary: {
+    history: `${SUMMARY}/history`,
+    today: `${SUMMARY}/today`,
   },
 } as const
