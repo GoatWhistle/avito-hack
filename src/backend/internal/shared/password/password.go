@@ -25,8 +25,12 @@ type Hash struct {
 }
 
 func NewHash(plain string) (Hash, error) {
-	if plain == "" {
+	if len(plain) < MinLength {
 		return Hash{}, ErrTooShort
+	}
+
+	if len(plain) > MaxLength {
+		return Hash{}, ErrTooLong
 	}
 
 	raw, err := bcrypt.GenerateFromPassword(truncate(plain), cost)

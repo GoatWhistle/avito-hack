@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +35,7 @@ func TestDailyCheckIn(t *testing.T) {
 
 	assert.Equal(t, 7, pet.StreakDays())
 	_, err := pet.DailyCheckIn(testTime().AddDate(0, 0, 6).Add(time.Hour))
-	assert.ErrorIs(t, err, ErrDuplicateAction)
+	require.ErrorIs(t, err, ErrDuplicateAction)
 }
 
 func TestDailyCheckInGrantsMilestoneBonus(t *testing.T) {
@@ -76,13 +75,19 @@ func TestLimitedActions(t *testing.T) {
 		xp     int
 	}{
 		{name: "favorite", action: validLimitedAction(), call: (*Pet).RewardFavorite, xp: 1},
-		{name: "favorite duplicate", action: actionWithUnique(false), call: (*Pet).RewardFavorite,
-			err: ErrDuplicateAction},
-		{name: "favorite limit", action: actionWithCount(5), call: (*Pet).RewardFavorite,
-			err: ErrLimitReached},
+		{
+			name: "favorite duplicate", action: actionWithUnique(false), call: (*Pet).RewardFavorite,
+			err: ErrDuplicateAction,
+		},
+		{
+			name: "favorite limit", action: actionWithCount(5), call: (*Pet).RewardFavorite,
+			err: ErrLimitReached,
+		},
 		{name: "search", action: validLimitedAction(), call: (*Pet).RewardSearchSubscription, xp: 4},
-		{name: "search limit", action: actionWithCount(3), call: (*Pet).RewardSearchSubscription,
-			err: ErrLimitReached},
+		{
+			name: "search limit", action: actionWithCount(3), call: (*Pet).RewardSearchSubscription,
+			err: ErrLimitReached,
+		},
 	}
 
 	for _, tt := range tests {
@@ -90,7 +95,7 @@ func TestLimitedActions(t *testing.T) {
 			t.Parallel()
 			pet := New(uuid.New(), testTime())
 			progress, err := tt.call(pet, tt.action)
-			assert.ErrorIs(t, err, tt.err)
+			require.ErrorIs(t, err, tt.err)
 			assert.Equal(t, tt.xp, progress.XPGranted)
 		})
 	}
@@ -106,17 +111,6 @@ func TestContentAndTrustRewards(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 5, progress.XPGranted)
-
-	progress, err = pet.RewardPhotoReview(Review{
-		ConfirmedDeal: true, HasAttachment: true, Now: testTime(),
-	})
-	require.NoError(t, err)
-	assert.Equal(t, 3, progress.XPGranted)
-
-	_, err = pet.RewardVideoReview(Review{
-		ConfirmedDeal: true, VideoDuration: 30 * time.Second, Now: testTime(),
-	})
-	assert.ErrorIs(t, err, ErrConditionNotMet)
 }
 
 func TestRewardQualityListingRules(t *testing.T) {
@@ -168,49 +162,10 @@ func TestRewardQualityListingRules(t *testing.T) {
 			listing.Now = testTime()
 
 			progress, err := pet.RewardQualityListing(listing)
-			assert.ErrorIs(t, err, tt.err)
+			require.ErrorIs(t, err, tt.err)
 			assert.Equal(t, tt.wantXP, progress.XPGranted)
 		})
 	}
-}
-
-func TestDaytimeIsCountedInMoscowZone(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		now  time.Time
-		want bool
-	}{
-		{name: "05:00 UTC is 08:00 MSK", now: utcAt(5), want: true},
-		{name: "04:59 UTC is 07:59 MSK", now: utcAt(4).Add(59 * time.Minute), want: false},
-		{name: "19:59 UTC is 22:59 MSK", now: utcAt(19).Add(59 * time.Minute), want: true},
-		{name: "20:00 UTC is 23:00 MSK", now: utcAt(20), want: false},
-		{name: "same instant in another zone", now: utcAt(5).In(time.FixedZone("UTC-5", -5*3600)), want: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tt.want, isDaytime(tt.now))
-		})
-	}
-}
-
-func utcAt(hour int) time.Time {
-	return time.Date(2026, time.August, 4, hour, 0, 0, 0, time.UTC)
-}
-
-func TestQuickReply(t *testing.T) {
-	t.Parallel()
-
-	pet := New(uuid.New(), testTime())
-	progress, err := pet.RewardQuickReply(59*time.Minute, testTime())
-	require.NoError(t, err)
-	assert.Equal(t, 4, progress.XPGranted)
-
-	_, err = pet.RewardQuickReply(61*time.Minute, testTime())
-	assert.True(t, errors.Is(err, ErrConditionNotMet))
 }
 
 func validLimitedAction() LimitedAction {

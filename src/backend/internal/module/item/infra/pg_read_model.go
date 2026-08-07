@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/avito-hack/backend/internal/module/item/app"
@@ -24,32 +25,23 @@ func NewPgReadModel(pool *pgxpool.Pool) *PgReadModel {
 func (m *PgReadModel) List(ctx context.Context, f app.ListFilter) ([]app.ListItem, error) {
 	query, args := buildListQuery(f)
 
-	rows, err := postgres.QuerierFrom(ctx, m.pool).Query(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("query items: %w", err)
-	}
-	defer rows.Close()
+	return postgres.QueryAll(ctx, postgres.QuerierFrom(ctx, m.pool), f.Limit, scanListItem, query, args...)
+}
 
-	items := make([]app.ListItem, 0, f.Limit)
+func scanListItem(row pgx.Row) (app.ListItem, error) {
+	var (
+		item   app.ListItem
+		status string
+	)
 
-	for rows.Next() {
-		var item app.ListItem
-		var status string
-
-		if err := rows.Scan(&item.ID, &item.OwnerID, &item.Title,
-			&item.PriceKopeks, &status, &item.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan item: %w", err)
-		}
-
-		item.Status = statusFrom(status)
-		items = append(items, item)
+	if err := row.Scan(&item.ID, &item.OwnerID, &item.Title,
+		&item.PriceKopeks, &status, &item.CreatedAt); err != nil {
+		return app.ListItem{}, fmt.Errorf("scan item: %w", err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate items: %w", err)
-	}
+	item.Status = statusFrom(status)
 
-	return items, nil
+	return item, nil
 }
 
 func buildListQuery(f app.ListFilter) (query string, args []any) {

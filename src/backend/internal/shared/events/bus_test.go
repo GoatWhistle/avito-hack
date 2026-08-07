@@ -57,6 +57,42 @@ func TestBus_HandlerErrorDoesNotStopOthers(t *testing.T) {
 	require.Equal(t, 1, called)
 }
 
+func TestBus_PanicInHandlerDoesNotEscape(t *testing.T) {
+	t.Parallel()
+
+	bus := events.NewBus(nil)
+	called := 0
+
+	bus.Subscribe(events.TypeItemPublished, func(context.Context, events.Event) error {
+		panic("subscriber exploded")
+	})
+	bus.Subscribe(events.TypeItemPublished, func(context.Context, events.Event) error {
+		called++
+
+		return nil
+	})
+
+	require.NotPanics(t, func() {
+		bus.Publish(context.Background(), events.New(events.TypeItemPublished, uuid.New(), uuid.New(), time.Now()))
+	})
+
+	require.Equal(t, 1, called)
+}
+
+func TestBus_PanicIsReportedAsHandlerPanic(t *testing.T) {
+	t.Parallel()
+
+	bus := events.NewBus(nil)
+
+	bus.Subscribe(events.TypeItemSold, func(context.Context, events.Event) error {
+		panic(errors.New("nil map write"))
+	})
+
+	require.NotPanics(t, func() {
+		bus.Publish(context.Background(), events.New(events.TypeItemSold, uuid.New(), uuid.New(), time.Now()))
+	})
+}
+
 type failingTx struct{ fail bool }
 
 func (f failingTx) WithTx(ctx context.Context, fn func(context.Context) error) error {

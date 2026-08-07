@@ -61,12 +61,6 @@ func (m *memoryItems) ByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.
 	return m.ByID(ctx, id)
 }
 
-func (m *memoryItems) Delete(_ context.Context, id uuid.UUID) error {
-	delete(m.items, id)
-
-	return nil
-}
-
 type memoryPhotos struct {
 	photos map[uuid.UUID][]*domain.Photo
 }

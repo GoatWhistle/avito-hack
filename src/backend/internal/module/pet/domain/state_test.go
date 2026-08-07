@@ -62,10 +62,3 @@ func TestXPMultipliers(t *testing.T) {
 		})
 	}
 }
-
-func TestCanPlay(t *testing.T) {
-	t.Parallel()
-
-	assert.True(t, petWithParams(50, 50, 20).CanPlay())
-	assert.False(t, petWithParams(50, 50, 19).CanPlay())
-}

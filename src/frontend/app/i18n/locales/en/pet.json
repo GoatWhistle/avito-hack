@@ -1,0 +1,121 @@
+{
+  "title": "Your pet",
+  "stats": {
+    "satiety": "Satiety",
+    "happiness": "Mood",
+    "energy": "Energy",
+    "level": "Level",
+    "levelValue": "Level {{level}}",
+    "xp": "Experience",
+    "xpProgress": "{{current}} / {{next}} XP",
+    "xpToNext": "{{count}} XP to next level",
+    "groupLabel": "Pet condition",
+    "meterLabel": "{{stat}}: {{value}} out of 100, {{tone}}"
+  },
+  "tone": {
+    "critical": "critically low",
+    "warning": "needs attention",
+    "good": "doing fine"
+  },
+  "hints": {
+    "satiety": {
+      "critical": "Your pet is hungry — improve a listing to feed it",
+      "warning": "Getting hungry soon"
+    },
+    "happiness": {
+      "critical": "Your pet is sad — give it a stroke",
+      "warning": "Mood is dropping, stroke your pet"
+    },
+    "energy": {
+      "critical": "Your pet is exhausted and falling asleep",
+      "warning": "Energy is running low"
+    }
+  },
+  "stage": {
+    "egg": "Egg",
+    "baby": "Baby",
+    "teen": "Teen",
+    "adult": "Adult",
+    "legend": "Legend"
+  },
+  "state": {
+    "happy": "Happy",
+    "neutral": "Calm",
+    "sad": "Sad",
+    "sleeping": "Sleeping",
+    "hungry": "Hungry"
+  },
+  "emotion": {
+    "eating": "eating",
+    "celebrate": "celebrating",
+    "levelup": "levelled up",
+    "hatching": "hatching"
+  },
+  "level": {
+    "toNext": "{{count}} XP left to level {{level}}",
+    "aria": "Progress to level {{level}}, {{count}} XP left",
+    "maxBadge": "MAX",
+    "maxAria": "Maximum level reached",
+    "maxHint": "Max level reached — your raccoon is a legend"
+  },
+  "actions": {
+    "stroke": "Stroke",
+    "strokeAria": "Stroke your pet",
+    "strokeHint": "click to stroke",
+    "checkIn": "Check in",
+    "checkingIn": "Checking in…",
+    "checkedIn": "You already checked in today",
+    "checkedInShort": "Checked in",
+    "dismiss": "Dismiss"
+  },
+  "streak": {
+    "label": "Streak",
+    "empty": "No streak yet",
+    "startHint": "Check in today to start a streak",
+    "atRisk": "Check in today or your streak resets",
+    "tomorrow": "Tomorrow makes day {{count}}",
+    "days_one": "{{count}} day in a row",
+    "days_other": "{{count}} days in a row",
+    "freezes_one": "{{count}} freeze",
+    "freezes_other": "{{count}} freezes",
+    "freezeUsed": "Streak freeze used",
+    "reset": "Streak reset",
+    "milestone": "{{count}} day milestone reached"
+  },
+  "next": {
+    "title": "What's next",
+    "checkIn": "Check in today — the fastest XP and it keeps your streak alive",
+    "feedHungry": "Your pet is hungry: refresh or improve a listing to feed it",
+    "cheerUp": "Stroke your pet to lift its mood and XP multiplier",
+    "rest": "Energy is empty — let your pet rest and come back later",
+    "hatch": "Check in to hatch the egg",
+    "keepGoing": "All good: keep checking in and improving your listings",
+    "maxLevel": "Max level reached — keep the streak and collect rewards"
+  },
+  "summary": {
+    "title": "A note from {{name}}",
+    "xpEarned": "XP today",
+    "fix": "Fix it"
+  },
+  "states": {
+    "loading": "Loading your pet",
+    "errorTitle": "Could not load your pet",
+    "retry": "Try again",
+    "retrying": "Loading…"
+  },
+  "events": {
+    "xpGained": "+{{amount}} XP",
+    "levelUp": "Level up: {{level}}",
+    "hatched": "Your pet hatched!",
+    "rewardGranted": "Reward earned: {{title}}"
+  },
+  "hatching": {
+    "title": "The egg is about to crack",
+    "hint": "Check in daily to hatch your pet"
+  },
+  "hatch": {
+    "title": "Your pet hatched!",
+    "description": "It now grows with you: check in and improve your listings to earn experience",
+    "cta": "Say hello"
+  }
+}

@@ -42,28 +42,8 @@ func (r *PgPhotoRepository) ByItemID(ctx context.Context, itemID uuid.UUID) ([]*
 		WHERE item_id = $1
 		ORDER BY position`
 
-	rows, err := postgres.QuerierFrom(ctx, r.pool).Query(ctx, query, itemID)
-	if err != nil {
-		return nil, fmt.Errorf("query photos: %w", err)
-	}
-	defer rows.Close()
-
-	photos := make([]*domain.Photo, 0, domain.MaxPhotosPerItem)
-
-	for rows.Next() {
-		photo, scanErr := scanPhoto(rows)
-		if scanErr != nil {
-			return nil, scanErr
-		}
-
-		photos = append(photos, photo)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate photos: %w", err)
-	}
-
-	return photos, nil
+	return postgres.QueryAll(ctx, postgres.QuerierFrom(ctx, r.pool),
+		domain.MaxPhotosPerItem, scanPhoto, query, itemID)
 }
 
 func (r *PgPhotoRepository) CountByItemID(ctx context.Context, itemID uuid.UUID) (int, error) {

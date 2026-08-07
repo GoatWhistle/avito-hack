@@ -40,14 +40,6 @@ func (m Money) IsZero() bool {
 	return m.kopeks == 0
 }
 
-func (m Money) Add(other Money) Money {
-	return Money{kopeks: m.kopeks + other.kopeks}
-}
-
-func (m Money) Equal(other Money) bool {
-	return m.kopeks == other.kopeks
-}
-
 func (m Money) String() string {
 	return fmt.Sprintf("%d.%02d", m.kopeks/100, m.kopeks%100)
 }

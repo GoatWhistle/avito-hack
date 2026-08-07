@@ -58,8 +58,11 @@ ufw status
 su - deploy
 git clone https://github.com/GoatWhistle/avito-hack.git
 cd avito-hack
-cp .env.example .env
+cp .env.production.example .env
 ```
+
+`.env.production.example` — это прод-шаблон: в нём каждая переменная снабжена пометкой,
+что и почему нужно заменить. `.env.example` — для локальной разработки, на сервере он не нужен.
 
 Сгенерировать секреты (никогда не оставляйте значения из примера):
 
@@ -107,8 +110,18 @@ curl -s http://localhost/readyz
 curl -si http://localhost/ | head -1
 ```
 
-Сайт уже доступен по `http://SERVER_IP`. Демо-данные (12 пользователей, питомцы всех стадий,
-объявления, награды) приезжают миграцией `00010_seed_demo_data.sql` автоматически.
+Сайт уже доступен по `http://SERVER_IP`. Демо-данные (12 пользователей с питомцами разных стадий,
+объявления, награды) приезжают миграцией `00005_seed_demo_data.sql` автоматически — отдельного шага
+для сида нет, лидерборд у жюри заполнен сразу.
+
+Общий пароль всех демо-аккаунтов — `demo1234`, логины вида `anna@demo.avito`, `boris@demo.avito`.
+Быстрая проверка, что данные на месте:
+
+```bash
+curl -s -X POST http://localhost/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"anna@demo.avito","password":"demo1234"}'
+```
 
 ---
 
@@ -139,18 +152,16 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
   --profile certbot run --rm certbot
 ```
 
-После успешного выпуска включить TLS:
-
-1. `deploy/nginx/conf.d/app.conf` — раскомментировать нижний `server`-блок и заменить в нём
-   `example.com` на свой домен (три места: `server_name` и два пути к сертификату).
-2. В верхнем блоке (порт 80) заменить `include /etc/nginx/conf.d/locations.inc;` на
-   `return 301 https://$host$request_uri;`. Локацию `acme-challenge` не трогать.
-3. Перечитать конфиг:
+После успешного выпуска включить TLS одной командой — руками конфиги править не нужно:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec nginx nginx -t
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec nginx nginx -s reload
+./deploy/enable-https.sh ваш-домен
 ```
+
+Скрипт проверяет наличие сертификата в томе, рендерит `deploy/nginx/ssl.conf.template` в
+`conf.d/ssl.conf` с подстановкой домена, переключает 80-й порт на редирект (оставляя открытым
+`acme-challenge` для автопродления), прогоняет `nginx -t` и перечитывает конфиг. Если что-то
+не сходится — откатывает всё обратно на рабочий HTTP.
 
 Проверка, включая WebSocket:
 
@@ -207,9 +218,63 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm migrate down
 ```
 
+### Аварийный откат прямо на защите
+
+Правило: **в день защиты не обновляем прод**. Если всё-таки обновились и сломалось — счёт идёт
+на минуты, поэтому готовимся заранее.
+
+Перед демо зафиксировать заведомо рабочий коммит и снять дамп:
+
+```bash
+git rev-parse HEAD > ~/GOOD_SHA
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres \
+  pg_dump -U avito avito | gzip > ~/pre-demo.sql.gz
+```
+
+Откат за ~60 секунд (образы уже в кеше, пересборка быстрая):
+
+```bash
+cd /home/deploy/avito-hack
+git checkout $(cat ~/GOOD_SHA)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Если БД пришла в негодность — восстановить дамп:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml stop backend
+gunzip -c ~/pre-demo.sql.gz | docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  exec -T postgres psql -U avito -d avito
+docker compose -f docker-compose.yml -f docker-compose.prod.yml start backend
+```
+
+Самый быстрый вариант «вернуть как было», если сломан только код, а данные целы:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml restart backend frontend
+```
+
 ---
 
-## 7. Эксплуатация
+## 7. Kafka (опционально)
+
+Сервис `kafka` объявлен в `docker-compose.yml` под профилем `kafka` и по умолчанию **не
+поднимается**. Без него события питомца идут внутрипроцессной шиной — весь пользовательский
+сценарий работает полностью.
+
+Включать Kafka для демо стоит только если её нужно показать жюри: брокер добавляет ~1 ГБ RAM и
+20–40 секунд к холодному старту (KRaft-инициализация), то есть это самый медленный сервис в стеке.
+
+```bash
+COMPOSE_PROFILES=kafka docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+В `.env` при этом задать `KAFKA_BROKERS=kafka:9092`. Пустое значение = шина в процессе.
+Порт брокера наружу не публикуется ни в одном режиме.
+
+---
+
+## 8. Эксплуатация
 
 Логи (в проде — JSON, ротация 20 МБ × 5 файлов):
 
@@ -239,6 +304,27 @@ gunzip -c backup-2026-08-05.sql.gz | \
   docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres psql -U avito -d avito
 ```
 
+Бэкап загруженных фото. Файлы лежат в docker-томе `avito-hack_uploads`, а не в репозитории:
+дамп БД без них восстановит объявления с битыми картинками, поэтому бэкапить нужно оба.
+
+```bash
+docker run --rm -v avito-hack_uploads:/data -v "$PWD":/backup alpine \
+  tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
+```
+
+Восстановление фото:
+
+```bash
+docker run --rm -v avito-hack_uploads:/data -v "$PWD":/backup alpine \
+  tar xzf /backup/uploads-2026-08-07.tar.gz -C /data
+```
+
+Ежедневный бэкап обоих хранилищ по крону:
+
+```cron
+30 3 * * * cd /home/deploy/avito-hack && docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres pg_dump -U avito avito | gzip > /home/deploy/backups/db-$(date +\%F).sql.gz && docker run --rm -v avito-hack_uploads:/data -v /home/deploy/backups:/backup alpine tar czf /backup/uploads-$(date +\%F).tar.gz -C /data . && find /home/deploy/backups -mtime +7 -delete
+```
+
 Подключиться к БД (снаружи порт закрыт, только через контейнер):
 
 ```bash
@@ -247,7 +333,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec postgres ps
 
 ---
 
-## 8. Что ломается чаще всего
+## 9. Что ломается чаще всего
 
 | Симптом | Причина | Что делать |
 | --- | --- | --- |
@@ -260,3 +346,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec postgres ps
 | 502 на всё подряд | бэкенд не прошёл healthcheck | `logs backend`, проверить `readyz` и доступность postgres |
 | Промокоды перестали активироваться | сменили `REWARD_HMAC_SECRET` | старые коды подписаны прежним секретом и невалидны навсегда — это ожидаемое поведение |
 | Кончилось место на диске | логи и старые образы | `docker image prune -a -f`, `docker system df` |
+| Фото объявлений отдают 404 | так и задумано для черновиков: `/uploads/` проксируется на бэкенд, а тот проверяет, что объявление опубликовано и не удалено | если 404 на опубликованном — `logs backend`, проверить том `uploads` и `UPLOAD_DIR` |
+| Фронтенд собирается, но контейнер отдаёт 403/404 на всё | nginx раздаёт не ту директорию: React Router 8 кладёт сборку в `build/client` | проверить `COPY --from=builder /app/build/client` в `src/frontend/Dockerfile` — путь должен совпадать с реальным выходом сборки |
+| Лидерборд пустой у жюри | сид-миграция не отработала | `logs migrate`; `exec postgres psql -U avito -d avito -c 'select count(*) from users;'` — на чистой базе должно быть 12 |
+| `nginx` не стартует после включения HTTPS | сертификата нет по указанному пути | `./deploy/enable-https.sh` сам откатывается; вручную — удалить `deploy/nginx/conf.d/ssl.conf` и перезапустить nginx |
+| Стек долго поднимается | профиль `kafka` включён, брокеру нужно 20–40 с | для демо Kafka не обязательна: снять `COMPOSE_PROFILES=kafka` и очистить `KAFKA_BROKERS` |

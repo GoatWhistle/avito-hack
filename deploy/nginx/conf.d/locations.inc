@@ -18,6 +18,11 @@ proxy_set_header X-Forwarded-Host  $host;
 # Without Upgrade/Connection the handshake degrades to a plain request,
 # and without the long read timeout nginx kills an idle socket after 60s.
 location /api/v1/ws {
+    # ОБЯЗАТЕЛЬНО: клиент передаёт JWT query-параметром (браузерный WebSocket API
+    # не умеет кастомные заголовки). Строка запроса попадает в access_log вместе
+    # с токеном, поэтому логирование этой локации выключено полностью.
+    access_log off;
+
     proxy_pass http://backend_upstream;
 
     proxy_set_header Upgrade    $http_upgrade;
@@ -62,13 +67,15 @@ location = /metrics {
     return 404;
 }
 
-# Item photos are written by the backend to the shared uploads volume
-# and served straight off disk, never through Go.
+# Item photos MUST go through the backend, not straight off the volume.
+# internal/server/router.go wraps /uploads/ in uploadGuard: it resolves the item
+# id from the path and returns 404 unless the item is published/sold and not
+# soft-deleted. Serving the directory with `alias` here would bypass that check
+# and expose photos of drafts and deleted listings to anyone guessing a URL.
+# Caching is left to the backend's own headers.
 location /uploads/ {
-    alias /var/www/uploads/;
-    expires 30d;
-    add_header Cache-Control "public, immutable";
-    try_files $uri =404;
+    proxy_pass http://backend_upstream;
+    proxy_read_timeout 60s;
 }
 
 location / {

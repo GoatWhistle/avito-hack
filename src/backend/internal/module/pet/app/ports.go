@@ -23,6 +23,10 @@ type Cache interface {
 	Delete(ctx context.Context, userID uuid.UUID) error
 }
 
+type AccountGate interface {
+	IsActive(ctx context.Context, userID uuid.UUID) (bool, error)
+}
+
 type XPJournal interface {
 	Append(ctx context.Context, event domain.XPEvent) error
 	CountSince(ctx context.Context, userID uuid.UUID, action domain.Action, since time.Time) (int, error)

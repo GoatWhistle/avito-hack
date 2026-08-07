@@ -1,9 +1,0 @@
-{
-  "required": "This field is required",
-  "minLength": "Minimum {{count}} characters",
-  "maxLength": "Maximum {{count}} characters",
-  "email": "Invalid email address",
-  "nonNegative": "Value cannot be negative",
-  "integer": "Integer expected",
-  "uuid": "Invalid identifier"
-}

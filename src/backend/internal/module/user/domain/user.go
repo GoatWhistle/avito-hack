@@ -103,11 +103,6 @@ func (u *User) Rename(fullName string, now time.Time) error {
 	return nil
 }
 
-func (u *User) ChangePassword(hash password.Hash, now time.Time) {
-	u.passwordHash = hash
-	u.updatedAt = now
-}
-
 func normalizeFullName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" {

@@ -1,0 +1,86 @@
+{
+  "title": "Listings",
+  "myTitle": "My listings",
+  "favoritesTitle": "Favorites",
+  "fields": {
+    "title": "Title",
+    "description": "Description",
+    "price": "Price",
+    "photos": "Photos",
+    "attributes": "Attributes"
+  },
+  "placeholders": {
+    "title": "For example, Stels bicycle",
+    "description": "Describe the condition and details",
+    "price": "0"
+  },
+  "status": {
+    "draft": "Draft",
+    "moderation": "In moderation",
+    "published": "Published",
+    "sold": "Sold",
+    "archived": "Archived"
+  },
+  "actions": {
+    "create": "Post a listing",
+    "submit": "Send to moderation",
+    "publish": "Publish",
+    "sell": "Mark as sold",
+    "archive": "Archive",
+    "restore": "Restore",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "addPhoto": "Add photo",
+    "deletePhoto": "Delete photo"
+  },
+  "price": "{{value}} ₽",
+  "owner": "Seller",
+  "ownerActions": "Seller actions",
+  "filters": {
+    "searchPlaceholder": "Search by title",
+    "status": "Filter by status",
+    "all": "All"
+  },
+  "photo": {
+    "alt": "{{title}} — photo {{index}}",
+    "none": "No photos added",
+    "saveFirst": "Save the listing first to add photos",
+    "dropzoneAction": "Choose files or drag them here",
+    "dropzoneHint": "Up to {{max}} photos, each under {{size}}",
+    "remaining_one": "{{count}} slot left",
+    "remaining_other": "{{count}} slots left",
+    "uploadFailed": "Upload failed — dismiss",
+    "rejected": {
+      "type": "{{name}}: unsupported file format",
+      "size": "{{name}}: file is larger than {{size}}",
+      "limit": "{{name}}: the {{max}} photo limit is exceeded"
+    }
+  },
+  "quality": {
+    "title": "How to improve this listing",
+    "hint": "{{completed}} of {{total}} done — a complete listing reaches more buyers",
+    "boosted": "Great listing",
+    "boostedHint": "Everything is filled in: your listing ranks higher in search",
+    "checks": {
+      "photo": "At least one photo added",
+      "price": "Price is set",
+      "description": "Detailed description provided",
+      "descriptionLeft_one": "Add {{count}} more character to the description",
+      "descriptionLeft_other": "Add {{count}} more characters to the description"
+    }
+  },
+  "sold": {
+    "title": "Congrats on the sale!",
+    "petHint": "Your pet earned experience from this deal",
+    "openPet": "View your pet"
+  },
+  "empty": {
+    "list": "No listings yet",
+    "listHint": "Try a different search or reset the filters",
+    "mine": "You haven't posted any listings yet",
+    "mineHint": "Post your first listing — your pet earns experience for it",
+    "favorites": "Your favorites are empty",
+    "favoritesHint": "Tap the heart on a listing to save it here"
+  },
+  "notFound": "Listing not found"
+}

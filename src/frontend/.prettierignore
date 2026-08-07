@@ -1,0 +1,7 @@
+build
+coverage
+.react-router
+node_modules
+
+# Generated from docs/openapi.yaml by `npm run api:generate` — never hand-edited.
+app/api/generated/schema.ts

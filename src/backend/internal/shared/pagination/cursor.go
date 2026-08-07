@@ -57,7 +57,7 @@ func DecodeCursor(raw string) (Cursor, error) {
 	}
 
 	id, err := uuid.Parse(parts[1])
-	if err != nil {
+	if err != nil || id == uuid.Nil {
 		return Cursor{}, ErrInvalidCursor
 	}
 

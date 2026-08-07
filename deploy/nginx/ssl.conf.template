@@ -1,0 +1,38 @@
+# Шаблон HTTPS-конфигурации. НЕ подключается автоматически: nginx.conf инклюдит
+# только conf.d/*.conf, а этот файл лежит уровнем выше и имеет расширение .template.
+#
+# Включается скриптом deploy/enable-https.sh, который подставляет домен вместо
+# __DOMAIN__ и кладёт результат в conf.d/ssl.conf. Ручное редактирование не нужно.
+#
+# Причина такой схемы: nginx не стартует, если ssl_certificate указывает на
+# несуществующий файл. Пока сертификат не выпущен, конфиг обязан отсутствовать,
+# иначе весь стек ляжет — включая порт 80, по которому certbot проходит проверку.
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name __DOMAIN__;
+
+    ssl_certificate     /etc/letsencrypt/live/__DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMAIN__/privkey.pem;
+
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # max-age намеренно короткий (1 день) для хакатон-демо: если что-то пойдёт
+    # не так с сертификатом, браузеры отпустят домен через сутки, а не через год.
+    add_header Strict-Transport-Security "max-age=86400" always;
+
+    location = /nginx-health {
+        access_log off;
+        add_header Content-Type text/plain always;
+        return 200 "ok\n";
+    }
+
+    include /etc/nginx/conf.d/locations.inc;
+}

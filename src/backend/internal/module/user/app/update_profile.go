@@ -10,8 +10,8 @@ import (
 )
 
 type UpdateProfileCommand struct {
-	UserID      uuid.UUID
-	FullName    string
+	UserID   uuid.UUID
+	FullName string
 }
 
 type UpdateProfileHandler struct {

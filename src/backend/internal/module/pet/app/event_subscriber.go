@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/avito-hack/backend/internal/module/pet/domain"
+	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/events"
 )
 
@@ -39,15 +40,32 @@ func (s *Subscriber) WithRewards(rewards *RewardService) *Subscriber {
 	return s
 }
 
+func (s *Subscriber) routes() map[events.Type]events.Handler {
+	return map[events.Type]events.Handler{
+		events.TypeItemPublished:  s.onItemPublished,
+		events.TypeItemSold:       s.onItemSold,
+		events.TypeFavoriteAdded:  s.onFavoriteAdded,
+		events.TypeUserRegistered: s.onUserRegistered,
+	}
+}
+
 func (s *Subscriber) Register(bus events.Subscriber) {
 	if bus == nil {
 		return
 	}
 
-	bus.Subscribe(events.TypeItemPublished, s.onItemPublished)
-	bus.Subscribe(events.TypeItemSold, s.onItemSold)
-	bus.Subscribe(events.TypeFavoriteAdded, s.onFavoriteAdded)
-	bus.Subscribe(events.TypeUserRegistered, s.onUserRegistered)
+	for eventType, handler := range s.routes() {
+		bus.Subscribe(eventType, handler)
+	}
+}
+
+func (s *Subscriber) Dispatch(ctx context.Context, e events.Event) error {
+	handler, ok := s.routes()[e.Type]
+	if !ok {
+		return nil
+	}
+
+	return handler(ctx, e)
 }
 
 func (s *Subscriber) onItemPublished(ctx context.Context, e events.Event) error {
@@ -148,5 +166,6 @@ func isSkippable(err error) bool {
 	return errors.Is(err, domain.ErrDuplicateAction) ||
 		errors.Is(err, domain.ErrLimitReached) ||
 		errors.Is(err, domain.ErrConditionNotMet) ||
-		errors.Is(err, domain.ErrInvalidAction)
+		errors.Is(err, domain.ErrInvalidAction) ||
+		errors.Is(err, domainerr.ErrNotFound)
 }

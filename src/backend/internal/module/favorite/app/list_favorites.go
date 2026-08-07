@@ -40,12 +40,9 @@ func (h *ListFavoritesHandler) Handle(ctx context.Context, q ListFavoritesQuery)
 		return ListFavoritesResult{}, fmt.Errorf("list favorites: %w", err)
 	}
 
-	var next string
-	if len(rows) > limit {
-		last := rows[limit-1]
-		next = pagination.Cursor{CreatedAt: last.CreatedAt, ID: last.ItemID}.Encode()
-		rows = rows[:limit]
-	}
+	page, next := pagination.Paginate(rows, limit, func(item FavoriteItem) pagination.CursorKey {
+		return pagination.CursorKey{CreatedAt: item.CreatedAt, ID: item.ItemID}
+	})
 
-	return ListFavoritesResult{Items: rows, NextCursor: next}, nil
+	return ListFavoritesResult{Items: page, NextCursor: next}, nil
 }

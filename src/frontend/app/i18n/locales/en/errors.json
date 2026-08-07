@@ -1,0 +1,27 @@
+{
+  "code": {
+    "not_found": "Not found",
+    "forbidden": "Access denied",
+    "unauthorized": "Sign in required",
+    "conflict": "State conflict",
+    "validation_error": "Please check the entered data",
+    "bad_request": "Invalid request",
+    "internal_error": "Internal server error"
+  },
+  "network": "Cannot reach the server",
+  "timeout": "The server is not responding",
+  "invalidResponse": "The server returned an unexpected response",
+  "unknown": "Unknown error",
+  "requestId": "Request id: {{id}}",
+  "websocket": {
+    "disconnected": "Connection lost",
+    "reconnecting": "Reconnecting…",
+    "unknownMessage": "Unknown message"
+  },
+  "page": {
+    "notFoundTitle": "Page not found",
+    "notFoundHint": "Check the address or go back home",
+    "crashTitle": "Something broke",
+    "crashHint": "Try reloading the page"
+  }
+}

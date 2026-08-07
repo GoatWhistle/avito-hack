@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -11,27 +10,9 @@ import (
 
 	"github.com/avito-hack/backend/internal/module/item/app"
 	"github.com/avito-hack/backend/internal/module/item/domain"
-	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/events"
 )
-
-func collectEvents(t *testing.T, types ...events.Type) (*events.Bus, *[]events.Event) {
-	t.Helper()
-
-	bus := events.NewBus(nil)
-	collected := make([]events.Event, 0)
-
-	for _, eventType := range types {
-		bus.Subscribe(eventType, func(_ context.Context, e events.Event) error {
-			collected = append(collected, e)
-
-			return nil
-		})
-	}
-
-	return bus, &collected
-}
 
 func TestUpdateItemHandlerAppliesChanges(t *testing.T) {
 	t.Parallel()
@@ -218,26 +199,43 @@ func TestChangeStatusPropagatesLoadFailure(t *testing.T) {
 	require.ErrorIs(t, err, sentinel)
 }
 
-func TestChangeStatusToleratesPhotoCountFailure(t *testing.T) {
+func TestChangeStatusFailsOnPhotoCountFailure(t *testing.T) {
 	t.Parallel()
 
 	ownerID := uuid.New()
 	item := itemWithStatus(t, ownerID, domain.StatusDraft)
+	sentinel := errors.New("boom")
 	bus, collected := collectEvents(t, events.TypeItemPublished)
 
 	handler := app.NewChangeStatusHandler(
-		&stubRepository{item: item}, &countingPhotos{countErr: errors.New("boom")},
+		&stubRepository{item: item}, &countingPhotos{countErr: sentinel},
 		passthroughTx{}, fakeClock{}, bus)
 
 	_, err := handler.Handle(t.Context(), app.ChangeStatusCommand{
 		ItemID: item.ID(), Actor: actorOf(ownerID), Action: app.ActionPublish,
 	})
 
-	require.NoError(t, err)
-	require.Len(t, *collected, 1)
-	assert.Zero(t, (*collected)[0].Payload.PhotoCount)
+	require.ErrorIs(t, err, sentinel)
+	assert.Empty(t, *collected)
 }
 
-func actorOf(id uuid.UUID) auth.Actor {
-	return auth.Actor{ID: id, Role: auth.RoleUser}
+func TestUpdateItemFailsOnPhotoCountFailure(t *testing.T) {
+	t.Parallel()
+
+	ownerID := uuid.New()
+	item := itemWithStatus(t, ownerID, domain.StatusDraft)
+	sentinel := errors.New("boom")
+	bus, collected := collectEvents(t, events.TypeItemUpdated)
+	title := "renamed title"
+
+	handler := app.NewUpdateItemHandler(
+		&stubRepository{item: item}, &countingPhotos{countErr: sentinel},
+		passthroughTx{}, fakeClock{}, bus)
+
+	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{
+		ItemID: item.ID(), ActorID: ownerID, Title: &title,
+	})
+
+	require.ErrorIs(t, err, sentinel)
+	assert.Empty(t, *collected)
 }

@@ -47,6 +47,11 @@ type itemResponse struct {
 	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
+type ItemListResponse struct {
+	Items      []itemListItemResponse `json:"items"`
+	NextCursor string                 `json:"next_cursor,omitempty"`
+}
+
 type itemListItemResponse struct {
 	ID          uuid.UUID `json:"id"`
 	OwnerID     uuid.UUID `json:"owner_id"`

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -35,38 +34,22 @@ func NewRewardHandlers(deps RewardDeps) *RewardHandlers {
 	return &RewardHandlers{deps: deps}
 }
 
-type rewardCatalogItem struct {
-	ID             string `json:"id"`
-	Title          string `json:"title"`
-	Description    string `json:"description"`
-	Kind           string `json:"kind"`
-	ConditionType  string `json:"condition_type"`
-	ConditionValue int    `json:"condition_value"`
-	Unlocked       bool   `json:"unlocked"`
-	Claimed        bool   `json:"claimed"`
-	Status         string `json:"status,omitempty"`
-	Current        int    `json:"progress_current"`
-	Target         int    `json:"progress_target"`
-}
-
-type myRewardItem struct {
-	RewardID    string     `json:"reward_id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Kind        string     `json:"kind"`
-	Status      string     `json:"status"`
-	Code        string     `json:"code,omitempty"`
-	GrantedAt   time.Time  `json:"granted_at"`
-	ActivatedAt *time.Time `json:"activated_at,omitempty"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-}
-
-type activateRewardResponse struct {
-	RewardID string `json:"reward_id"`
-	Code     string `json:"code"`
-	Status   string `json:"status"`
-}
-
+// @Id listRewardCatalog
+// @Summary Каталог наград
+// @Description Полный каталог наград с отметкой прогресса текущего пользователя:
+// @Description `unlocked` — условие выполнено, `claimed` — награда уже выдана,
+// @Description `progress_current`/`progress_target` — прогресс к условию.
+// @Description
+// @Description Ответ обёрнут в `{items, next_cursor}` ради единообразия, но
+// @Description пагинации нет: каталог отдаётся целиком, `next_cursor` всегда пуст
+// @Description и потому отсутствует в JSON.
+// @Tags Rewards
+// @Produce json
+// @Success 200 {object} RewardCatalogResponse "Каталог наград"
+// @Failure 401 {object} apierr.ErrorEnvelope
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/rewards [get]
 func (h *RewardHandlers) Catalog(w http.ResponseWriter, r *http.Request) {
 	actor, ok := actorOf(w, r)
 	if !ok {
@@ -81,13 +64,25 @@ func (h *RewardHandlers) Catalog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	items := make([]rewardCatalogItem, 0, len(entries))
-	for _, entry := range entries {
-		items = append(items, toCatalogItem(entry))
+	for i := range entries {
+		items = append(items, toCatalogItem(entries[i]))
 	}
 
 	httpx.OK(w, httpx.NewListResponse(items, ""))
 }
 
+// @Id listMyRewards
+// @Summary Мои награды
+// @Description Награды, выданные текущему пользователю. Поле `code` — промокод —
+// @Description заполняется только после активации; до неё оно опущено.
+// @Description `next_cursor` всегда пуст, пагинации нет.
+// @Tags Rewards
+// @Produce json
+// @Success 200 {object} UserRewardListResponse "Выданные награды"
+// @Failure 401 {object} apierr.ErrorEnvelope
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/rewards/my [get]
 func (h *RewardHandlers) Mine(w http.ResponseWriter, r *http.Request) {
 	actor, ok := actorOf(w, r)
 	if !ok {
@@ -102,13 +97,40 @@ func (h *RewardHandlers) Mine(w http.ResponseWriter, r *http.Request) {
 	}
 
 	items := make([]myRewardItem, 0, len(granted))
-	for _, item := range granted {
-		items = append(items, toMyRewardItem(item))
+	for i := range granted {
+		items = append(items, toMyRewardItem(granted[i]))
 	}
 
 	httpx.OK(w, httpx.NewListResponse(items, ""))
 }
 
+// @Id activateReward
+// @Summary Активация награды
+// @Description Превращает выданную награду в промокод. Код детерминированно
+// @Description выводится через HMAC от идентификаторов пользователя и награды,
+// @Description поэтому одна и та же награда всегда даёт один и тот же код.
+// @Description
+// @Description Не идемпотентна на уровне ответа: первая активация даёт 200,
+// @Description повторная — 409 (`reward has already been activated`).
+// @Description
+// @Description Ошибки:
+// @Description
+// @Description - награда не выдана пользователю — 400, `field: reward_id`;
+// @Description - условие награды не выполнено — 400, `field: reward_id`;
+// @Description - награда уже активирована — 409;
+// @Description - награда просрочена — 409;
+// @Description - награда неактивируемая по своей природе — 409.
+// @Tags Rewards
+// @Produce json
+// @Param id path string true "Строковый идентификатор награды (например `streak_5`), НЕ UUID." minlength(1)
+// @Success 200 {object} activateRewardResponse "Награда активирована"
+// @Failure 400 {object} apierr.ErrorEnvelope "Награда не выдана или условие не выполнено"
+// @Failure 401 {object} apierr.ErrorEnvelope
+// @Failure 404 {object} apierr.ErrorEnvelope
+// @Failure 409 {object} apierr.ErrorEnvelope "Награда уже активирована, просрочена или неактивируема"
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/rewards/{id}/activate [post]
 func (h *RewardHandlers) Activate(w http.ResponseWriter, r *http.Request) {
 	actor, ok := actorOf(w, r)
 	if !ok {

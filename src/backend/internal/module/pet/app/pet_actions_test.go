@@ -26,7 +26,7 @@ func TestFavoriteRespectsDailyLimitFromJournal(t *testing.T) {
 	}
 
 	_, err := service.AddFavorite(t.Context(), userID, uuid.New())
-	assert.ErrorIs(t, err, domain.ErrLimitReached)
+	require.ErrorIs(t, err, domain.ErrLimitReached)
 	assert.Len(t, journal.events, 5)
 }
 
@@ -41,7 +41,7 @@ func TestFavoriteIsIdempotentPerSubject(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = service.AddFavorite(t.Context(), userID, itemID)
-	assert.ErrorIs(t, err, domain.ErrDuplicateAction)
+	require.ErrorIs(t, err, domain.ErrDuplicateAction)
 	assert.Len(t, journal.events, 1)
 }
 
@@ -57,7 +57,7 @@ func TestSearchSubscriptionUsesWeeklyLimit(t *testing.T) {
 	}
 
 	_, err := service.AddSearchSubscription(t.Context(), userID, uuid.New())
-	assert.ErrorIs(t, err, domain.ErrLimitReached)
+	require.ErrorIs(t, err, domain.ErrLimitReached)
 }
 
 func TestFailedActionInvalidatesCache(t *testing.T) {

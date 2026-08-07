@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/avito-hack/backend/internal/module/pet/domain"
+	"github.com/avito-hack/backend/internal/shared/domainerr"
 )
 
 type subjectChecker interface {
@@ -22,6 +23,14 @@ type AwardCommand struct {
 
 func (s *Service) AwardAction(ctx context.Context, cmd AwardCommand) (*domain.Pet, error) {
 	now := s.clock.Now()
+
+	active, err := s.accountActive(ctx, cmd.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !active {
+		return nil, domainerr.ErrNotFound
+	}
 
 	return s.hatching(ctx, cmd.UserID, func(ctx context.Context, pet *domain.Pet) error {
 		rewarded, err := s.journal.CountSince(ctx, cmd.UserID, cmd.Action, domain.DayStart(now))
@@ -55,6 +64,19 @@ func (s *Service) AwardAction(ctx context.Context, cmd AwardCommand) (*domain.Pe
 
 		return s.journal.Append(ctx, domain.NewXPEvent(cmd.UserID, cmd.Action, &subjectID, granted, now))
 	})
+}
+
+func (s *Service) accountActive(ctx context.Context, userID uuid.UUID) (bool, error) {
+	if s.accounts == nil {
+		return true, nil
+	}
+
+	active, err := s.accounts.IsActive(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("check account state: %w", err)
+	}
+
+	return active, nil
 }
 
 func (s *Service) isUniqueSubject(ctx context.Context, cmd AwardCommand) (bool, error) {

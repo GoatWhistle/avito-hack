@@ -42,22 +42,6 @@ func (p *Pet) Cheer(amount int, now time.Time) {
 	p.updatedAt = now
 }
 
-func (p *Pet) SpendEnergy(amount int, now time.Time) error {
-	if amount < 0 {
-		return ErrInvalidAction
-	}
-
-	p.ApplyDecay(now)
-	if p.energy < amount {
-		return ErrConditionNotMet
-	}
-
-	p.energy -= amount
-	p.updatedAt = now
-
-	return nil
-}
-
 func shiftParameter(current int, delta float64) int {
 	return clampParameter(int(math.Round(float64(current) + delta)))
 }

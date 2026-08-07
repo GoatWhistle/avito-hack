@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Avito Tamagotchi",
+    "tagline": "Care for your pet and earn rewards"
+  },
+  "nav": {
+    "pet": "Pet",
+    "items": "Listings",
+    "myItems": "My listings",
+    "favorites": "Favorites",
+    "rewards": "Rewards",
+    "leaderboard": "Leaderboard",
+    "profile": "Profile",
+    "primary": "Primary navigation",
+    "menu": "Menu",
+    "skipToContent": "Skip to content"
+  },
+  "progress": {
+    "level": "Level",
+    "levelShort": "Lv. {{level}}",
+    "maxLevel": "Max level reached",
+    "xp": "Experience",
+    "xpProgress": "Experience progress",
+    "xpOfNext": "{{xp}} XP, {{next}} XP to next level",
+    "streak": "Streak",
+    "streakLabel_one": "{{count}} day streak",
+    "streakLabel_other": "{{count}} day streak",
+    "badges": "Badges",
+    "rewards": "Rewards",
+    "indicatorLabel": "Level {{level}}, {{xp}} XP, {{streak}} day streak"
+  },
+  "profile": {
+    "account": "Account",
+    "memberSince": "Member since",
+    "stats": "Statistics"
+  },
+  "onboarding": {
+    "title": "Getting started",
+    "intro": "Three steps to hatch your pet and start growing together",
+    "stepDone": "Step completed",
+    "stepPending": "Step not completed",
+    "steps": {
+      "publish": {
+        "title": "Post a listing",
+        "hint": "Your first listing feeds the pet and earns experience"
+      },
+      "comeback": {
+        "title": "Come back every day",
+        "hint": "Check in two days in a row to start a streak"
+      },
+      "meet": {
+        "title": "Meet your pet",
+        "hint": "Open the pet page and give it a stroke"
+      }
+    },
+    "welcome": "Welcome!",
+    "welcomeNamed": "Welcome, {{name}}!",
+    "skip": "Later"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "back": "Back",
+    "retry": "Retry",
+    "close": "Close",
+    "loadMore": "Load more",
+    "search": "Search"
+  },
+  "status": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "error": "Something went wrong",
+    "saved": "Saved",
+    "offline": "No connection",
+    "reconnecting": "Reconnecting…"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language",
+    "ru": "Русский",
+    "en": "English"
+  }
+}

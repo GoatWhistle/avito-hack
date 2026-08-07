@@ -99,7 +99,7 @@ func TestPageFromRequest(t *testing.T) {
 	t.Run("defaults", func(t *testing.T) {
 		t.Parallel()
 
-		page, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/", nil))
+		page, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/", http.NoBody))
 
 		require.NoError(t, err)
 		assert.Equal(t, pagination.DefaultLimit, page.Limit)
@@ -111,7 +111,7 @@ func TestPageFromRequest(t *testing.T) {
 
 		url := "/?limit=1000&cursor=" + cursor.Encode()
 
-		page, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, url, nil))
+		page, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, url, http.NoBody))
 
 		require.NoError(t, err)
 		assert.Equal(t, pagination.MaxLimit, page.Limit)
@@ -121,7 +121,7 @@ func TestPageFromRequest(t *testing.T) {
 	t.Run("rejects malformed limit", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/?limit=many", nil))
+		_, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/?limit=many", http.NoBody))
 
 		require.Error(t, err)
 	})
@@ -129,7 +129,7 @@ func TestPageFromRequest(t *testing.T) {
 	t.Run("rejects malformed cursor", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/?cursor=%21%21%21", nil))
+		_, err := httpx.PageFromRequest(httptest.NewRequest(http.MethodGet, "/?cursor=%21%21%21", http.NoBody))
 
 		require.Error(t, err)
 	})

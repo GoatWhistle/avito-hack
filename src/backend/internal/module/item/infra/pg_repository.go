@@ -70,21 +70,6 @@ func (r *PgRepository) ByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain
 	return r.queryOne(ctx, query, id)
 }
 
-func (r *PgRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	const query = `UPDATE items SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`
-
-	tag, err := postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query, id)
-	if err != nil {
-		return fmt.Errorf("delete item: %w", err)
-	}
-
-	if tag.RowsAffected() == 0 {
-		return domain.ErrItemNotFound
-	}
-
-	return nil
-}
-
 func (r *PgRepository) queryOne(ctx context.Context, query string, args ...any) (*domain.Item, error) {
 	row := postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, args...)
 

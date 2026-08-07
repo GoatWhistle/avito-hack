@@ -100,8 +100,9 @@ curl -s "http://localhost:8080/api/v1/items?limit=2&cursor=MjAyNi0wOC0wNVQx..." 
 
 ## Аутентификация
 
-Access-токен: JWT, HS256, время жизни `JWT_TTL` (по умолчанию 15 минут). Refresh-токенов в MVP
-нет — по истечении требуется повторный вход (см. «Ограничения MVP» в README).
+Access-токен: JWT, HS256, время жизни `JWT_TTL` (по умолчанию 15 минут). Срок хранится в клейме
+`exp` внутри токена, отдельного поля в ответе нет. Refresh-токенов в MVP нет — по истечении
+требуется повторный вход (см. «[Ограничения MVP](../README.md#ограничения-mvp)» в README).
 
 ### POST /api/v1/auth/register
 
@@ -114,25 +115,32 @@ curl -i -X POST http://localhost:8080/api/v1/auth/register \
   -d '{
     "email": "new@example.com",
     "password": "supersecret",
-    "display_name": "Новый Пользователь"
+    "full_name": "Новый Пользователь"
   }'
 ```
 
 | Поле | Тип | Правила |
 | --- | --- | --- |
-| `email` | string | Обязательное, формат почты, до 254 символов, уникальное |
-| `password` | string | Обязательное, 8–72 символа (72 — предел bcrypt) |
-| `display_name` | string | Обязательное, 2–100 символов |
+| `email` | string | Обязательное, формат почты, уникальное |
+| `password` | string | Обязательное, от 8 до 72 символов (верхний предел — ограничение bcrypt) |
+| `full_name` | string | Обязательное, непустое |
 
-`201 Created`:
+Нарушение длины пароля даёт `400` с кодом `validation_error`, полем `password` и текстом,
+указывающим границу. Требований к составу символов намеренно нет — регистрация должна
+оставаться быстрой.
+
+`201 Created` — тот же конверт, что у входа, чтобы после регистрации не делать второй запрос:
 
 ```json
 {
-  "id": "018f2c3d-4e5f-7a8b-9c0d-1e2f3a4b5c6d",
-  "email": "new@example.com",
-  "display_name": "Новый Пользователь",
-  "role": "user",
-  "created_at": "2026-08-05T09:41:12Z"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "018f2c3d-4e5f-7a8b-9c0d-1e2f3a4b5c6d",
+    "email": "new@example.com",
+    "full_name": "Новый Пользователь",
+    "role": "user",
+    "created_at": "2026-08-05T09:41:12Z"
+  }
 }
 ```
 
@@ -153,11 +161,10 @@ curl -s -X POST http://localhost:8080/api/v1/auth/login \
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_at": "2026-08-05T09:56:12Z",
   "user": {
     "id": "d0000000-0000-4000-a000-000000000001",
     "email": "anna@demo.avito",
-    "display_name": "Анна Ковалёва",
+    "full_name": "Анна Ковалёва",
     "role": "user",
     "created_at": "2026-06-06T09:41:12Z"
   }
@@ -186,7 +193,7 @@ curl -s http://localhost:8080/api/v1/users/me -H "Authorization: Bearer $T"
 curl -s -X PATCH http://localhost:8080/api/v1/users/me \
   -H "Authorization: Bearer $T" \
   -H 'Content-Type: application/json' \
-  -d '{"display_name":"Анна К."}'
+  -d '{"full_name":"Анна К."}'
 ```
 
 `200 OK` — обновлённый объект пользователя.
@@ -468,9 +475,11 @@ curl -s http://localhost:8080/api/v1/raccoon/profile -H "Authorization: Bearer $
   "user_id": "d0000000-0000-4000-a000-000000000001",
   "name": "Ноти",
   "level": 15,
-  "xp": 455,
+  "xp": 581,
   "xp_to_next_level": 0,
   "current_streak": 41,
+  "stage": "legend",
+  "state": "happy",
   "badges": [
     {
       "id": "raccoon_friend",
@@ -487,25 +496,28 @@ curl -s http://localhost:8080/api/v1/raccoon/profile -H "Authorization: Bearer $
 | --- | --- |
 | `level` | 1–15, выводится из суммарного XP по порогам |
 | `xp` | Суммарный накопленный XP |
-| `xp_to_next_level` | Порог следующего уровня; `0` означает достигнутый максимум |
+| `xp_to_next_level` | Порог следующего уровня, не остаток до него; `0` означает достигнутый максимум. Остаток отдаёт `GET /progress` в поле с тем же именем |
 | `current_streak` | Дней подряд с заходом, «день» считается по МСК |
-| `badges` | Полученные бейджи, `earned_at` пустой у неполученных |
+| `stage` | Стадия роста: `egg`, `baby`, `teen`, `adult`, `legend` |
+| `state` | Текущее настроение: `happy`, `neutral`, `sad`, `sleeping` |
+| `badges` | Полученные пользователем бейджи |
 
 Пороги уровней 1–15: 0, 5, 12, 22, 35, 52, 72, 95, 122, 155, 195, 240, 290, 350, 420.
 
 Ошибки: `401 unauthorized`.
 
-### GET /api/v1/badges/
+### GET /api/v1/badges
 
-Каталог бейджей со статусом получения текущим пользователем.
+Бейджи, **уже полученные** текущим пользователем.
 
 ```bash
-curl -s http://localhost:8080/api/v1/badges/ -H "Authorization: Bearer $T"
+curl -s http://localhost:8080/api/v1/badges -H "Authorization: Bearer $T"
 ```
 
-`200 OK` — массив объектов бейджа того же вида, что в профиле. У неполученных `earned_at` пуст.
+`200 OK` — массив объектов бейджа того же вида, что в профиле; у каждого заполнен `earned_at`.
+У нового пользователя ответ — пустой массив `[]`, а не весь каталог со статусами.
 
-Каталог из 11 бейджей сидится миграцией `00004`: «Исследователь», «Быстрый палец», «Охотник за
+Сам каталог из 11 бейджей сидится миграцией `00004`: «Исследователь», «Быстрый палец», «Охотник за
 скидками», «Режиссёр Авито», «Честный критик», «Надёжный бро», «Ничего не скроешь», «Молния»,
 «Зелёная планета», «Заряженный стрик», «Друг Енота».
 
@@ -531,7 +543,7 @@ curl -s -X POST http://localhost:8080/api/v1/rewards/claim \
 
 Структура кода: `base32(nonce)` + `-` + усечённая `HMAC-SHA256(user_id ‖ reward_id ‖ nonce)`,
 подписанная серверным секретом `REWARD_HMAC_SECRET`. Подробности защиты — в разделе
-«Безопасность наград» README.
+«[Безопасность наград](../README.md#безопасность-наград-подпись-промокодов-hmac)» README.
 
 Что это значит на практике:
 
@@ -576,6 +588,8 @@ curl -s -X POST http://localhost:8080/api/v1/rewards/claim \
 
 | Действие | XP | Лимит | Условие |
 | --- | --- | --- | --- |
+| Публикация объявления | 50 | 3/день | Уникальное объявление, `pet/domain/listing.go` |
+| Продажа объявления | 100 | без дневного лимита | Уникальное объявление |
 | Ежедневный заход | 1 | 1/день | ×1.5 при серии от 7 дней |
 | Подписка на поиск | 3 | 3/неделю | — |
 | Добавление в избранное | 1 | 5/день | Уникальное объявление |
@@ -680,12 +694,17 @@ websocat "ws://localhost:8080/api/v1/ws?token=$T"
     "user_id": "d0000000-0000-4000-a000-000000000001",
     "name": "Ноти",
     "stage": "legend",
+    "state": "happy",
     "level": 15,
-    "xp": 455,
-    "next_level_xp": 420,
+    "xp": 581,
+    "next_level_xp": 0,
     "satiety": 92,
     "happiness": 88,
+    "energy": 100,
     "streak_days": 41,
+    "freezes": 3,
+    "is_hatched": true,
+    "hatched_at": "2026-06-10T09:41:12Z",
     "last_checkin_date": "2026-08-05T00:00:00Z",
     "last_decay_time": "2026-08-05T08:50:56Z",
     "updated_at": "2026-08-05T09:50:56Z"
@@ -709,12 +728,17 @@ websocat "ws://localhost:8080/api/v1/ws?token=$T"
 | Поле | Тип | Описание |
 | --- | --- | --- |
 | `stage` | string | `egg`, `baby`, `teen`, `adult`, `legend` |
+| `state` | string | `happy`, `neutral`, `sad`, `sleeping` — выводится из параметров |
 | `level` | int | 1–15 |
 | `xp` | int | Суммарный XP |
 | `next_level_xp` | int | Порог следующего уровня, `0` на максимуме |
 | `satiety` | int | Сытость 0–100, ниже 30 — множитель XP ×0.5 |
 | `happiness` | int | Настроение 0–100, от 70 — множитель ×1.25 |
+| `energy` | int | Энергия 0–100 |
 | `streak_days` | int | Серия заходов подряд |
+| `freezes` | int | Запас заморозок серии |
+| `is_hatched` | bool | Вылупился ли питомец |
+| `hatched_at` | timestamp | Момент вылупления, отсутствует у яйца |
 | `last_checkin_date` | date | Последний засчитанный чек-ин, отсутствует до первого |
 | `last_decay_time` | timestamp | Точка отсчёта ленивого пересчёта параметров |
 
@@ -789,19 +813,174 @@ socket.onmessage = (event) => {
 
 ---
 
+## Питомец, прогресс и чек-ин по REST
+
+Всё, что ниже, требует заголовка `Authorization: Bearer $T`.
+
+### GET /api/v1/pet
+
+Состояние питомца с параметрами, пересчитанными на момент запроса: домен применяет деградацию
+от `last_decay_time` лениво, при чтении.
+
+```bash
+curl -s http://localhost:8080/api/v1/pet -H "Authorization: Bearer $T"
+```
+
+`200 OK` — объект с полями `id`, `user_id`, `name`, `stage`, `state`, `level`, `xp`,
+`next_level_xp`, `satiety`, `happiness`, `energy`, `streak_days`, `freezes`, `is_hatched`,
+`hatched_at`, `last_checkin_date`, `last_decay_time`, `updated_at`.
+
+### POST /api/v1/pet/actions/stroke
+
+Погладить питомца — поднимает настроение. То же действие доступно и через WebSocket (`pet.pet`).
+
+### POST /api/v1/checkin
+
+Ежедневный чек-ин: продлевает серию, начисляет опыт и повышает сытость. Повторный вызов в тот же
+день по московскому времени возвращает ошибку дублирования.
+
+`200 OK` — объект с `pet`, `xp_granted`, `level`, `previous_level`, `next_level_xp`,
+`unlocked_rewards` и вложенным `streak` (`days`, `continued`, `freeze_used`, `reset`,
+`milestone_bonus`, `milestone_reached`, `freezes_left`).
+
+### GET /api/v1/progress
+
+Короткая сводка прогресса: `level`, `xp`, `next_level_xp`, `xp_to_next_level`, `is_max_level`,
+`stage`, `streak_days`, `freezes`.
+
+---
+
+## Награды по уровням
+
+### GET /api/v1/rewards
+
+Каталог наград со статусом для текущего пользователя. Ответ — конверт `{"items": [...]}`;
+у элемента поля `id`, `title`, `description`, `kind`, `condition_type`, `condition_value`,
+`unlocked`, `claimed`, `progress_current`, `progress_target`, а у уже выданных — ещё и `status`.
+
+`progress_current` и `progress_target` дают прогресс-бар к условию: например «уровень 4 из 5».
+
+### GET /api/v1/rewards/my
+
+Выданные пользователю награды, тоже конвертом `{"items": [...]}`: `reward_id`, `title`,
+`description`, `kind`, `status`, `granted_at`. Поля `code`, `activated_at` и `expires_at`
+появляются после активации.
+
+### POST /api/v1/rewards/{id}/activate
+
+Активация выданной награды. Возвращает подписанный промокод. Повторная активация невозможна:
+переход выполняется как `UPDATE ... WHERE status = 'granted'`, и из двух параллельных запросов
+строку изменит ровно один.
+
+---
+
+## Ежедневная сводка
+
+### GET /api/v1/summary/today
+
+Сводка за прошедший день от лица питомца. Генерируется лениво при первом запросе и сохраняется в
+`daily_summaries` — повторные обращения читают уже готовую запись.
+
+```bash
+curl -s http://localhost:8080/api/v1/summary/today -H "Authorization: Bearer $T"
+```
+
+`200 OK`:
+
+```json
+{
+  "id": "9e9b59d1-6072-46b8-84bf-38289aa15ea7",
+  "date": "2026-08-06",
+  "message": "Ты набрал 2 XP, я подрос до 15 уровня. Серия держится уже 41 дней подряд.",
+  "advice": {
+    "text": "У объявления «iPhone 13 128GB» нет ни одной фотографии — с фото такие продаются заметно быстрее.",
+    "item_id": "a0000000-0000-4000-a000-000000000001",
+    "action": "add_photo"
+  },
+  "generated_by": "template",
+  "facts": {
+    "total_xp": 2,
+    "actions": [{ "action": "daily_login", "count": 1, "amount": 2 }],
+    "level": 15,
+    "previous_level": 2,
+    "leveled_up": true,
+    "streak_days": 41,
+    "leaderboard_rank": 1,
+    "issues_count": 3
+  },
+  "created_at": "2026-08-07T15:51:58Z"
+}
+```
+
+| Поле | Описание |
+| --- | --- |
+| `message` | Текст от первого лица, собранный поверх `facts` |
+| `advice` | Ровно один совет с `item_id` и кодом действия — фронтенд делает из него ссылку на объявление. Отсутствует, если придраться не к чему |
+| `facts` | Детерминированные факты дня: агрегаты XP, уровень, параметры, серия, позиция в лидерборде |
+| `generated_by` | `template` либо `llm` — чем собран текст. На прогрессию не влияет |
+
+Ошибки: `401 unauthorized`.
+
+### GET /api/v1/summary/history
+
+История сводок с keyset-пагинацией (`limit`, `cursor`), новые сверху.
+
+```bash
+curl -s "http://localhost:8080/api/v1/summary/history?limit=5" -H "Authorization: Bearer $T"
+```
+
+`200 OK` — конверт `{"items": [...], "next_cursor": "..."}`, элементы того же вида,
+что в `/summary/today`.
+
+---
+
+## Лидерборд
+
+### GET /api/v1/leaderboard
+
+Рейтинг по уровню и опыту с keyset-курсором.
+
+```bash
+curl -s "http://localhost:8080/api/v1/leaderboard?around=me" -H "Authorization: Bearer $T"
+```
+
+| Параметр | Назначение |
+| --- | --- |
+| `cursor` | Курсор следующей страницы из поля `next_cursor` |
+| `around` | Значение `me` — вернуть окрестность позиции текущего пользователя |
+
+Поле `name` — имя пользователя, а не кличка питомца: email в рейтинге не раскрывается.
+
+`200 OK`:
+
+```json
+{
+  "items": [
+    {
+      "user_id": "d0000000-0000-4000-a000-000000000001",
+      "name": "Анна Ковалёва",
+      "level": 15,
+      "xp": 581,
+      "streak_days": 41,
+      "rank": 1
+    }
+  ],
+  "my_rank": 7,
+  "next_cursor": "..."
+}
+```
+
+---
+
 ## Что ещё не реализовано
 
-Контракты зафиксированы в [CASE.md](CASE.md) и [PLAN.md](PLAN.md), но эндпоинтов пока нет.
-Помечено честно, чтобы никто не искал их в коде:
+Помечено честно, чтобы никто не искал этого в коде:
 
-| Что | Планируемый контракт | Статус |
-| --- | --- | --- |
-| Лидерборд | `GET /leaderboard?cursor=...` с keyset-курсором `(level, xp, user_id)`, позицией и соседями ±3 | Сценарий, курсор и read-model готовы (`pet/app/leaderboard.go`, `shared/pagination`), HTTP-маршрут ещё не зарегистрирован. Индекс `idx_pets_leaderboard` создан миграцией `00003` |
-| Ежедневная сводка | `GET /summary/today`, `GET /summary/history` | В разработке. LLM-генерация с обязательным шаблонным фолбэком |
-| Задания дня | `GET /tasks/today` | В разработке |
-| Явный чек-ин | `POST /checkin` | Логика есть в домене (`Pet.CheckIn`) и покрыта тестами, HTTP-эндпоинта пока нет |
-| Действия с питомцем по REST | `POST /pet/actions/{pet,play,feed}` | «Погладить» доступно через WebSocket (`pet.pet`); остальное в разработке |
-| Активация промокода | `POST /rewards/{id}/activate` | Выдача и подпись работают, отдельный эндпоинт активации в разработке |
+| Что | Статус |
+| --- | --- |
+| Задания дня `GET /tasks/today` | Не реализовано, отвечает `404` |
+| Действия `POST /pet/actions/{play,feed}` | Не реализованы, доступно только «погладить» |
+| Генерация текста сводки через LLM | Клиент к Anthropic API и промпт написаны (`internal/shared/llm`), но в сборку приложения не подключены: текст собирается шаблонным генератором, в ответе `generated_by: "template"` |
+| Диалоги, отзывы, подписки на поиск как источники событий | Правила экономики написаны и покрыты тестами в домене, но вызывать их пока некому: соответствующих модулей нет |
 
-Диалоги, отзывы и подписки на поиск как источники событий отсутствуют — соответствующие правила
-экономики написаны и протестированы в домене, но вызывать их пока некому.
+Экономика работает на публикациях, продажах, избранном и ежедневных заходах.

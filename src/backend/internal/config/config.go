@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
+
+	"github.com/avito-hack/backend/internal/shared/postgres"
 )
 
 type Config struct {
@@ -33,6 +35,37 @@ type Config struct {
 	MaxPhotoBytes int64  `env:"MAX_PHOTO_BYTES" envDefault:"5242880"`
 	UploadDir     string `env:"UPLOAD_DIR"      envDefault:"/data/uploads"`
 	UploadURL     string `env:"UPLOAD_URL"      envDefault:"/uploads"`
+
+	DBMaxConns          int32         `env:"DB_MAX_CONNS"            envDefault:"20"`
+	DBMinConns          int32         `env:"DB_MIN_CONNS"            envDefault:"2"`
+	DBMaxConnLifetime   time.Duration `env:"DB_MAX_CONN_LIFETIME"    envDefault:"1h"`
+	DBMaxConnIdleTime   time.Duration `env:"DB_MAX_CONN_IDLE_TIME"   envDefault:"30m"`
+	DBHealthCheckPeriod time.Duration `env:"DB_HEALTH_CHECK_PERIOD"  envDefault:"1m"`
+	DBConnectTimeout    time.Duration `env:"DB_CONNECT_TIMEOUT"      envDefault:"5s"`
+
+	KafkaBrokers  []string      `env:"KAFKA_BROKERS"   envSeparator:","`
+	KafkaTopic    string        `env:"KAFKA_TOPIC"     envDefault:"pet.activity"`
+	KafkaGroup    string        `env:"KAFKA_GROUP"     envDefault:"pet-service"`
+	KafkaClientID string        `env:"KAFKA_CLIENT_ID" envDefault:"pet-service"`
+	KafkaTimeout  time.Duration `env:"KAFKA_TIMEOUT"   envDefault:"3s"`
+
+	PetFlushInterval  time.Duration `env:"PET_FLUSH_INTERVAL"   envDefault:"15s"`
+	PetFlushBatchSize int64         `env:"PET_FLUSH_BATCH_SIZE" envDefault:"100"`
+}
+
+func (c Config) KafkaEnabled() bool {
+	return len(c.KafkaBrokers) > 0 && c.KafkaTopic != ""
+}
+
+func (c Config) PoolOptions() postgres.PoolOptions {
+	return postgres.PoolOptions{
+		MaxConns:          c.DBMaxConns,
+		MinConns:          c.DBMinConns,
+		MaxConnLifetime:   c.DBMaxConnLifetime,
+		MaxConnIdleTime:   c.DBMaxConnIdleTime,
+		HealthCheckPeriod: c.DBHealthCheckPeriod,
+		ConnectTimeout:    c.DBConnectTimeout,
+	}
 }
 
 func Load() (Config, error) {
@@ -59,26 +92,4 @@ func (c Config) SlogLevel() slog.Level {
 	default:
 		return slog.LevelInfo
 	}
-}
-
-const (
-	minJWTSecretLen    = 16
-	minRewardSecretLen = 16
-)
-
-func (c Config) validate() error {
-	if len(c.JWTSecret) < minJWTSecretLen {
-		return fmt.Errorf("JWT_SECRET must be at least %d characters long", minJWTSecretLen)
-	}
-	if len(c.RewardHMACSecret) < minRewardSecretLen {
-		return fmt.Errorf("REWARD_HMAC_SECRET must be at least %d characters long", minRewardSecretLen)
-	}
-	if c.JWTTTL <= 0 {
-		return fmt.Errorf("JWT_TTL must be positive, got %s", c.JWTTTL)
-	}
-	if c.MaxBodyBytes <= 0 {
-		return fmt.Errorf("MAX_BODY_BYTES must be positive, got %d", c.MaxBodyBytes)
-	}
-
-	return nil
 }

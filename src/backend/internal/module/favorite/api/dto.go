@@ -8,6 +8,11 @@ import (
 	"github.com/avito-hack/backend/internal/module/favorite/app"
 )
 
+type FavoriteListResponse struct {
+	Items      []favoriteItemResponse `json:"items"`
+	NextCursor string                 `json:"next_cursor,omitempty"`
+}
+
 type favoriteItemResponse struct {
 	ItemID      uuid.UUID `json:"item_id"`
 	OwnerID     uuid.UUID `json:"owner_id"`

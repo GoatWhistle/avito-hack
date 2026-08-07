@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestApplyDecay(t *testing.T) {
@@ -85,17 +84,6 @@ func TestFeedAndCheerClamp(t *testing.T) {
 
 	assert.Equal(t, 100, pet.Satiety())
 	assert.Equal(t, 100, pet.Happiness())
-}
-
-func TestSpendEnergy(t *testing.T) {
-	t.Parallel()
-
-	pet := petWithParams(70, 70, 30)
-	require.NoError(t, pet.SpendEnergy(20, testTime()))
-	assert.Equal(t, 10, pet.Energy())
-
-	err := pet.SpendEnergy(20, testTime())
-	assert.ErrorIs(t, err, ErrConditionNotMet)
 }
 
 func petWithParams(satiety, happiness, energy int) *Pet {

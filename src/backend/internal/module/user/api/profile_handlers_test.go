@@ -75,7 +75,7 @@ func TestUpdateMeEndpointValidation(t *testing.T) {
 func seed(t *testing.T, repo *memoryUsers) *domain.User {
 	t.Helper()
 
-	result, err := app.NewRegisterUserHandler(repo, passthroughTx{}, fixedClock{}, nil).
+	result, err := app.NewRegisterUserHandler(repo, passthroughTx{}, fixedClock{}, nil, stubTokens{}).
 		Handle(context.Background(), app.RegisterUserCommand{
 			Email: "seed@example.com", Password: testPassword, FullName: "Seeded",
 		})

@@ -1,0 +1,93 @@
+{
+  "title": "Rewards",
+  "subtitle": "Come back daily — rewards unlock as you go",
+  "loading": "Loading rewards",
+  "tabs": {
+    "catalog": "Catalog",
+    "mine": "My rewards",
+    "badges": "Badges"
+  },
+  "groups": {
+    "close": "Almost there",
+    "available": "Available",
+    "far": "Ahead of you"
+  },
+  "groupHints": {
+    "close": "Just a little more and these are yours",
+    "available": "Condition met, the reward is unlocked",
+    "far": "Long-term goals worth aiming for"
+  },
+  "status": {
+    "locked": "Locked",
+    "unlocked": "Available",
+    "claimed": "Claimed",
+    "granted": "Granted",
+    "activated": "Activated",
+    "expired": "Expired"
+  },
+  "kind": {
+    "promo": "Promo code",
+    "utility": "Utility",
+    "badge": "Badge",
+    "boost": "Boost",
+    "cosmetic": "Cosmetic"
+  },
+  "condition": {
+    "level": "Level {{value}}",
+    "streak": "{{value}} day streak",
+    "xp": "{{value}} XP",
+    "achievement": "Achievement",
+    "generic": "Goal: {{value}}"
+  },
+  "remaining": {
+    "level_one": "{{count}} level to go",
+    "level_other": "{{count}} levels to go",
+    "streak_one": "{{count}} streak day to go",
+    "streak_other": "{{count}} streak days to go",
+    "generic_one": "{{count}} step to go",
+    "generic_other": "{{count}} steps to go"
+  },
+  "progress": "{{current}} of {{target}}",
+  "progressLabel": "Progress to \"{{title}}\": {{percent}}%",
+  "readyToClaim": "Condition met",
+  "singleUse": "Single-use code — works once",
+  "grantedAt": "Granted {{date}}",
+  "expiresAt": "Valid until {{date}}",
+  "activateConfirm": "Activate this promo code? This cannot be undone.",
+  "activateSuccess": "Promo code activated",
+  "actions": {
+    "activate": "Activate",
+    "confirmActivate": "Yes, activate",
+    "activating": "Activating…",
+    "cancel": "Cancel",
+    "claim": "Claim",
+    "copyCode": "Copy code",
+    "retry": "Retry"
+  },
+  "codeCopied": "Code copied",
+  "empty": {
+    "catalog": "No rewards available yet",
+    "catalogHint": "Check back later — the list keeps growing",
+    "mine": "You haven't earned any rewards yet",
+    "mineHint": "Check in daily and feed your pet — the first reward is close"
+  },
+  "badges": {
+    "title": "Badges",
+    "counter": "{{earned}} of {{total}}",
+    "earnedAt": "Earned {{date}}",
+    "locked": "Not earned yet",
+    "empty": "No badges yet",
+    "emptyHint": "Badges unlock through achievements and long streaks"
+  },
+  "errors": {
+    "alreadyActivated": "This promo code has already been activated",
+    "expired": "This promo code has expired",
+    "notGranted": "This reward has not been granted to you yet",
+    "locked": "The reward condition is not met yet",
+    "notActivatable": "This reward cannot be activated",
+    "unauthorized": "Sign in to continue",
+    "network": "No connection to the server. Check your internet",
+    "loadFailed": "Failed to load rewards",
+    "unknown": "Failed to activate the promo code"
+  }
+}

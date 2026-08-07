@@ -4,6 +4,8 @@ WORKDIR /build
 
 RUN apk add --no-cache git ca-certificates tzdata
 
+ENV GOPROXY=https://proxy.golang.org,https://goproxy.cn,https://goproxy.io,direct
+
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download && go mod verify
@@ -38,10 +40,12 @@ EXPOSE 8080
 
 ENTRYPOINT ["air", "-c", ".air.toml"]
 
-FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+FROM alpine:3.20 AS runtime
 
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN apk add --no-cache ca-certificates tzdata \
+ && addgroup -g 65532 -S nonroot \
+ && adduser -u 65532 -S nonroot -G nonroot
+
 COPY --from=builder /out/api /app/api
 COPY --from=builder /out/migrate /app/migrate
 COPY --from=builder --chown=nonroot:nonroot /out/uploads /data/uploads

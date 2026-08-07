@@ -18,7 +18,6 @@ const (
 	hungryXPMultiplier       = 0.5
 	happyXPMultiplier        = 1.25
 	neutralXPMultiplier      = 1.0
-	playEnergyCost           = 20
 	minimalAwardWhenPositive = 1
 )
 
@@ -42,10 +41,6 @@ func (p *Pet) State() State {
 	default:
 		return StateNeutral
 	}
-}
-
-func (p *Pet) CanPlay() bool {
-	return p.energy >= playEnergyCost
 }
 
 func (p *Pet) xpMultiplier() float64 {

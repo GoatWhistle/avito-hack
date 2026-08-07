@@ -1,0 +1,43 @@
+{
+  "title": "Leaderboard",
+  "subtitle": "Top pet owners",
+  "loading": "Loading the leaderboard",
+  "caption": "Leaderboard standings table",
+  "you": "You",
+  "columns": {
+    "rank": "Rank",
+    "name": "Player",
+    "level": "Level",
+    "xp": "Experience",
+    "streak": "Streak"
+  },
+  "top": {
+    "title": "Top players"
+  },
+  "neighbors": {
+    "title": "Around you",
+    "caption": "Players ranked near you",
+    "chase": "Catch up with {{name}} — {{xp}} XP to go",
+    "leader": "You are in first place. Keep it up!"
+  },
+  "guest": {
+    "title": "The leaderboard is for players",
+    "hint": "Get a pet, grow it with real actions on Avito — and claim your spot at the top",
+    "signUp": "Get started",
+    "signIn": "Sign in"
+  },
+  "myRank": "Your rank: {{rank}}",
+  "notRanked": "You are not ranked yet — feed your pet to join",
+  "empty": "The leaderboard is empty",
+  "emptyHint": "Be the first: check in daily and grow your pet",
+  "actions": {
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "retry": "Retry"
+  },
+  "errors": {
+    "unauthorized": "Sign in to see the leaderboard",
+    "network": "No connection to the server. Check your internet",
+    "loadFailed": "Failed to load the leaderboard"
+  }
+}

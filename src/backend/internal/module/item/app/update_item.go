@@ -66,8 +66,13 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 			return saveErr
 		}
 
+		count, countErr := photoCount(ctx, h.photos, item.ID())
+		if countErr != nil {
+			return countErr
+		}
+
 		out.Add(events.New(events.TypeItemUpdated, item.OwnerID(), item.ID(), h.clock.Now()).
-			WithPayload(itemPayload(item, photoCount(ctx, h.photos, item.ID()))))
+			WithPayload(itemPayload(item, count)))
 
 		updated = item
 

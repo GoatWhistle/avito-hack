@@ -9,6 +9,48 @@ import (
 	"github.com/avito-hack/backend/internal/module/pet/domain"
 )
 
+type RewardCatalogResponse struct {
+	Items      []rewardCatalogItem `json:"items"`
+	NextCursor string              `json:"next_cursor,omitempty"`
+}
+
+type UserRewardListResponse struct {
+	Items      []myRewardItem `json:"items"`
+	NextCursor string         `json:"next_cursor,omitempty"`
+}
+
+type rewardCatalogItem struct {
+	ID             string `json:"id"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	Kind           string `json:"kind"`
+	ConditionType  string `json:"condition_type"`
+	ConditionValue int    `json:"condition_value"`
+	Unlocked       bool   `json:"unlocked"`
+	Claimed        bool   `json:"claimed"`
+	Status         string `json:"status,omitempty"`
+	Current        int    `json:"progress_current"`
+	Target         int    `json:"progress_target"`
+}
+
+type myRewardItem struct {
+	RewardID    string     `json:"reward_id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Kind        string     `json:"kind"`
+	Status      string     `json:"status"`
+	Code        string     `json:"code,omitempty"`
+	GrantedAt   time.Time  `json:"granted_at"`
+	ActivatedAt *time.Time `json:"activated_at,omitempty"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+}
+
+type activateRewardResponse struct {
+	RewardID string `json:"reward_id"`
+	Code     string `json:"code"`
+	Status   string `json:"status"`
+}
+
 type clientMessage struct {
 	Type      string `json:"type"`
 	RequestID string `json:"request_id,omitempty"`
@@ -111,7 +153,7 @@ func toCheckInPayload(result app.ActionResult) checkInPayload {
 		Streak: streakPayload{
 			Days: result.Streak.Days, Continued: result.Streak.Continued,
 			FreezeUsed: result.Streak.FreezeUsed, Reset: result.Streak.Reset,
-			MilestoneBonus: result.Streak.MilestoneBonus,
+			MilestoneBonus:   result.Streak.MilestoneBonus,
 			MilestoneReached: result.Streak.MilestoneReached,
 			FreezesLeft:      result.Streak.FreezesLeft,
 		},

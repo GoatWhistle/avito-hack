@@ -14,7 +14,7 @@ func TestRewardSignerRejectsWeakSecret(t *testing.T) {
 	t.Parallel()
 
 	signer, err := NewRewardSigner("short")
-	assert.ErrorIs(t, err, ErrWeakSecret)
+	require.ErrorIs(t, err, ErrWeakSecret)
 	assert.Nil(t, signer)
 }
 
@@ -64,7 +64,7 @@ func TestRewardCodeRejections(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			assert.ErrorIs(t, signer.Verify(tt.userID, tt.rewardID, tt.code), tt.err)
+			require.ErrorIs(t, signer.Verify(tt.userID, tt.rewardID, tt.code), tt.err)
 		})
 	}
 }
@@ -100,7 +100,7 @@ func TestRewardActivationOnlyFromGranted(t *testing.T) {
 	require.NoError(t, granted.Activate(code, testTime()))
 
 	assert.True(t, granted.IsActivated())
-	assert.ErrorIs(t, granted.Activate(code, testTime()), ErrRewardAlreadyActivated)
+	require.ErrorIs(t, granted.Activate(code, testTime()), ErrRewardAlreadyActivated)
 }
 
 func tamperLastRune(code string) string {

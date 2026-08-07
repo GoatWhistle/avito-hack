@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"log/slog"
 	"os"
 )
@@ -10,8 +9,6 @@ const (
 	formatJSON   = "json"
 	formatPretty = "pretty"
 )
-
-type ctxKey struct{}
 
 type Options struct {
 	Level  slog.Level
@@ -49,19 +46,18 @@ func resolveColor(mode string) bool {
 	switch mode {
 	case "never", "off", "false", "0":
 		return false
-	default:
+	case "always", "on", "true", "1":
 		return true
+	default:
+		return isTerminal(os.Stdout)
 	}
 }
 
-func ToContext(ctx context.Context, log *slog.Logger) context.Context {
-	return context.WithValue(ctx, ctxKey{}, log)
-}
-
-func FromContext(ctx context.Context) *slog.Logger {
-	if log, ok := ctx.Value(ctxKey{}).(*slog.Logger); ok {
-		return log
+func isTerminal(f *os.File) bool {
+	info, err := f.Stat()
+	if err != nil {
+		return false
 	}
 
-	return slog.Default()
+	return info.Mode()&os.ModeCharDevice != 0
 }

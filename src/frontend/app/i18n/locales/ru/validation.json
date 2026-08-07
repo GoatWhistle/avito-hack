@@ -1,0 +1,15 @@
+{
+  "required": "Обязательное поле",
+  "email": "Введите корректный адрес почты",
+  "minLength": "Минимум {{count}} символов",
+  "maxLength": "Максимум {{count}} символов",
+  "min": "Минимальное значение: {{value}}",
+  "max": "Максимальное значение: {{value}}",
+  "passwordTooShort": "Пароль должен быть не короче {{count}} символов",
+  "passwordsDoNotMatch": "Пароли не совпадают",
+  "positiveNumber": "Введите положительное число",
+  "invalidNumber": "Введите число",
+  "titleTooShort": "Название должно быть не короче {{count}} символов",
+  "fileTooLarge": "Файл больше {{size}}",
+  "unsupportedFormat": "Неподдерживаемый формат"
+}

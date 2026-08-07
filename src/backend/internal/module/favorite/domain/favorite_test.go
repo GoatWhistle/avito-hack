@@ -56,23 +56,11 @@ func TestNewFavoriteValidation(t *testing.T) {
 	}
 }
 
-func TestRestoreFavorite(t *testing.T) {
-	t.Parallel()
-
-	userID, itemID := uuid.New(), uuid.New()
-
-	favorite := domain.Restore(userID, itemID, favoriteTime)
-
-	assert.Equal(t, userID, favorite.UserID())
-	assert.Equal(t, itemID, favorite.ItemID())
-	assert.Equal(t, favoriteTime, favorite.CreatedAt())
-}
-
 func TestFavoriteErrorsMapToSentinels(t *testing.T) {
 	t.Parallel()
 
-	assert.ErrorIs(t, domain.ErrFavoriteNotFound, domainerr.ErrNotFound)
-	assert.ErrorIs(t, domain.ErrItemNotFound, domainerr.ErrNotFound)
+	require.ErrorIs(t, domain.ErrFavoriteNotFound, domainerr.ErrNotFound)
+	require.ErrorIs(t, domain.ErrItemNotFound, domainerr.ErrNotFound)
 	assert.Contains(t, domain.ErrFavoriteNotFound.Error(), "favorite not found")
 	assert.Contains(t, domain.ErrItemNotFound.Error(), "item not found")
 }

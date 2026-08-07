@@ -1,0 +1,132 @@
+@keyframes pet-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes pet-hatch-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+@keyframes pet-shell-top {
+  0%,
+  45% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-46px, -62px) rotate(-52deg);
+  }
+}
+
+@keyframes pet-shell-bottom {
+  0%,
+  45% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(38px, 34px) rotate(30deg);
+  }
+}
+
+@keyframes pet-hatchling-rise {
+  0%,
+  42% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.62);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pet-zzz {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.7);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(16px, -34px) scale(1.15);
+  }
+}
+
+@keyframes pet-heart {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -46px) scale(1.2);
+  }
+}
+
+@keyframes pet-confetti {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-72px) rotate(220deg) scale(1);
+  }
+}
+
+@keyframes pet-spark {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(24deg);
+  }
+}
+
+@keyframes pet-aura {
+  0%,
+  100% {
+    opacity: 0.16;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.07);
+  }
+}

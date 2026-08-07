@@ -1,7 +1,9 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
+ARG NPM_REGISTRY=https://registry.npmjs.org
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-audit --no-fund --registry=${NPM_REGISTRY}
 
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -27,7 +29,7 @@ COPY nginx.conf /etc/nginx/conf.d/app.conf
 RUN esc=$(printf '\033') && sed -i "s/\\\\x1b/${esc}/g" /etc/nginx/conf.d/app.conf
 RUN sed -i 's|^error_log .*|error_log /dev/stderr warn;|' /etc/nginx/nginx.conf \
  && sed -i '/^user /d' /etc/nginx/nginx.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/build/client /usr/share/nginx/html
 
 RUN addgroup -S app && adduser -S app -G app \
  && chown -R app:app /usr/share/nginx/html /var/cache/nginx /var/log/nginx \

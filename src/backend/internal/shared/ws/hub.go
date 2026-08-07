@@ -61,13 +61,6 @@ func (h *Hub) Broadcast(userID uuid.UUID, m Message) {
 	}
 }
 
-func (h *Hub) Online(userID uuid.UUID) bool {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	return len(h.conns[userID]) > 0
-}
-
 func (h *Hub) sinks(userID uuid.UUID) []Sink {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

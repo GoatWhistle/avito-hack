@@ -21,6 +21,7 @@ jobs:
           cp .env.example .env
           sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=ci_password|' .env
           sed -i 's|^JWT_SECRET=.*|JWT_SECRET=ci_secret_not_for_production|' .env
+          sed -i 's|^REWARD_HMAC_SECRET=.*|REWARD_HMAC_SECRET=ci_reward_secret_not_for_production|' .env
           sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgres://avito:ci_password@postgres:5432/avito?sslmode=disable|' .env
 
       - name: Start the stack
@@ -39,7 +40,7 @@ jobs:
           set -euo pipefail
           curl -fsS -X POST http://localhost:8080/api/v1/auth/register \
             -H 'Content-Type: application/json' \
-            -d '{"email":"ci@example.com","password":"password123","display_name":"CI User"}' > /dev/null
+            -d '{"email":"ci@example.com","password":"password123","full_name":"CI User"}' > /dev/null
 
           token=$(curl -fsS -X POST http://localhost:8080/api/v1/auth/login \
             -H 'Content-Type: application/json' \
@@ -58,6 +59,19 @@ jobs:
             -d '{"action":"submit"}' > /dev/null
 
           echo "Smoke test passed"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: src/backend/go.sum
+
+      # The stack is already up, so the integration tests run for real instead of skipping.
+      - name: Integration tests
+        working-directory: tests/integration
+        env:
+          INTEGRATION: '1'
+          INTEGRATION_BASE_URL: http://localhost:8080
+        run: go test -tags=integration -count=1 -v ./...
 
       - name: Dump logs on failure
         if: failure()

@@ -1,0 +1,28 @@
+@keyframes onboarding-confetti-fall {
+  0% {
+    transform: translate3d(0, -10%, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift, 0), 320%, 0)
+      rotate(var(--confetti-spin, 180deg));
+    opacity: 0;
+  }
+}
+
+.onboarding-confetti {
+  animation-name: onboarding-confetti-fall;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+  animation-iteration-count: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-confetti {
+    animation: none;
+    opacity: 0;
+  }
+}

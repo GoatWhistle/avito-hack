@@ -61,12 +61,6 @@ func (m *memoryFavorites) Remove(_ context.Context, userID, itemID uuid.UUID) er
 	return nil
 }
 
-func (m *memoryFavorites) Exists(_ context.Context, userID, itemID uuid.UUID) (bool, error) {
-	_, ok := m.stored[key(userID, itemID)]
-
-	return ok, nil
-}
-
 type stubItems struct{ exists bool }
 
 func (s stubItems) Exists(context.Context, uuid.UUID) (bool, error) { return s.exists, nil }
@@ -126,7 +120,7 @@ func do(t *testing.T, router http.Handler, method, path string) *httptest.Respon
 	t.Helper()
 
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+	router.ServeHTTP(rec, httptest.NewRequest(method, path, http.NoBody))
 
 	return rec
 }

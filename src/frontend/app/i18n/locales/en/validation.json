@@ -1,0 +1,15 @@
+{
+  "required": "This field is required",
+  "email": "Enter a valid email address",
+  "minLength": "At least {{count}} characters",
+  "maxLength": "At most {{count}} characters",
+  "min": "Minimum value: {{value}}",
+  "max": "Maximum value: {{value}}",
+  "passwordTooShort": "Password must be at least {{count}} characters",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "positiveNumber": "Enter a positive number",
+  "invalidNumber": "Enter a number",
+  "titleTooShort": "Title must be at least {{count}} characters",
+  "fileTooLarge": "File is larger than {{size}}",
+  "unsupportedFormat": "Unsupported format"
+}

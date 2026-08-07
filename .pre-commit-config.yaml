@@ -36,7 +36,7 @@ repos:
         name: locale sync
         entry: node ./scripts/check-locales.mjs
         language: system
-        files: ^src/frontend/src/shared/i18n/locales/.*\.json$
+        files: ^src/frontend/app/i18n/locales/.*\.json$
         pass_filenames: false
 
       - id: go-fmt

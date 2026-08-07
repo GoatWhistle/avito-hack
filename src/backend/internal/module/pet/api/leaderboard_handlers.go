@@ -39,6 +39,30 @@ func NewLeaderboardHandlers(deps LeaderboardDeps) *LeaderboardHandlers {
 	return &LeaderboardHandlers{deps: deps}
 }
 
+// @Id getLeaderboard
+// @Summary Рейтинг пользователей
+// @Description Рейтинг по уровню, затем по опыту, затем по идентификатору (для
+// @Description устойчивости порядка). Поле `my_rank` — позиция владельца токена;
+// @Description `null`, если она неизвестна.
+// @Description
+// @Description Пагинация использует ОТДЕЛЬНЫЙ формат курсора (`level|xp|user_id`),
+// @Description несовместимый с временным курсором остальных списков. Передача
+// @Description временного курсора сюда даёт 400 с `field: cursor`.
+// @Description
+// @Description Параметр `around=me` переключает выдачу на окно вокруг позиции
+// @Description текущего пользователя вместо начала таблицы. Любое иное значение
+// @Description параметра игнорируется — сравнение строгое, только строка `me`.
+// @Tags Leaderboard
+// @Produce json
+// @Param limit query int false "Размер страницы. По умолчанию 20, максимум 100." default(20) maximum(100)
+// @Param cursor query string false "Лидербордный курсор из `next_cursor` предыдущей страницы."
+// @Param around query string false "Значение `me` — показать окно вокруг позиции текущего пользователя." Enums(me)
+// @Success 200 {object} leaderboardResponse "Страница рейтинга"
+// @Failure 400 {object} apierr.ErrorEnvelope
+// @Failure 401 {object} apierr.ErrorEnvelope
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/leaderboard [get]
 func (h *LeaderboardHandlers) List(w http.ResponseWriter, r *http.Request) {
 	actor, err := auth.ActorFrom(r.Context())
 	if err != nil {

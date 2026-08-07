@@ -19,10 +19,11 @@ func TestNewHashLengthBoundaries(t *testing.T) {
 		wantErr error
 	}{
 		{name: "empty", plain: "", wantErr: password.ErrTooShort},
-		{name: "single character", plain: "a"},
+		{name: "single character", plain: "a", wantErr: password.ErrTooShort},
+		{name: "below minimum", plain: strings.Repeat("a", password.MinLength-1), wantErr: password.ErrTooShort},
 		{name: "exactly minimum", plain: strings.Repeat("a", password.MinLength)},
 		{name: "exactly maximum", plain: strings.Repeat("a", password.MaxLength)},
-		{name: "above maximum is truncated", plain: strings.Repeat("a", password.MaxLength+10)},
+		{name: "above maximum", plain: strings.Repeat("a", password.MaxLength+10), wantErr: password.ErrTooLong},
 	}
 
 	for _, tt := range tests {

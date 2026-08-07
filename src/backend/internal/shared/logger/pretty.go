@@ -166,14 +166,18 @@ func (h *prettyHandler) writeAttr(buf *strings.Builder, key string, value slog.V
 	buf.WriteString(" ")
 	buf.WriteString(h.paint(ansiDim, key+"="))
 
+	if key == "stack" {
+		buf.WriteString("\n")
+		buf.WriteString(h.paint(ansiDim, indentBlock(value.String())))
+
+		return
+	}
+
 	rendered := renderValue(value)
 
 	switch key {
 	case "error", "panic":
 		buf.WriteString(h.paint(ansiBrightRed, rendered))
-	case "stack":
-		buf.WriteString("\n")
-		buf.WriteString(h.paint(ansiDim, indentBlock(rendered)))
 	default:
 		buf.WriteString(h.paint(ansiWhite, rendered))
 	}

@@ -4,31 +4,44 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/avito-hack/backend/internal/config"
-	"github.com/avito-hack/backend/internal/module/favorite"
-	"github.com/avito-hack/backend/internal/module/item"
-	"github.com/avito-hack/backend/internal/module/pet"
-	"github.com/avito-hack/backend/internal/module/raccoon"
-	"github.com/avito-hack/backend/internal/module/user"
 	"github.com/avito-hack/backend/internal/server"
-	"github.com/avito-hack/backend/internal/shared/auth"
-	"github.com/avito-hack/backend/internal/shared/clock"
-	"github.com/avito-hack/backend/internal/shared/events"
 	"github.com/avito-hack/backend/internal/shared/logger"
-	"github.com/avito-hack/backend/internal/shared/middleware"
 	"github.com/avito-hack/backend/internal/shared/postgres"
-	"github.com/avito-hack/backend/internal/shared/validate"
 )
 
+// @title Avito Hack API
+// @version 1.0.0
+// @description REST и WebSocket API маркетплейса с геймификацией (питомец-енот)
+//
+// @contact.name Avito Hack Team
+// @license.name MIT
+//
+// @servers.url http://localhost:8080
+// @servers.description Локальная разработка
+//
+// @securityDefinitions.apikey bearerAuth
+// @in header
+// @name Authorization
+//
+// @tag.name Auth
+// @tag.name Users
+// @tag.name Items
+// @tag.name Photos
+// @tag.name Favorites
+// @tag.name Pet
+// @tag.name Rewards
+// @tag.name Leaderboard
+// @tag.name Raccoon
+// @tag.name WebSocket
+// @tag.name System
 func main() {
 	if isHealthcheckMode() {
 		if err := runHealthcheck(healthcheckAddr()); err != nil {
@@ -69,7 +82,7 @@ func run() error {
 	})
 	slog.SetDefault(log)
 
-	pool, err := postgres.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := postgres.NewPoolWithOptions(ctx, cfg.DatabaseURL, cfg.PoolOptions())
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}
@@ -87,101 +100,21 @@ func run() error {
 		}
 	}()
 
-	modules, webSocket, err := buildModules(cfg, pool, redisClient)
+	built, err := buildModules(cfg, pool, redisClient, log)
 	if err != nil {
 		return fmt.Errorf("build modules: %w", err)
 	}
+
+	stopBackground := built.background.run(ctx)
+	defer stopBackground()
 
 	handler := server.NewRouter(server.RouterDeps{
 		Config:    cfg,
 		Pool:      pool,
 		Logger:    log,
-		Modules:   modules,
-		WebSocket: webSocket,
+		Modules:   built.registrars,
+		WebSocket: built.webSocket,
 	})
 
 	return server.New(cfg, handler, log).Run(ctx)
-}
-
-func buildModules(
-	cfg config.Config,
-	pool *pgxpool.Pool,
-	redisClient *redis.Client,
-) ([]server.ModuleRegistrar, http.Handler, error) {
-	appClock := clock.New()
-	tx := postgres.NewTxManager(pool)
-	validator := validate.New()
-	tokens := auth.NewTokenService(cfg.JWTSecret, cfg.JWTTTL, appClock.Now)
-
-	authenticate := middleware.Authenticate(tokens)
-	optionalAuth := middleware.OptionalAuthenticate(tokens)
-
-	bus := events.NewBus(slog.Default())
-
-	userModule := user.New(user.Options{
-		Pool:         pool,
-		Tx:           tx,
-		Clock:        appClock,
-		Tokens:       tokens,
-		Bus:          bus,
-		Validator:    validator,
-		Authenticate: authenticate,
-		MaxBodyBytes: cfg.MaxBodyBytes,
-	})
-
-	itemModule := item.New(item.Options{
-		Pool:          pool,
-		Tx:            tx,
-		Clock:         appClock,
-		Bus:           bus,
-		Validator:     validator,
-		Authenticate:  authenticate,
-		OptionalAuth:  optionalAuth,
-		MaxBodyBytes:  cfg.MaxBodyBytes,
-		MaxPhotoBytes: cfg.MaxPhotoBytes,
-		UploadDir:     cfg.UploadDir,
-		UploadURL:     cfg.UploadURL,
-	})
-
-	favoriteModule := favorite.New(favorite.Options{
-		Pool:         pool,
-		Tx:           tx,
-		Clock:        appClock,
-		Bus:          bus,
-		Authenticate: authenticate,
-	})
-
-	petModule, err := pet.New(pet.Options{
-		Pool:             pool,
-		Redis:            redisClient,
-		Tx:               tx,
-		Clock:            appClock,
-		Tokens:           tokens,
-		Bus:              bus,
-		AllowedOrigins:   cfg.AllowedOrigins,
-		RewardHMACSecret: cfg.RewardHMACSecret,
-		Authenticate:     authenticate,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	raccoonModule := raccoon.New(raccoon.Options{
-		Pool:         pool,
-		Pets:         petModule.Service,
-		Rewards:      petModule.Rewards,
-		Validator:    validator,
-		Authenticate: authenticate,
-		MaxBodyBytes: cfg.MaxBodyBytes,
-	})
-
-	return []server.ModuleRegistrar{
-		userModule.Handlers,
-		itemModule.Handlers,
-		favoriteModule.Handlers,
-		raccoonModule.Handlers,
-		petModule.Leaderboard,
-		petModule.Pet,
-		petModule.RewardAPI,
-	}, petModule.WebSocket, nil
 }

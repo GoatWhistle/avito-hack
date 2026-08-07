@@ -171,8 +171,8 @@ func (s *RewardService) activate(ctx context.Context, userID uuid.UUID, rewardID
 		return "", fmt.Errorf("issue reward code: %w", err)
 	}
 
-	if err := granted.Activate(code, s.clock.Now()); err != nil {
-		return "", err
+	if activateErr := granted.Activate(code, s.clock.Now()); activateErr != nil {
+		return "", activateErr
 	}
 
 	updated, err := s.rewards.Activate(ctx, granted)

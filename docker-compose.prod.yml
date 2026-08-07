@@ -45,6 +45,25 @@ services:
         max-size: 10m
         max-file: "3"
 
+  # Kafka встроен в базовый compose (KRaft, без ZooKeeper). Наружу порт не публикуется —
+  # брокер доступен только сервисам в сети backend по адресу kafka:9092.
+  # 768M heap + оверхед JVM: меньше 1g лимита ставить нельзя, иначе OOMKill на старте.
+  kafka:
+    restart: unless-stopped
+    ports: !override []
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+        reservations:
+          memory: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
   migrate:
     restart: on-failure
     deploy:
@@ -110,7 +129,6 @@ services:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot-webroot:/var/www/certbot
       - certbot-certs:/etc/letsencrypt:ro
-      - uploads:/var/www/uploads:ro
     depends_on:
       backend:
         condition: service_healthy

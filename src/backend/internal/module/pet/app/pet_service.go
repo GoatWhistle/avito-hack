@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 
@@ -19,9 +20,11 @@ type Service struct {
 	pets     domain.Repository
 	journal  XPJournal
 	cache    Cache
+	hot      HotStateStore
 	tx       TxManager
 	clock    Clock
 	notifier HatchNotifier
+	accounts AccountGate
 }
 
 func NewService(pets domain.Repository, journal XPJournal, cache Cache, tx TxManager, clock Clock) *Service {
@@ -34,21 +37,61 @@ func (s *Service) WithHatchNotifier(notifier HatchNotifier) *Service {
 	return s
 }
 
+func (s *Service) WithAccountGate(accounts AccountGate) *Service {
+	s.accounts = accounts
+
+	return s
+}
+
+func (s *Service) WithHotState(hot HotStateStore) *Service {
+	s.hot = hot
+
+	return s
+}
+
 func (s *Service) State(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
-	cached, err := s.cache.Get(ctx, userID)
-	if err == nil && cached != nil {
-		cached.ApplyDecay(s.clock.Now())
-
-		return cached, nil
-	}
-
-	pet, err := s.pets.ByUserID(ctx, userID)
+	pet, err := s.readPet(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 	pet.ApplyDecay(s.clock.Now())
+	s.mergeHotState(ctx, pet)
 
 	return pet, nil
+}
+
+func (s *Service) readPet(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
+	cached, err := s.cache.Get(ctx, userID)
+	if err == nil && cached != nil {
+		return cached, nil
+	}
+
+	return s.pets.ByUserID(ctx, userID)
+}
+
+func (s *Service) mergeHotState(ctx context.Context, pet *domain.Pet) {
+	if s.hot == nil || pet == nil {
+		return
+	}
+
+	hot, err := s.hot.GetOrInitialize(ctx, hotFromPet(pet))
+	if err != nil {
+		slog.WarnContext(ctx, "load hot pet state",
+			slog.String("user_id", pet.UserID().String()), slog.Any("error", err))
+
+		return
+	}
+	if err := pet.ApplyHotState(hot.Happiness, hot.Satiety, hot.Version, hot.UpdatedAt); err != nil {
+		slog.WarnContext(ctx, "apply hot pet state",
+			slog.String("user_id", pet.UserID().String()), slog.Any("error", err))
+	}
+}
+
+func hotFromPet(pet *domain.Pet) HotState {
+	return HotState{
+		UserID: pet.UserID(), Happiness: pet.Happiness(), Satiety: pet.Satiety(),
+		Version: pet.InteractionVersion(), UpdatedAt: pet.UpdatedAt(),
+	}
 }
 
 func (s *Service) Create(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
@@ -60,6 +103,31 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID) (*domain.Pet, er
 }
 
 func (s *Service) Stroke(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
+	if s.hot == nil {
+		return s.strokeInDatabase(ctx, userID)
+	}
+
+	pet, err := s.readPet(ctx, userID)
+	if err != nil {
+		return s.strokeInDatabase(ctx, userID)
+	}
+	pet.ApplyDecay(s.clock.Now())
+
+	hot, _, err := s.hot.Stroke(ctx, hotFromPet(pet), s.clock.Now())
+	if err != nil {
+		slog.WarnContext(ctx, "stroke via hot state failed, falling back to database",
+			slog.String("user_id", userID.String()), slog.Any("error", err))
+
+		return s.strokeInDatabase(ctx, userID)
+	}
+	if err := pet.ApplyHotState(hot.Happiness, hot.Satiety, hot.Version, hot.UpdatedAt); err != nil {
+		return s.strokeInDatabase(ctx, userID)
+	}
+
+	return pet, nil
+}
+
+func (s *Service) strokeInDatabase(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
 	return s.hatching(ctx, userID, func(_ context.Context, pet *domain.Pet) error {
 		pet.ApplyDecay(s.clock.Now())
 		pet.Stroke(s.clock.Now())
@@ -117,18 +185,32 @@ func (s *Service) mutate(
 		return nil
 	})
 	if err != nil {
-		if invalidateErr := s.cache.Delete(ctx, userID); invalidateErr != nil {
-			return nil, errors.Join(err, invalidateErr)
-		}
+		s.invalidateCache(ctx, userID)
 
 		return nil, err
 	}
 
-	if err := s.cache.Set(ctx, result); err != nil {
-		return nil, fmt.Errorf("cache pet: %w", err)
-	}
+	s.refreshCache(ctx, result)
 
 	return result, nil
+}
+
+func (s *Service) refreshCache(ctx context.Context, pet *domain.Pet) {
+	if pet == nil {
+		return
+	}
+
+	if err := s.cache.Set(ctx, pet); err != nil {
+		slog.WarnContext(ctx, "cache pet after commit",
+			slog.String("user_id", pet.UserID().String()), slog.Any("error", err))
+	}
+}
+
+func (s *Service) invalidateCache(ctx context.Context, userID uuid.UUID) {
+	if err := s.cache.Delete(ctx, userID); err != nil {
+		slog.WarnContext(ctx, "invalidate pet cache",
+			slog.String("user_id", userID.String()), slog.Any("error", err))
+	}
 }
 
 func (s *Service) load(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {

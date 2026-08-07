@@ -1,0 +1,2825 @@
+# Generated from Go annotations by `make api-spec` — do not edit by hand.
+# Sources: swaggo annotations in src/backend and docs/openapi.overlay.yaml.
+components:
+    parameters:
+        ItemID:
+            description: Идентификатор объявления.
+            in: path
+            name: id
+            required: true
+            schema:
+                format: uuid
+                type: string
+        Limit:
+            description: |
+                Размер страницы. По умолчанию 20, максимум 100. Значения вне
+                диапазона нормализуются молча: 0 и отрицательные превращаются
+                в 20, значения больше 100 — в 100. Нечисловое значение даёт 400.
+            in: query
+            name: limit
+            required: false
+            schema:
+                default: 20
+                maximum: 100
+                type: integer
+        TimeCursor:
+            description: |
+                Непрозрачный курсор из `next_cursor` предыдущей страницы —
+                base64url от `created_at|id`. Отсутствие означает первую страницу.
+                Испорченное значение даёт 400 с `field: cursor`.
+            in: query
+            name: cursor
+            required: false
+            schema:
+                type: string
+    responses:
+        BadRequest:
+            content:
+                application/json:
+                    examples:
+                        malformed:
+                            value:
+                                error:
+                                    code: bad_request
+                                    message: 'malformed request body: json: unknown field "titel"'
+                                    request_id: 9f2a1b3c
+                        validation:
+                            value:
+                                error:
+                                    code: validation_error
+                                    field: title
+                                    message: title must be at least 3 characters
+                                    request_id: 9f2a1b3c
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: |
+                Некорректный запрос — нарушение валидации (`validation_error`)
+                либо неразбираемое тело или неизвестное поле в нём (`bad_request`).
+        Conflict:
+            content:
+                application/json:
+                    examples:
+                        default:
+                            value:
+                                error:
+                                    code: conflict
+                                    message: state conflict
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: Действие противоречит текущему состоянию ресурса.
+        Forbidden:
+            content:
+                application/json:
+                    examples:
+                        default:
+                            value:
+                                error:
+                                    code: forbidden
+                                    message: access forbidden
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: Ресурс существует, но действие над ним запрещено.
+        InternalError:
+            content:
+                application/json:
+                    examples:
+                        default:
+                            value:
+                                error:
+                                    code: internal_error
+                                    message: internal server error
+                                    request_id: 9f2a1b3c
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: |
+                Внутренняя ошибка. Детали наружу не раскрываются, но `request_id`
+                позволяет найти запись в логах.
+        NotFound:
+            content:
+                application/json:
+                    examples:
+                        default:
+                            value:
+                                error:
+                                    code: not_found
+                                    message: resource not found
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: Ресурс не найден либо скрыт от текущего пользователя.
+        Unauthorized:
+            content:
+                application/json:
+                    examples:
+                        default:
+                            value:
+                                error:
+                                    code: unauthorized
+                                    message: authentication required
+                                    request_id: 9f2a1b3c
+                    schema:
+                        $ref: '#/components/schemas/ErrorEnvelope'
+            description: Токен отсутствует, просрочен или невалиден.
+    schemas:
+        ActivateRewardResponse:
+            properties:
+                code:
+                    type: string
+                reward_id:
+                    type: string
+                status:
+                    type: string
+            type: object
+        Badge:
+            properties:
+                description:
+                    type: string
+                earned_at:
+                    type: string
+                icon_url:
+                    type: string
+                id:
+                    type: string
+                name:
+                    type: string
+            type: object
+        ChangeStatusRequest:
+            properties:
+                action:
+                    enum:
+                        - submit
+                        - publish
+                        - sell
+                        - archive
+                        - restore
+                    type: string
+            required:
+                - action
+            type: object
+        CheckInResult:
+            properties:
+                level:
+                    type: integer
+                next_level_xp:
+                    type: integer
+                pet:
+                    $ref: '#/components/schemas/Pet'
+                previous_level:
+                    type: integer
+                streak:
+                    $ref: '#/components/schemas/Streak'
+                unlocked_rewards:
+                    items:
+                        type: string
+                    type: array
+                    uniqueItems: false
+                xp_granted:
+                    type: integer
+            type: object
+        ClaimRewardRequest:
+            properties:
+                reward_id:
+                    type: string
+            required:
+                - reward_id
+            type: object
+        ClaimRewardResponse:
+            properties:
+                promocode:
+                    type: string
+                reward_id:
+                    type: string
+            type: object
+        CreateItemRequest:
+            properties:
+                attributes:
+                    additionalProperties:
+                        type: string
+                    type: object
+                description:
+                    maxLength: 5000
+                    type: string
+                price:
+                    minimum: 0
+                    type: integer
+                title:
+                    maxLength: 200
+                    minLength: 3
+                    type: string
+            required:
+                - title
+            type: object
+        DailySummary:
+            description: Ежедневная сводка достижений.
+            properties:
+                advice:
+                    $ref: '#/components/schemas/SummaryAdvice'
+                created_at:
+                    format: date-time
+                    type: string
+                date:
+                    description: Календарный день сводки в формате `YYYY-MM-DD`.
+                    format: date
+                    type: string
+                facts:
+                    $ref: '#/components/schemas/SummaryFacts'
+                generated_by:
+                    $ref: '#/components/schemas/SummarySource'
+                id:
+                    format: uuid
+                    type: string
+                message:
+                    description: Текст сводки для показа пользователю.
+                    maxLength: 4000
+                    minLength: 1
+                    type: string
+            required:
+                - id
+                - date
+                - message
+                - generated_by
+                - facts
+                - created_at
+            type: object
+        DailySummaryListResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/DailySummary'
+                    type: array
+                next_cursor:
+                    type: string
+            required:
+                - items
+            type: object
+        ErrorBody:
+            properties:
+                code:
+                    type: string
+                field:
+                    type: string
+                message:
+                    type: string
+                request_id:
+                    type: string
+            type: object
+        ErrorEnvelope:
+            properties:
+                error:
+                    $ref: '#/components/schemas/ErrorBody'
+            type: object
+        Favorite:
+            properties:
+                added_at:
+                    type: string
+                item_id:
+                    type: string
+                owner_id:
+                    type: string
+                photo_url:
+                    type: string
+                price:
+                    type: integer
+                status:
+                    type: string
+                title:
+                    type: string
+            type: object
+        FavoriteListResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/Favorite'
+                    type: array
+                    uniqueItems: false
+                next_cursor:
+                    type: string
+            type: object
+        Item:
+            properties:
+                attributes:
+                    additionalProperties:
+                        type: string
+                    type: object
+                created_at:
+                    type: string
+                description:
+                    type: string
+                id:
+                    type: string
+                owner_id:
+                    type: string
+                price:
+                    type: integer
+                status:
+                    type: string
+                title:
+                    type: string
+                updated_at:
+                    type: string
+            type: object
+        ItemAttributes:
+            additionalProperties:
+                type: string
+            description: |
+                Произвольные атрибуты объявления — плоский словарь строк.
+                Не более 50 пар.
+            maxProperties: 50
+            type: object
+        ItemListEntry:
+            properties:
+                created_at:
+                    type: string
+                id:
+                    type: string
+                owner_id:
+                    type: string
+                owner_name:
+                    type: string
+                price:
+                    type: integer
+                status:
+                    type: string
+                title:
+                    type: string
+            type: object
+        ItemListResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/ItemListEntry'
+                    type: array
+                    uniqueItems: false
+                next_cursor:
+                    type: string
+            type: object
+        ItemPhoto:
+            properties:
+                created_at:
+                    type: string
+                id:
+                    type: string
+                item_id:
+                    type: string
+                position:
+                    type: integer
+                url:
+                    type: string
+            type: object
+        ItemStatus:
+            description: |
+                Статус объявления. `sold` — терминальный, из него переходов нет.
+            enum:
+                - draft
+                - moderation
+                - published
+                - sold
+                - archived
+            type: string
+        LeaderboardEntry:
+            properties:
+                level:
+                    type: integer
+                name:
+                    type: string
+                rank:
+                    type: integer
+                streak_days:
+                    type: integer
+                user_id:
+                    type: string
+                xp:
+                    type: integer
+            type: object
+        LeaderboardResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/LeaderboardEntry'
+                    type: array
+                    uniqueItems: false
+                my_rank:
+                    type: integer
+                next_cursor:
+                    type: string
+            type: object
+        LoginRequest:
+            properties:
+                email:
+                    type: string
+                password:
+                    type: string
+            required:
+                - email
+                - password
+            type: object
+        Pet:
+            properties:
+                energy:
+                    type: integer
+                freezes:
+                    type: integer
+                happiness:
+                    type: integer
+                hatched_at:
+                    type: string
+                id:
+                    type: string
+                is_hatched:
+                    type: boolean
+                last_checkin_date:
+                    type: string
+                last_decay_time:
+                    type: string
+                level:
+                    type: integer
+                name:
+                    type: string
+                next_level_xp:
+                    type: integer
+                satiety:
+                    type: integer
+                stage:
+                    $ref: '#/components/schemas/PetStage'
+                state:
+                    $ref: '#/components/schemas/PetState'
+                streak_days:
+                    type: integer
+                updated_at:
+                    type: string
+                user_id:
+                    type: string
+                xp:
+                    type: integer
+            type: object
+        PetStage:
+            enum:
+                - egg
+                - baby
+                - teen
+                - adult
+                - legend
+            type: string
+            x-enum-varnames:
+                - StageEgg
+                - StageBaby
+                - StageTeen
+                - StageAdult
+                - StageLegend
+        PetState:
+            enum:
+                - happy
+                - neutral
+                - sad
+                - sleeping
+            type: string
+            x-enum-varnames:
+                - StateHappy
+                - StateNeutral
+                - StateSad
+                - StateSleeping
+        Progress:
+            properties:
+                freezes:
+                    type: integer
+                is_max_level:
+                    type: boolean
+                level:
+                    type: integer
+                next_level_xp:
+                    type: integer
+                stage:
+                    $ref: '#/components/schemas/PetStage'
+                streak_days:
+                    type: integer
+                xp:
+                    type: integer
+                xp_to_next_level:
+                    type: integer
+            type: object
+        RaccoonProfile:
+            properties:
+                badges:
+                    items:
+                        $ref: '#/components/schemas/Badge'
+                    type: array
+                    uniqueItems: false
+                current_streak:
+                    type: integer
+                id:
+                    type: string
+                level:
+                    type: integer
+                name:
+                    type: string
+                stage:
+                    type: string
+                state:
+                    type: string
+                user_id:
+                    type: string
+                xp:
+                    type: integer
+                xp_to_next_level:
+                    type: integer
+            type: object
+        RegisterRequest:
+            properties:
+                email:
+                    type: string
+                full_name:
+                    type: string
+                password:
+                    maxLength: 72
+                    minLength: 8
+                    type: string
+            required:
+                - email
+                - full_name
+                - password
+            type: object
+        Reward:
+            properties:
+                claimed:
+                    type: boolean
+                condition_type:
+                    type: string
+                condition_value:
+                    type: integer
+                description:
+                    type: string
+                id:
+                    type: string
+                kind:
+                    type: string
+                progress_current:
+                    type: integer
+                progress_target:
+                    type: integer
+                status:
+                    type: string
+                title:
+                    type: string
+                unlocked:
+                    type: boolean
+            type: object
+        RewardCatalogResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/Reward'
+                    type: array
+                    uniqueItems: false
+                next_cursor:
+                    type: string
+            type: object
+        RewardConditionType:
+            description: Тип условия открытия награды.
+            enum:
+                - level
+                - streak
+                - achievement
+            type: string
+        RewardKind:
+            description: Тип награды — промокод, полезное действие или косметика.
+            enum:
+                - promo
+                - utility
+                - cosmetic
+            type: string
+        RewardStatus:
+            description: Состояние выданной награды.
+            enum:
+                - granted
+                - activated
+                - expired
+            type: string
+        Session:
+            properties:
+                token:
+                    type: string
+                user:
+                    $ref: '#/components/schemas/User'
+            type: object
+        Streak:
+            properties:
+                continued:
+                    type: boolean
+                days:
+                    type: integer
+                freeze_used:
+                    type: boolean
+                freezes_left:
+                    type: integer
+                milestone_bonus:
+                    type: integer
+                milestone_reached:
+                    type: integer
+                reset:
+                    type: boolean
+            type: object
+        SummaryAction:
+            description: Агрегат по одному типу действия за день.
+            properties:
+                action:
+                    description: Код действия.
+                    type: string
+                amount:
+                    description: Суммарный опыт, начисленный за эти действия.
+                    type: integer
+                count:
+                    description: Сколько раз действие совершено.
+                    minimum: 0
+                    type: integer
+            required:
+                - action
+                - count
+                - amount
+            type: object
+        SummaryAdvice:
+            description: Подсказка следующего действия, иногда с привязкой к объявлению.
+            properties:
+                action:
+                    description: Машиночитаемый код рекомендуемого действия.
+                    type: string
+                item_id:
+                    description: Объявление, к которому относится совет. Опускается, если совет общий.
+                    format: uuid
+                    type: string
+                text:
+                    type: string
+            required:
+                - text
+                - action
+            type: object
+        SummaryFacts:
+            description: Числовая часть сводки — то, из чего строится текст.
+            properties:
+                actions:
+                    items:
+                        $ref: '#/components/schemas/SummaryAction'
+                    type: array
+                badges:
+                    description: Идентификаторы бейджей за день. Пустой массив вместо `null`.
+                    items:
+                        type: string
+                    type: array
+                energy:
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                happiness:
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                issues_count:
+                    description: Сколько проблем питомца зафиксировано за день.
+                    minimum: 0
+                    type: integer
+                leaderboard_rank:
+                    description: Позиция в рейтинге. Опускается, если неизвестна.
+                    minimum: 1
+                    type: integer
+                level:
+                    minimum: 1
+                    type: integer
+                leveled_up:
+                    type: boolean
+                next_level_xp:
+                    minimum: 0
+                    type: integer
+                previous_level:
+                    minimum: 1
+                    type: integer
+                rewards:
+                    description: Идентификаторы наград за день. Пустой массив вместо `null`.
+                    items:
+                        type: string
+                    type: array
+                satiety:
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                stage:
+                    $ref: '#/components/schemas/PetStage'
+                state:
+                    $ref: '#/components/schemas/PetState'
+                streak_broken:
+                    type: boolean
+                streak_days:
+                    minimum: 0
+                    type: integer
+                total_xp:
+                    description: Весь опыт, набранный за день.
+                    type: integer
+                xp:
+                    minimum: 0
+                    type: integer
+                xp_to_next_level:
+                    minimum: 0
+                    type: integer
+            required:
+                - total_xp
+                - actions
+                - level
+                - previous_level
+                - leveled_up
+                - xp
+                - next_level_xp
+                - xp_to_next_level
+                - rewards
+                - badges
+                - stage
+                - state
+                - satiety
+                - happiness
+                - energy
+                - streak_days
+                - streak_broken
+                - issues_count
+            type: object
+        SummarySource:
+            description: Чем сгенерирован текст сводки.
+            enum:
+                - template
+                - llm
+            type: string
+        UpdateItemRequest:
+            properties:
+                attributes:
+                    additionalProperties:
+                        type: string
+                    type: object
+                description:
+                    maxLength: 5000
+                    type: string
+                price:
+                    minimum: 0
+                    type: integer
+                title:
+                    maxLength: 200
+                    minLength: 3
+                    type: string
+            type: object
+        UpdateProfileRequest:
+            properties:
+                full_name:
+                    type: string
+            required:
+                - full_name
+            type: object
+        User:
+            properties:
+                created_at:
+                    type: string
+                email:
+                    type: string
+                full_name:
+                    type: string
+                id:
+                    type: string
+                role:
+                    type: string
+            type: object
+        UserReward:
+            properties:
+                activated_at:
+                    type: string
+                code:
+                    type: string
+                description:
+                    type: string
+                expires_at:
+                    type: string
+                granted_at:
+                    type: string
+                kind:
+                    type: string
+                reward_id:
+                    type: string
+                status:
+                    type: string
+                title:
+                    type: string
+            type: object
+        UserRewardListResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/UserReward'
+                    type: array
+                    uniqueItems: false
+                next_cursor:
+                    type: string
+            type: object
+        WSClientMessage:
+            description: |
+                Сообщение клиента в WebSocket. Полезной нагрузки у клиентских
+                сообщений нет — действие полностью задаётся полем `type`.
+            properties:
+                request_id:
+                    description: |
+                        Произвольный идентификатор запроса. Сервер вернёт его в ответе,
+                        что позволяет соотнести ответ с запросом. Можно не передавать.
+                    type: string
+                type:
+                    description: |
+                        `ping` — проверка живости, `pet.get` — запрос состояния,
+                        `pet.pet` — погладить питомца.
+                    enum:
+                        - ping
+                        - pet.get
+                        - pet.pet
+                    type: string
+            required:
+                - type
+            type: object
+        WSErrorPayload:
+            description: |
+                Payload события `error`. Формат отличается от HTTP-конверта
+                `ErrorEnvelope` — здесь плоский объект без обёртки и без `request_id`.
+            properties:
+                code:
+                    description: |
+                        `unknown_message` — неизвестный тип сообщения,
+                        `internal_error` — не удалось выполнить действие.
+                    enum:
+                        - unknown_message
+                        - internal_error
+                    type: string
+                message:
+                    type: string
+            required:
+                - code
+                - message
+            type: object
+        WSLevelUpPayload:
+            description: Payload события `level.up`.
+            properties:
+                level:
+                    description: Новый достигнутый уровень.
+                    minimum: 1
+                    type: integer
+            required:
+                - level
+            type: object
+        WSRewardGrantedPayload:
+            description: |
+                Payload события `reward.granted`. Промокода здесь нет — награда
+                только выдана; код появляется после активации.
+            properties:
+                reward_id:
+                    type: string
+                title:
+                    type: string
+            required:
+                - reward_id
+                - title
+            type: object
+        WSServerMessage:
+            description: |
+                Сообщение сервера в WebSocket. Тип payload определяется полем `type`
+                согласно таблице в описании `GET /api/v1/ws`.
+            properties:
+                payload:
+                    description: |
+                        Содержимое события. Отсутствует у `pong`. Для `pet.state`,
+                        `pet.updated` и `pet.hatched` это `Pet`; для остальных —
+                        соответствующая `WS*Payload`-схема.
+                    oneOf:
+                        - $ref: '#/components/schemas/Pet'
+                        - $ref: '#/components/schemas/WSXPGainedPayload'
+                        - $ref: '#/components/schemas/WSLevelUpPayload'
+                        - $ref: '#/components/schemas/WSRewardGrantedPayload'
+                        - $ref: '#/components/schemas/WSStreakUpdatedPayload'
+                        - $ref: '#/components/schemas/WSErrorPayload'
+                request_id:
+                    description: |
+                        Копия `request_id` из запроса клиента. Отсутствует
+                        у широковещательных событий.
+                    type: string
+                type:
+                    enum:
+                        - pet.state
+                        - pet.updated
+                        - pet.hatched
+                        - xp.gained
+                        - level.up
+                        - reward.granted
+                        - streak.updated
+                        - error
+                        - pong
+                    type: string
+            required:
+                - type
+            type: object
+        WSStreakUpdatedPayload:
+            description: Payload события `streak.updated`.
+            properties:
+                days:
+                    description: Длина серии после обновления.
+                    minimum: 0
+                    type: integer
+                milestone:
+                    description: Взят ли рубежный день серии.
+                    type: boolean
+            required:
+                - days
+                - milestone
+            type: object
+        WSXPGainedPayload:
+            description: Payload события `xp.gained`.
+            properties:
+                amount:
+                    description: Сколько опыта начислено этим событием.
+                    type: integer
+                reason:
+                    description: Код причины начисления — какое действие его вызвало.
+                    type: string
+                total:
+                    description: Опыт в пределах текущего уровня после начисления.
+                    minimum: 0
+                    type: integer
+            required:
+                - amount
+                - reason
+                - total
+            type: object
+    securitySchemes:
+        bearerAuth:
+            bearerFormat: JWT
+            description: |
+                JWT, подписанный HS256. Клеймы: `sub` — UUID пользователя,
+                `role` — роль, `exp` — момент истечения, `iat` — момент выпуска,
+                `jti` — уникальный идентификатор токена.
+
+                Просроченный токен и токен с неверной подписью одинаково
+                дают 401 с кодом `unauthorized`.
+            in: header
+            name: Authorization
+            scheme: bearer
+            type: http
+info:
+    contact:
+        name: Avito Hack Team
+    description: |
+        API объявлений с игровым слоем: пользователь заводит объявления, добавляет фотографии,
+        ведёт избранное, а параллельно развивает питомца — за действия в маркетплейсе
+        начисляется опыт, растут уровень и стрик, открываются награды.
+
+        ## Конверт ошибок
+
+        Все ошибки возвращаются единым конвертом `ErrorEnvelope`:
+
+        ```json
+        {"error": {"code": "validation_error", "message": "title must be at least 3 characters", "field": "title", "request_id": "..."}}
+        ```
+
+        Поля `field` и `request_id` опциональны и опускаются, когда пусты.
+        Коды: `validation_error`, `bad_request`, `unauthorized`, `forbidden`,
+        `not_found`, `conflict`, `internal_error`.
+
+        ## Авторизация
+
+        JWT (HS256) передаётся в заголовке `Authorization: Bearer <token>`.
+        Срок жизни токена лежит в клейме `exp` внутри самого токена — отдельного поля
+        `expires_at` в ответах на регистрацию и вход нет. В клеймах также присутствуют
+        `sub` (идентификатор пользователя) и `role` (`user` | `moderator` | `admin`).
+        WebSocket авторизуется query-параметром `token`, так как браузерный
+        WebSocket API не позволяет задавать заголовки.
+
+        ## Пагинация
+
+        Списки используют keyset-курсоры, непрозрачные для клиента (base64url).
+        В проекте два независимых формата курсора:
+
+        - **Временной** (`created_at|id`) — объявления, избранное, история сводок.
+        - **Лидербордный** (`level|xp|user_id`) — только `GET /leaderboard`.
+
+        Курсоры не взаимозаменяемы. Ответ содержит `next_cursor`; поле отсутствует,
+        когда страница последняя. Параметр `limit` по умолчанию 20, максимум 100;
+        значения вне диапазона молча нормализуются, а не отклоняются.
+
+        ## Деньги
+
+        Цена объявления — целое число копеек в поле `price`. 1500000 означает 15 000 ₽.
+
+        ## Тело запроса
+
+        JSON-декодер работает в строгом режиме: неизвестные поля в теле приводят
+        к ответу 400 с кодом `bad_request`.
+    license:
+        name: MIT
+    summary: REST и WebSocket API маркетплейса с геймификацией (питомец-енот)
+    title: Avito Hack API
+    version: 1.0.0
+openapi: 3.1.0
+paths:
+    /api/v1/auth/login:
+        post:
+            description: |-
+                Проверяет пару e-mail/пароль и выдаёт JWT.
+
+                Идемпотентна по побочным эффектам, но каждый вызов выпускает новый токен
+                с новым `jti`. Срок действия — в клейме `exp`; отдельного поля
+                `expires_at` в ответе нет. Неверные учётные данные дают 401 без
+                уточнения, что именно неверно.
+            operationId: login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LoginRequest'
+                description: Учётные данные
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Session'
+                    description: Токен выдан
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Неверный e-mail или пароль
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - {}
+            summary: Вход
+            tags:
+                - Auth
+    /api/v1/auth/register:
+        post:
+            description: |-
+                Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `egg`.
+
+                Не идемпотентна: повторная регистрация того же e-mail даёт 409.
+                Ответ совпадает по форме с `POST /api/v1/auth/login` — сразу приходит
+                токен, отдельный вход после регистрации не нужен. Поля `expires_at` нет:
+                срок жизни лежит в claim `exp` внутри самого JWT.
+
+                Пароль хранится как bcrypt-хеш. Ограничение длины пароля задаётся
+                доменом (`user/domain`), а не тегом `validate`, поэтому слишком короткий
+                пароль отклоняется с кодом `validation_error`, а не схемной ошибкой.
+            operationId: register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterRequest'
+                description: Учётные данные
+                required: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Session'
+                    description: Пользователь создан, сессия открыта
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: E-mail уже зарегистрирован
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - {}
+            summary: Регистрация пользователя
+            tags:
+                - Auth
+    /api/v1/badges:
+        get:
+            description: |-
+                Плоский массив бейджей — без обёртки `{items}` и без пагинации.
+                Поле `earned_at` пусто (и опущено) у ещё не полученных бейджей;
+                формат времени — RFC 3339 в UTC.
+            operationId: listBadges
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/Badge'
+                                type: array
+                    description: Массив бейджей
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Бейджи пользователя
+            tags:
+                - Raccoon
+    /api/v1/checkin:
+        post:
+            description: |-
+                Отмечает вход за текущий день, начисляет опыт и продлевает стрик.
+                Тело запроса не требуется.
+
+                Идемпотентна в пределах суток: повторный чек-ин в тот же день
+                даёт 409 (`action has already been performed today`). Именно этот
+                конфликт — нормальный, ожидаемый ответ для клиента, который
+                не знает, был ли уже чек-ин.
+
+                Логика стрика:
+
+                - Вход на следующий день после предыдущего — стрик продолжается
+                (`continued: true`).
+                - Пропуск дня при наличии заморозки — она тратится
+                (`freeze_used: true`), стрик сохраняется. Заморозок не больше 3.
+                - Пропуск дня без заморозки — стрик обнуляется (`reset: true`).
+                - На рубежных значениях стрика начисляется бонус
+                (`milestone_bonus` > 0, `milestone_reached` — достигнутый рубеж).
+
+                Побочные эффекты: начисление опыта, возможный рост уровня,
+                автоматическая выдача наград, для которых выполнились условия
+                (их идентификаторы — в `unlocked_rewards`). По WebSocket уходят
+                `xp.gained`, при росте уровня `level.up`, при выдаче наград
+                `reward.granted`, а также `streak.updated`.
+            operationId: checkIn
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CheckInResult'
+                    description: Чек-ин засчитан
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Чек-ин за сегодня уже выполнен
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Ежедневный чек-ин
+            tags:
+                - Pet
+    /api/v1/favorites:
+        get:
+            description: |-
+                Избранные объявления владельца токена, свежие сверху.
+                Пагинация — временной курсор по времени добавления в избранное.
+                Поле `photo_url` содержит первую фотографию объявления и опускается,
+                если фотографий нет.
+            operationId: listFavorites
+            parameters:
+                - description: Размер страницы. По умолчанию 20, максимум 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 100
+                    type: integer
+                - description: Временной курсор из `next_cursor` предыдущей страницы.
+                  in: query
+                  name: cursor
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FavoriteListResponse'
+                    description: Страница избранного
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Список избранного
+            tags:
+                - Favorites
+    /api/v1/items:
+        get:
+            description: |-
+                Анонимный доступ разрешён (`OptionalAuth`): токен читается, если передан,
+                но не требуется. Анонимно и для чужого пользователя видны только
+                объявления в статусах `published` и `sold`; владелец дополнительно видит
+                собственные черновики.
+
+                Пагинация — временной курсор. Побочных эффектов нет.
+            operationId: listItems
+            parameters:
+                - description: Размер страницы. По умолчанию 20, максимум 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 100
+                    type: integer
+                - description: Временной курсор из `next_cursor` предыдущей страницы.
+                  in: query
+                  name: cursor
+                  schema:
+                    type: string
+                - description: Фильтр по статусу.
+                  in: query
+                  name: status
+                  schema:
+                    enum:
+                        - draft
+                        - moderation
+                        - published
+                        - sold
+                        - archived
+                    type: string
+                - description: Фильтр по владельцу. Невалидный UUID даёт 400.
+                  in: query
+                  name: owner_id
+                  schema:
+                    format: uuid
+                    type: string
+                - description: Полнотекстовый поиск по заголовку.
+                  in: query
+                  name: search
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ItemListResponse'
+                    description: Страница объявлений
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+                - {}
+            summary: Публичный список объявлений
+            tags:
+                - Items
+        post:
+            description: |-
+                Создаёт объявление в статусе `draft` от имени владельца токена.
+
+                Не идемпотентна — каждый вызов создаёт новую запись.
+
+                Побочный эффект: публикуется доменное событие, на которое подписан
+                игровой модуль. Опыт за создание объявления начисляется асинхронно
+                (через Kafka либо через in-process шину, если Kafka выключена),
+                поэтому в ответе изменение XP не отражается — его нужно получать
+                из WebSocket-события `xp.gained` или повторным `GET /api/v1/pet`.
+            operationId: createItem
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateItemRequest'
+                description: Данные объявления
+                required: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Item'
+                    description: Объявление создано
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Создание объявления
+            tags:
+                - Items
+    /api/v1/items/{id}:
+        get:
+            description: |-
+                Анонимный доступ разрешён. Чужой черновик или архив отдаётся как 404,
+                а не 403, чтобы не раскрывать существование записи.
+            operationId: getItem
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Item'
+                    description: Объявление
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+                - {}
+            summary: Объявление по идентификатору
+            tags:
+                - Items
+        patch:
+            description: |-
+                Частичное обновление: все поля тела необязательны, применяются только
+                переданные. Доступно только владельцу — чужое объявление даёт 403.
+
+                Идемпотентна: повтор с тем же телом приводит к тому же состоянию.
+                Терминальные статусы (`sold`) редактировать нельзя — 409.
+            operationId: updateItem
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateItemRequest'
+                description: Изменяемые поля
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Item'
+                    description: Объявление обновлено
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Conflict
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Редактирование объявления
+            tags:
+                - Items
+    /api/v1/items/{id}/favorite:
+        delete:
+            description: |-
+                Идемпотентна: удаление отсутствующей записи также даёт 204.
+                Тело ответа пустое. Опыт за удаление не начисляется и не отнимается.
+            operationId: removeFavorite
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "204":
+                    description: Убрано из избранного
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Убрать из избранного
+            tags:
+                - Favorites
+        post:
+            description: |-
+                Идемпотентна: повторное добавление того же объявления не создаёт дубль
+                и возвращает те же 204 (ограничение уникальности пары пользователь-объявление
+                обрабатывается как no-op). Тело ответа пустое.
+
+                Побочный эффект: первое добавление порождает доменное событие,
+                за которое питомцу асинхронно начисляется опыт. Повторное добавление
+                опыт не приносит.
+            operationId: addFavorite
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "204":
+                    description: Добавлено в избранное
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Добавить в избранное
+            tags:
+                - Favorites
+    /api/v1/items/{id}/photos:
+        get:
+            description: |-
+                Отдаёт плоский массив фотографий, отсортированный по `position`.
+                Ответ НЕ обёрнут в `{items, next_cursor}` — это голый массив,
+                в отличие от прочих списков. Анонимный доступ разрешён.
+            operationId: listItemPhotos
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/ItemPhoto'
+                                type: array
+                    description: Массив фотографий
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+                - {}
+            summary: Фотографии объявления
+            tags:
+                - Photos
+        post:
+            description: |-
+                Загрузка одного файла через `multipart/form-data`, поле формы — `photo`.
+
+                Ограничения:
+
+                - Тип определяется по содержимому (сниффинг первых 512 байт),
+                а не по заголовку `Content-Type` части. Допустимы только
+                `image/jpeg`, `image/png`, `image/webp`.
+                - Размер ограничен настройкой `MaxPhotoBytes` (по умолчанию 5 МиБ);
+                превышение даёт 400 с `field: photo`.
+                - Не более 10 фотографий на объявление (`position` от 0 до 9,
+                CHECK-ограничение); одиннадцатая загрузка даёт 409.
+
+                Не идемпотентна: каждый вызов создаёт новую фотографию с новым `position`.
+
+                Побочный эффект: доменное событие о добавлении фотографии
+                асинхронно приносит питомцу опыт.
+            operationId: addItemPhoto
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            requestBody:
+                content:
+                    multipart/form-data:
+                        schema:
+                            properties:
+                                photo:
+                                    description: Файл изображения — jpeg, png или webp.
+                                    format: binary
+                                    type: string
+                            required:
+                                - photo
+                            type: object
+                description: Файл изображения — jpeg, png или webp.
+                required: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ItemPhoto'
+                    description: Фотография загружена
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Файл отсутствует, слишком велик или имеет недопустимый тип.
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Достигнут лимит в 10 фотографий
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Загрузка фотографии
+            tags:
+                - Photos
+    /api/v1/items/{id}/photos/{photoID}:
+        delete:
+            description: |-
+                Удаляет фотографию объявления. Доступно только владельцу объявления.
+                Идемпотентна по результату для клиента, но повторный вызов вернёт 404,
+                так как записи уже нет. Тело ответа пустое.
+            operationId: deleteItemPhoto
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+                - description: Идентификатор фотографии.
+                  in: path
+                  name: photoID
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "204":
+                    description: Фотография удалена
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Удаление фотографии
+            tags:
+                - Photos
+    /api/v1/items/{id}/status:
+        post:
+            description: |-
+                Переводит объявление по конечному автомату статусов. Действие задаётся
+                полем `action`, а не целевым статусом.
+
+                Разрешённые переходы:
+
+                | Из | В |
+                |---|---|
+                | `draft` | `published`, `moderation`, `archived` |
+                | `moderation` | `published`, `draft`, `archived` |
+                | `published` | `sold`, `archived` |
+                | `sold` | — (терминальный) |
+                | `archived` | `draft` |
+
+                Соответствие действий: `submit` → `moderation`, `publish` → `published`,
+                `sell` → `sold`, `archive` → `archived`, `restore` → `draft`.
+
+                Недопустимый переход даёт 409. Доступно только владельцу.
+
+                Побочный эффект: публикация (`publish`) и продажа (`sell`) порождают
+                доменные события, за которые игровой модуль асинхронно начисляет опыт
+                питомцу.
+            operationId: changeItemStatus
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeStatusRequest'
+                description: Действие
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Item'
+                    description: Статус изменён
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Переход не разрешён из текущего статуса
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Смена статуса объявления
+            tags:
+                - Items
+    /api/v1/items/mine:
+        get:
+            description: |-
+                Список объявлений владельца токена во всех статусах, включая черновики
+                и архив. Фильтр `owner_id` недоступен — владелец подставляется из токена.
+            operationId: listMyItems
+            parameters:
+                - description: Размер страницы. По умолчанию 20, максимум 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 100
+                    type: integer
+                - description: Временной курсор из `next_cursor` предыдущей страницы.
+                  in: query
+                  name: cursor
+                  schema:
+                    type: string
+                - description: Фильтр по статусу.
+                  in: query
+                  name: status
+                  schema:
+                    enum:
+                        - draft
+                        - moderation
+                        - published
+                        - sold
+                        - archived
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ItemListResponse'
+                    description: Страница объявлений
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Мои объявления
+            tags:
+                - Items
+    /api/v1/leaderboard:
+        get:
+            description: |-
+                Рейтинг по уровню, затем по опыту, затем по идентификатору (для
+                устойчивости порядка). Поле `my_rank` — позиция владельца токена;
+                `null`, если она неизвестна.
+
+                Пагинация использует ОТДЕЛЬНЫЙ формат курсора (`level|xp|user_id`),
+                несовместимый с временным курсором остальных списков. Передача
+                временного курсора сюда даёт 400 с `field: cursor`.
+
+                Параметр `around=me` переключает выдачу на окно вокруг позиции
+                текущего пользователя вместо начала таблицы. Любое иное значение
+                параметра игнорируется — сравнение строгое, только строка `me`.
+            operationId: getLeaderboard
+            parameters:
+                - description: Размер страницы. По умолчанию 20, максимум 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 100
+                    type: integer
+                - description: Лидербордный курсор из `next_cursor` предыдущей страницы.
+                  in: query
+                  name: cursor
+                  schema:
+                    type: string
+                - description: Значение `me` — показать окно вокруг позиции текущего пользователя.
+                  in: query
+                  name: around
+                  schema:
+                    enum:
+                        - me
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/LeaderboardResponse'
+                    description: Страница рейтинга
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Рейтинг пользователей
+            tags:
+                - Leaderboard
+    /api/v1/pet:
+        get:
+            description: |-
+                Текущее состояние питомца владельца токена. Питомец создаётся
+                автоматически при регистрации, поэтому 404 здесь не ожидается.
+
+                Побочный эффект чтения: перед выдачей применяется ленивое затухание
+                характеристик (`satiety`, `happiness`, `energy`) пропорционально времени,
+                прошедшему с `last_decay_time`. Поэтому два последовательных чтения
+                без действий пользователя могут вернуть разные значения характеристик
+                и производное поле `state`.
+            operationId: getPet
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Pet'
+                    description: Состояние питомца
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Состояние питомца
+            tags:
+                - Pet
+    /api/v1/pet/actions/stroke:
+        post:
+            description: |-
+                Повышает `happiness`. Тело запроса не требуется.
+
+                Не идемпотентна, но эффект ограничен: приросты счастья упираются
+                в потолок 100, а частота ограничена внутренним лимитом действий —
+                превышение даёт 409 (`action limit reached`).
+
+                Побочный эффект: если питомец на стадии `egg` и условия вылупления
+                выполнены, вызов может привести к вылуплению — тогда подписчикам
+                WebSocket уходит событие `pet.hatched`. Всем активным соединениям
+                пользователя также рассылается `pet.updated`.
+            operationId: strokePet
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Pet'
+                    description: Обновлённое состояние питомца
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Лимит действий исчерпан
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Погладить питомца
+            tags:
+                - Pet
+    /api/v1/progress:
+        get:
+            description: |-
+                Компактная выжимка для полосы прогресса: уровень, опыт, сколько
+                осталось до следующего уровня, стадия и стрик. Подмножество данных
+                `GET /api/v1/pet` — отдельный запрос нужен, чтобы не тянуть
+                характеристики питомца ради шапки интерфейса.
+
+                На максимальном уровне `is_max_level` равно `true`, а `xp_to_next_level`
+                равно нулю.
+            operationId: getProgress
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Progress'
+                    description: Прогресс
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Прогресс уровня и стрика
+            tags:
+                - Pet
+    /api/v1/raccoon/profile:
+        get:
+            description: |-
+                Альтернативное представление того же питомца, ориентированное на
+                экран профиля: уровень, опыт, остаток до следующего уровня, стрик,
+                стадия, состояние и заработанные бейджи.
+
+                Данные берутся из того же сервиса, что и `GET /api/v1/pet`, но поля
+                названы иначе — `xp_to_next_level` вместо `next_level_xp`,
+                `current_streak` вместо `streak_days`. Все идентификаторы здесь
+                отдаются строками, хотя по сути являются UUID.
+            operationId: getRaccoonProfile
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RaccoonProfile'
+                    description: Профиль енота
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Профиль енота
+            tags:
+                - Raccoon
+    /api/v1/rewards:
+        get:
+            description: |-
+                Полный каталог наград с отметкой прогресса текущего пользователя:
+                `unlocked` — условие выполнено, `claimed` — награда уже выдана,
+                `progress_current`/`progress_target` — прогресс к условию.
+
+                Ответ обёрнут в `{items, next_cursor}` ради единообразия, но
+                пагинации нет: каталог отдаётся целиком, `next_cursor` всегда пуст
+                и потому отсутствует в JSON.
+            operationId: listRewardCatalog
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RewardCatalogResponse'
+                    description: Каталог наград
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Каталог наград
+            tags:
+                - Rewards
+    /api/v1/rewards/{id}/activate:
+        post:
+            description: |-
+                Превращает выданную награду в промокод. Код детерминированно
+                выводится через HMAC от идентификаторов пользователя и награды,
+                поэтому одна и та же награда всегда даёт один и тот же код.
+
+                Не идемпотентна на уровне ответа: первая активация даёт 200,
+                повторная — 409 (`reward has already been activated`).
+
+                Ошибки:
+
+                - награда не выдана пользователю — 400, `field: reward_id`;
+                - условие награды не выполнено — 400, `field: reward_id`;
+                - награда уже активирована — 409;
+                - награда просрочена — 409;
+                - награда неактивируемая по своей природе — 409.
+            operationId: activateReward
+            parameters:
+                - description: Строковый идентификатор награды (например `streak_5`), НЕ UUID.
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    minLength: 1
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ActivateRewardResponse'
+                    description: Награда активирована
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Награда не выдана или условие не выполнено
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Награда уже активирована, просрочена или неактивируема
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Активация награды
+            tags:
+                - Rewards
+    /api/v1/rewards/claim:
+        post:
+            description: |-
+                Вариант активации награды из модуля енота: идентификатор награды
+                передаётся в теле, а не в пути, и в ответе поле называется
+                `promocode`, а не `code`.
+
+                Функционально дублирует `POST /api/v1/rewards/{id}/activate`
+                и работает поверх того же сервиса наград. Для нового кода
+                предпочтительна версия с идентификатором в пути.
+
+                Не идемпотентна: повторный вызов для уже активированной награды
+                даёт 409.
+            operationId: claimReward
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ClaimRewardRequest'
+                description: Идентификатор награды
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ClaimRewardResponse'
+                    description: Промокод выдан
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Conflict
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Получить промокод награды
+            tags:
+                - Raccoon
+    /api/v1/rewards/my:
+        get:
+            description: |-
+                Награды, выданные текущему пользователю. Поле `code` — промокод —
+                заполняется только после активации; до неё оно опущено.
+                `next_cursor` всегда пуст, пагинации нет.
+            operationId: listMyRewards
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserRewardListResponse'
+                    description: Выданные награды
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Мои награды
+            tags:
+                - Rewards
+    /api/v1/summary/history:
+        get:
+            description: |
+                Постраничная история ежедневных сводок, свежие сверху.
+                Пагинация — временной курсор.
+            operationId: getSummaryHistory
+            parameters:
+                - $ref: '#/components/parameters/Limit'
+                - $ref: '#/components/parameters/TimeCursor'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DailySummaryListResponse'
+                    description: Страница сводок
+                "400":
+                    $ref: '#/components/responses/BadRequest'
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "500":
+                    $ref: '#/components/responses/InternalError'
+            summary: История сводок
+            tags:
+                - Summary
+    /api/v1/summary/today:
+        get:
+            description: |
+                Сводка достижений за текущий день: сколько опыта набрано, какие
+                действия совершены, изменился ли уровень, состояние питомца, стрик
+                и позиция в рейтинге. Поле `generated_by` показывает, собран ли
+                текст шаблоном (`template`) или языковой моделью (`llm`).
+
+                Поле `advice` — опциональная подсказка следующего действия,
+                иногда с привязкой к конкретному объявлению (`item_id`).
+            operationId: getTodaySummary
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DailySummary'
+                    description: Сводка за сегодня
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/NotFound'
+                "500":
+                    $ref: '#/components/responses/InternalError'
+            summary: Сводка за сегодня
+            tags:
+                - Summary
+    /api/v1/users/me:
+        get:
+            description: Возвращает профиль владельца токена. Идентификатор берётся из клейма `sub`.
+            operationId: getMe
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/User'
+                    description: Профиль
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Профиль текущего пользователя
+            tags:
+                - Users
+        patch:
+            description: |-
+                Меняет отображаемое имя. Несмотря на метод PATCH, поле `full_name`
+                обязательно (`validate:"required"`) — частичное обновление без него
+                отклоняется. Идемпотентна: повтор с тем же значением даёт тот же результат.
+
+                Пустая строка и строка из одних пробелов запрещены
+                CHECK-ограничением `users_full_name_not_blank`.
+            operationId: updateMe
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateProfileRequest'
+                description: Новое имя
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/User'
+                    description: Профиль обновлён
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Обновление профиля
+            tags:
+                - Users
+    /api/v1/ws:
+        get:
+            description: |
+                Апгрейд HTTP-соединения до WebSocket для получения событий питомца
+                в реальном времени и выполнения лёгких действий без REST-запросов.
+
+                ## Подключение
+
+                ```
+                const ws = new WebSocket(`wss://host/api/v1/ws?token=${jwt}`);
+                ```
+
+                Авторизация — query-параметр `token` с тем же JWT, что и в
+                `Authorization: Bearer`. Заголовок здесь не используется, так как
+                браузерный WebSocket API не позволяет его задать. Отсутствующий или
+                невалидный токен даёт обычный HTTP-ответ 401 с конвертом `ErrorEnvelope` —
+                апгрейд не происходит.
+
+                Origin проверяется по списку `AllowedOrigins` из конфигурации;
+                запрос с чужого источника отклоняется на этапе рукопожатия.
+
+                ## Формат сообщений
+
+                Обе стороны обмениваются JSON-текстовыми кадрами.
+
+                Клиент → сервер (`WSClientMessage`):
+
+                ```json
+                {"type": "pet.get", "request_id": "req-1"}
+                ```
+
+                Сервер → клиент (`WSServerMessage`):
+
+                ```json
+                {"type": "pet.state", "request_id": "req-1", "payload": { ... }}
+                ```
+
+                Поле `request_id` необязательно. Если клиент его прислал, сервер
+                вернёт то же значение в ответе — так соотносятся запрос и ответ.
+                Широковещательные события (`pet.updated`, `xp.gained` и прочие)
+                приходят без `request_id`, потому что не являются ответом на запрос.
+
+                ## Сообщения клиента
+
+                | `type` | Действие | Ответ |
+                |---|---|---|
+                | `ping` | Проверка живости на уровне приложения | `pong` без payload |
+                | `pet.get` | Запросить текущее состояние | `pet.state` |
+                | `pet.pet` | Погладить питомца | `pet.state` с обновлённым состоянием |
+
+                Неизвестный `type` даёт `error` с кодом `unknown_message`.
+                Ошибка при выполнении действия даёт `error` с кодом `internal_error`.
+
+                ## Сообщения сервера
+
+                | `type` | Payload | Когда приходит |
+                |---|---|---|
+                | `pet.state` | `Pet` | Ответ на `pet.get` или `pet.pet` |
+                | `pet.updated` | `Pet` | Состояние изменилось любым путём, включая REST |
+                | `pet.hatched` | `Pet` | Питомец вылупился из яйца |
+                | `xp.gained` | `WSXPGainedPayload` | Начислен опыт |
+                | `level.up` | `WSLevelUpPayload` | Достигнут новый уровень |
+                | `reward.granted` | `WSRewardGrantedPayload` | Выдана награда |
+                | `streak.updated` | `WSStreakUpdatedPayload` | Изменился стрик |
+                | `error` | `WSErrorPayload` | Ошибка обработки сообщения |
+                | `pong` | отсутствует | Ответ на `ping` |
+
+                Широковещательные события рассылаются на ВСЕ активные соединения
+                пользователя, поэтому действие в одной вкладке немедленно
+                отражается в остальных.
+
+                ## Таймауты и лимиты
+
+                - Размер входящего кадра — не более 4096 байт; превышение закрывает
+                  соединение со статусом 1007 (`invalid frame payload data`).
+                - Сервер шлёт протокольный ping каждые 30 секунд; отсутствие
+                  понга закрывает соединение со статусом 1001 (`going away`).
+                - Если клиент молчит дольше 90 секунд, чтение обрывается по таймауту.
+                  Прикладной `ping` сбрасывает этот таймер — его стоит слать
+                  с интервалом порядка 30 секунд.
+                - Исходящая очередь на соединение — 32 сообщения. При переполнении
+                  новые события ТИХО ОТБРАСЫВАЮТСЯ, соединение не закрывается.
+                  Медленный клиент теряет события, поэтому состояние, критичное
+                  для отображения, стоит периодически подтверждать через `pet.get`.
+            operationId: petWebSocket
+            parameters:
+                - description: JWT доступа — тот же, что и в заголовке `Authorization`.
+                  in: query
+                  name: token
+                  required: true
+                  schema:
+                    type: string
+                - in: header
+                  name: Upgrade
+                  required: true
+                  schema:
+                    const: websocket
+                    type: string
+                - in: header
+                  name: Connection
+                  required: true
+                  schema:
+                    const: Upgrade
+                    type: string
+                - in: header
+                  name: Sec-WebSocket-Version
+                  required: true
+                  schema:
+                    const: "13"
+                    type: string
+                - description: Base64-ключ рукопожатия, генерируется клиентом.
+                  in: header
+                  name: Sec-WebSocket-Key
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "101":
+                    description: Протокол переключён на WebSocket
+                    headers:
+                        Connection:
+                            schema:
+                                const: Upgrade
+                                type: string
+                        Sec-WebSocket-Accept:
+                            schema:
+                                type: string
+                        Upgrade:
+                            schema:
+                                const: websocket
+                                type: string
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Токен отсутствует или невалиден — апгрейд не выполнен
+                "403":
+                    description: Origin не входит в список разрешённых
+            security: []
+            summary: WebSocket-канал питомца
+            tags:
+                - WebSocket
+    /healthz:
+        get:
+            description: |
+                Всегда отвечает 200, пока процесс жив. Зависимости не проверяет —
+                подходит для liveness-пробы, но не для readiness.
+            operationId: health
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            examples:
+                                default:
+                                    value:
+                                        status: ok
+                            schema:
+                                properties:
+                                    status:
+                                        const: ok
+                                        type: string
+                                required:
+                                    - status
+                                type: object
+                    description: Процесс жив
+            security: []
+            summary: Проверка живости
+            tags:
+                - System
+    /metrics:
+        get:
+            description: |
+                Метрики в текстовом формате Prometheus: счётчики и гистограммы
+                HTTP-запросов из middleware, плюс стандартные метрики Go-рантайма.
+                Эндпоинт не защищён — в продакшене его следует закрывать на уровне
+                reverse-proxy.
+            operationId: metrics
+            responses:
+                "200":
+                    content:
+                        text/plain:
+                            schema:
+                                type: string
+                    description: Метрики
+            security: []
+            summary: Метрики Prometheus
+            tags:
+                - System
+    /readyz:
+        get:
+            description: |
+                Пингует базу данных с таймаутом 2 секунды. Недоступность БД даёт 503 —
+                readiness-проба для оркестратора.
+            operationId: ready
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    status:
+                                        const: ready
+                                        type: string
+                                required:
+                                    - status
+                                type: object
+                    description: Сервис готов принимать трафик
+                "503":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    status:
+                                        const: unavailable
+                                        type: string
+                                required:
+                                    - status
+                                type: object
+                    description: База данных недоступна
+            security: []
+            summary: Проверка готовности
+            tags:
+                - System
+    /uploads/{itemID}/{filename}:
+        get:
+            description: |
+                Раздача загруженных фотографий с диска. Путь имеет ровно два
+                сегмента — идентификатор объявления и имя файла; любая другая
+                глубина вложенности даёт 404.
+
+                Доступ ограничен видимостью объявления: файл отдаётся, только если
+                объявление не удалено и находится в статусе `published` или `sold`.
+                Фотографии черновиков и архива недоступны даже владельцу по прямой
+                ссылке — они возвращают 404.
+
+                Ответ снабжается заголовками `Cache-Control: private, max-age=86400`
+                и `X-Content-Type-Options: nosniff`.
+
+                Префикс пути задаётся настройкой `UPLOAD_URL`; при пустом значении
+                раздача не монтируется вовсе.
+            operationId: getUpload
+            parameters:
+                - description: Идентификатор объявления. Невалидный UUID даёт 404.
+                  in: path
+                  name: itemID
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+                - description: Имя файла на диске.
+                  in: path
+                  name: filename
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        image/jpeg:
+                            schema:
+                                format: binary
+                                type: string
+                        image/png:
+                            schema:
+                                format: binary
+                                type: string
+                        image/webp:
+                            schema:
+                                format: binary
+                                type: string
+                    description: Содержимое файла
+                    headers:
+                        Cache-Control:
+                            schema:
+                                const: private, max-age=86400
+                                type: string
+                        X-Content-Type-Options:
+                            schema:
+                                const: nosniff
+                                type: string
+                "404":
+                    description: Файл не найден или объявление невидимо
+                "503":
+                    description: Не удалось проверить видимость объявления
+            security: []
+            summary: Файл фотографии объявления
+            tags:
+                - System
+servers:
+    - description: Локальная разработка
+      url: http://localhost:8080
+    - description: Тот же хост, что и фронтенд (за общим reverse-proxy)
+      url: /
+tags:
+    - description: Регистрация и вход. Единственные публичные операции с побочными эффектами.
+      name: Auth
+    - description: Профиль текущего пользователя.
+      name: Users
+    - description: Объявления — создание, редактирование, смена статуса, публичные списки.
+      name: Items
+    - description: Фотографии объявлений. Загрузка через multipart, раздача через `/uploads`.
+      name: Photos
+    - description: Избранные объявления пользователя.
+      name: Favorites
+    - description: Состояние питомца, поглаживание, ежедневный чек-ин, прогресс.
+      name: Pet
+    - description: Каталог наград, выданные награды и их активация.
+      name: Rewards
+    - description: Рейтинг пользователей по уровню и опыту.
+      name: Leaderboard
+    - description: |
+        Ежедневные сводки достижений: что сделано за день, сколько опыта набрано,
+        как это отразилось на питомце. Текст собирается шаблоном либо языковой
+        моделью — источник виден в поле `generated_by`.
+      name: Summary
+    - description: Альтернативное представление питомца (енот) — профиль, бейджи, получение промокода.
+      name: Raccoon
+    - name: System

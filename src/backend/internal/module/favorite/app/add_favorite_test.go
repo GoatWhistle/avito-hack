@@ -55,12 +55,6 @@ func (s *stubRepository) Remove(_ context.Context, userID, itemID uuid.UUID) err
 	return nil
 }
 
-func (s *stubRepository) Exists(_ context.Context, userID, itemID uuid.UUID) (bool, error) {
-	_, ok := s.stored[key(userID, itemID)]
-
-	return ok, nil
-}
-
 type stubItems struct{ exists bool }
 
 func (s stubItems) Exists(context.Context, uuid.UUID) (bool, error) { return s.exists, nil }

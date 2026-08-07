@@ -20,14 +20,16 @@ type RegisterUserCommand struct {
 }
 
 type RegisterUserResult struct {
-	User *domain.User
+	User  *domain.User
+	Token string
 }
 
 type RegisterUserHandler struct {
-	users domain.Repository
-	tx    TxManager
-	clock Clock
-	bus   events.Publisher
+	users  domain.Repository
+	tx     TxManager
+	clock  Clock
+	bus    events.Publisher
+	tokens TokenIssuer
 }
 
 func NewRegisterUserHandler(
@@ -35,12 +37,13 @@ func NewRegisterUserHandler(
 	tx TxManager,
 	clock Clock,
 	bus events.Publisher,
+	tokens TokenIssuer,
 ) *RegisterUserHandler {
 	if bus == nil {
 		bus = events.NopPublisher{}
 	}
 
-	return &RegisterUserHandler{users: users, tx: tx, clock: clock, bus: bus}
+	return &RegisterUserHandler{users: users, tx: tx, clock: clock, bus: bus, tokens: tokens}
 }
 
 func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (RegisterUserResult, error) {
@@ -86,13 +89,22 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 		return RegisterUserResult{}, err
 	}
 
-	return RegisterUserResult{User: user}, nil
+	token, _, err := h.tokens.Issue(user.Actor())
+	if err != nil {
+		return RegisterUserResult{}, fmt.Errorf("issue token: %w", err)
+	}
+
+	return RegisterUserResult{User: user, Token: token}, nil
 }
 
 func mapPasswordError(err error) error {
 	switch {
-	case errors.Is(err, password.ErrTooShort), errors.Is(err, password.ErrTooLong):
-		return domainerr.NewInvalid("password", "field is required")
+	case errors.Is(err, password.ErrTooShort):
+		return domainerr.NewInvalid("password",
+			fmt.Sprintf("must be at least %d characters", password.MinLength))
+	case errors.Is(err, password.ErrTooLong):
+		return domainerr.NewInvalid("password",
+			fmt.Sprintf("must be at most %d characters", password.MaxLength))
 	default:
 		return fmt.Errorf("hash password: %w", err)
 	}

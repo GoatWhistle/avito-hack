@@ -32,7 +32,7 @@ func New(opts Options) *Module {
 	repo := infra.NewPgRepository(opts.Pool)
 
 	handlers := api.NewHandlers(api.Deps{
-		Register:      app.NewRegisterUserHandler(repo, opts.Tx, opts.Clock, opts.Bus),
+		Register:      app.NewRegisterUserHandler(repo, opts.Tx, opts.Clock, opts.Bus, opts.Tokens),
 		Login:         app.NewLoginUserHandler(repo, opts.Tokens),
 		GetProfile:    app.NewGetProfileHandler(repo),
 		UpdateProfile: app.NewUpdateProfileHandler(repo, opts.Tx, opts.Clock),

@@ -60,48 +60,6 @@ func TestZeroMoney(t *testing.T) {
 	assert.False(t, vo.MustMoney(1).IsZero())
 }
 
-func TestMoneyAdd(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		a    int64
-		b    int64
-		want int64
-	}{
-		{name: "zero plus zero", a: 0, b: 0, want: 0},
-		{name: "zero plus value", a: 0, b: 250, want: 250},
-		{name: "two values", a: 199, b: 801, want: 1000},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			sum := vo.MustMoney(tt.a).Add(vo.MustMoney(tt.b))
-
-			assert.Equal(t, tt.want, sum.Kopeks())
-		})
-	}
-}
-
-func TestMoneyAddIsImmutable(t *testing.T) {
-	t.Parallel()
-
-	base := vo.MustMoney(100)
-	_ = base.Add(vo.MustMoney(50))
-
-	assert.Equal(t, int64(100), base.Kopeks())
-}
-
-func TestMoneyEqual(t *testing.T) {
-	t.Parallel()
-
-	assert.True(t, vo.MustMoney(100).Equal(vo.MustMoney(100)))
-	assert.False(t, vo.MustMoney(100).Equal(vo.MustMoney(101)))
-	assert.True(t, vo.ZeroMoney().Equal(vo.MustMoney(0)))
-}
-
 func TestMoneyString(t *testing.T) {
 	t.Parallel()
 

@@ -12,18 +12,9 @@ const (
 	dailyLoginXP          = 1
 	searchSubscriptionXP  = 3
 	favoriteXP            = 1
-	newDialogueXP         = 2
-	quickReplyXP          = 3
 	qualityListingXP      = 2
-	textReviewXP          = 1
-	photoReviewXP         = 2
-	videoReviewXP         = 4
 	qualityDescriptionLen = 200
 	qualityVideoBonusXP   = 4
-	quickReplyLimit       = time.Hour
-	videoReviewMinLength  = 30 * time.Second
-	daytimeStartHour      = 8
-	daytimeEndHour        = 23
 	moscowOffsetSeconds   = 3 * 60 * 60
 	streakBonusDays       = 7
 	streakBonusFactor     = 1.5
@@ -49,13 +40,6 @@ type QualityListing struct {
 	HasVideo    bool
 	Description string
 	Now         time.Time
-}
-
-type Review struct {
-	ConfirmedDeal bool
-	HasAttachment bool
-	VideoDuration time.Duration
-	Now           time.Time
 }
 
 func (p *Pet) DailyCheckIn(now time.Time) (Progress, error) {
@@ -100,25 +84,6 @@ func (p *Pet) RewardFavorite(action LimitedAction) (Progress, error) {
 	return p.rewardLimited(action, MaxFavoritesPerDay, favoriteXP)
 }
 
-func (p *Pet) RewardNewDialogue(action LimitedAction) (Progress, error) {
-	if action.SubjectID == uuid.Nil {
-		return Progress{}, ErrInvalidAction
-	}
-	if !action.Unique {
-		return Progress{}, ErrDuplicateAction
-	}
-
-	return p.applyAward(newDialogueXP, action.Now), nil
-}
-
-func (p *Pet) RewardQuickReply(delay time.Duration, now time.Time) (Progress, error) {
-	if delay < 0 || delay > quickReplyLimit || !isDaytime(now) {
-		return Progress{}, ErrConditionNotMet
-	}
-
-	return p.applyAward(quickReplyXP, now), nil
-}
-
 func (p *Pet) RewardQualityListing(listing QualityListing) (Progress, error) {
 	if !listing.HasPhoto || !listing.HasPrice || !hasQualityDescription(listing.Description) {
 		return Progress{}, ErrConditionNotMet
@@ -134,30 +99,6 @@ func (p *Pet) RewardQualityListing(listing QualityListing) (Progress, error) {
 
 func hasQualityDescription(description string) bool {
 	return utf8.RuneCountInString(description) > qualityDescriptionLen
-}
-
-func (p *Pet) RewardTextReview(review Review) (Progress, error) {
-	if !review.ConfirmedDeal {
-		return Progress{}, ErrConditionNotMet
-	}
-
-	return p.applyAward(textReviewXP, review.Now), nil
-}
-
-func (p *Pet) RewardPhotoReview(review Review) (Progress, error) {
-	if !review.ConfirmedDeal || !review.HasAttachment {
-		return Progress{}, ErrConditionNotMet
-	}
-
-	return p.applyAward(photoReviewXP, review.Now), nil
-}
-
-func (p *Pet) RewardVideoReview(review Review) (Progress, error) {
-	if !review.ConfirmedDeal || review.VideoDuration <= videoReviewMinLength {
-		return Progress{}, ErrConditionNotMet
-	}
-
-	return p.applyAward(videoReviewXP, review.Now), nil
 }
 
 func (p *Pet) rewardLimited(action LimitedAction, limit, amount int) (Progress, error) {
@@ -189,10 +130,4 @@ func day(value time.Time) time.Time {
 	year, month, date := local.Date()
 
 	return time.Date(year, month, date, 0, 0, 0, 0, moscowZone)
-}
-
-func isDaytime(now time.Time) bool {
-	hour := now.In(moscowZone).Hour()
-
-	return hour >= daytimeStartHour && hour < daytimeEndHour
 }

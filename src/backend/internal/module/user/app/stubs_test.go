@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/avito-hack/backend/internal/module/user/app"
 	"github.com/avito-hack/backend/internal/module/user/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/vo"
@@ -36,6 +37,22 @@ func (s stubTokens) Issue(auth.Actor) (string, time.Time, error) {
 	}
 
 	return s.token, fixedNow.Add(time.Hour), nil
+}
+
+type actorCapturingTokens struct {
+	token string
+	actor auth.Actor
+}
+
+func (s *actorCapturingTokens) Issue(actor auth.Actor) (string, time.Time, error) {
+	s.actor = actor
+
+	return s.token, fixedNow.Add(time.Hour), nil
+}
+
+func newRegisterHandler(users domain.Repository) *app.RegisterUserHandler {
+	return app.NewRegisterUserHandler(
+		users, passthroughTx{}, fixedClock{}, nil, stubTokens{token: "signed.jwt.token"})
 }
 
 type stubUsers struct {

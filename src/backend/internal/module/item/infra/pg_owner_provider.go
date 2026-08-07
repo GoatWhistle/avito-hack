@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/avito-hack/backend/internal/module/item/app"
@@ -24,28 +25,27 @@ func (p *PgOwnerProvider) ByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.
 		return map[uuid.UUID]app.OwnerView{}, nil
 	}
 
-	const query = `SELECT id, full_name FROM users WHERE id = ANY($1)`
+	const query = `SELECT id, full_name FROM users WHERE id = ANY($1) AND deleted_at IS NULL`
 
-	rows, err := postgres.QuerierFrom(ctx, p.pool).Query(ctx, query, ids)
+	rows, err := postgres.QueryAll(ctx, postgres.QuerierFrom(ctx, p.pool), len(ids), scanOwner, query, ids)
 	if err != nil {
-		return nil, fmt.Errorf("query owners: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
 
-	owners := make(map[uuid.UUID]app.OwnerView, len(ids))
-
-	for rows.Next() {
-		var owner app.OwnerView
-		if err := rows.Scan(&owner.ID, &owner.DisplayName); err != nil {
-			return nil, fmt.Errorf("scan owner: %w", err)
-		}
-
+	owners := make(map[uuid.UUID]app.OwnerView, len(rows))
+	for _, owner := range rows {
 		owners[owner.ID] = owner
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate owners: %w", err)
+	return owners, nil
+}
+
+func scanOwner(row pgx.Row) (app.OwnerView, error) {
+	var owner app.OwnerView
+
+	if err := row.Scan(&owner.ID, &owner.DisplayName); err != nil {
+		return app.OwnerView{}, fmt.Errorf("scan owner: %w", err)
 	}
 
-	return owners, nil
+	return owner, nil
 }

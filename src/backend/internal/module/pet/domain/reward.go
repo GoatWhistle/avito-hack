@@ -136,12 +136,12 @@ func GrantReward(userID uuid.UUID, rewardID string, now time.Time) (UserReward, 
 	}, nil
 }
 
-func (u UserReward) ID() uuid.UUID          { return u.id }
-func (u UserReward) UserID() uuid.UUID      { return u.userID }
-func (u UserReward) RewardID() string       { return u.rewardID }
-func (u UserReward) Status() RewardStatus   { return u.status }
-func (u UserReward) Code() string           { return u.code }
-func (u UserReward) GrantedAt() time.Time   { return u.grantedAt }
+func (u UserReward) ID() uuid.UUID           { return u.id }
+func (u UserReward) UserID() uuid.UUID       { return u.userID }
+func (u UserReward) RewardID() string        { return u.rewardID }
+func (u UserReward) Status() RewardStatus    { return u.status }
+func (u UserReward) Code() string            { return u.code }
+func (u UserReward) GrantedAt() time.Time    { return u.grantedAt }
 func (u UserReward) ActivatedAt() *time.Time { return cloneTime(u.activatedAt) }
 func (u UserReward) ExpiresAt() *time.Time   { return cloneTime(u.expiresAt) }
 

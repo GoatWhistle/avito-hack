@@ -57,13 +57,14 @@ func TestHub_UnregisterStopsDelivery(t *testing.T) {
 	sink := &recordingSink{}
 
 	release := hub.Register(userID, sink)
-	require.True(t, hub.Online(userID))
-
-	release()
-	require.False(t, hub.Online(userID))
 
 	hub.Broadcast(userID, ws.Message{Type: "xp.gained"})
-	require.Equal(t, 0, sink.count())
+	require.Equal(t, 1, sink.count())
+
+	release()
+
+	hub.Broadcast(userID, ws.Message{Type: "xp.gained"})
+	require.Equal(t, 1, sink.count())
 }
 
 func TestHub_BroadcastToUnknownUserIsNoop(t *testing.T) {
@@ -93,5 +94,9 @@ func TestHub_ConcurrentRegisterAndBroadcast(t *testing.T) {
 	}
 	wg.Wait()
 
-	require.False(t, hub.Online(userID))
+	survivor := &recordingSink{}
+	hub.Register(userID, survivor)
+	hub.Broadcast(userID, ws.Message{Type: "streak.updated"})
+
+	require.Equal(t, 1, survivor.count())
 }

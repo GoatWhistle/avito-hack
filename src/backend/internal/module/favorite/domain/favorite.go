@@ -26,10 +26,6 @@ func New(userID, itemID uuid.UUID, now time.Time) (*Favorite, error) {
 	return &Favorite{userID: userID, itemID: itemID, createdAt: now}, nil
 }
 
-func Restore(userID, itemID uuid.UUID, createdAt time.Time) *Favorite {
-	return &Favorite{userID: userID, itemID: itemID, createdAt: createdAt}
-}
-
 func (f *Favorite) UserID() uuid.UUID    { return f.userID }
 func (f *Favorite) ItemID() uuid.UUID    { return f.itemID }
 func (f *Favorite) CreatedAt() time.Time { return f.createdAt }

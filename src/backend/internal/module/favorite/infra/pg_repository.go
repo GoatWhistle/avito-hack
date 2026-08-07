@@ -49,17 +49,6 @@ func (r *PgRepository) Remove(ctx context.Context, userID, itemID uuid.UUID) err
 	return nil
 }
 
-func (r *PgRepository) Exists(ctx context.Context, userID, itemID uuid.UUID) (bool, error) {
-	const query = `SELECT EXISTS (SELECT 1 FROM favorites WHERE user_id = $1 AND item_id = $2)`
-
-	var exists bool
-	if err := postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, userID, itemID).Scan(&exists); err != nil {
-		return false, fmt.Errorf("check favorite: %w", err)
-	}
-
-	return exists, nil
-}
-
 type PgItemChecker struct {
 	pool *pgxpool.Pool
 }

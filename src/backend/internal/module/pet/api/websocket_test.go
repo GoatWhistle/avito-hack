@@ -35,7 +35,8 @@ func TestWebSocketPing(t *testing.T) {
 	t.Parallel()
 
 	actor := auth.Actor{ID: uuid.New(), Role: auth.RoleUser}
-	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	var config net.ListenConfig
+	listener, err := config.Listen(t.Context(), "tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Skipf("local sockets are unavailable: %v", err)
 	}
@@ -46,8 +47,11 @@ func TestWebSocketPing(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	address := "ws" + strings.TrimPrefix(server.URL, "http") + "?token=valid"
-	conn, _, err := websocket.Dial(t.Context(), address, nil)
+	conn, resp, err := websocket.Dial(t.Context(), address, nil)
 	require.NoError(t, err)
+	if resp != nil && resp.Body != nil {
+		require.NoError(t, resp.Body.Close())
+	}
 	t.Cleanup(func() { _ = conn.Close(websocket.StatusNormalClosure, "test completed") })
 
 	require.NoError(t, wsjson.Write(t.Context(), conn, clientMessage{Type: messagePing, RequestID: "42"}))

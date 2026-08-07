@@ -1,0 +1,9 @@
+import type { defaultNamespace, resources } from './resources'
+
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: typeof defaultNamespace
+    resources: (typeof resources)['ru']
+    returnNull: false
+  }
+}

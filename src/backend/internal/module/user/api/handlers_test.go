@@ -1,135 +1,16 @@
 package api_test
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
-	"strings"
+	"sort"
 	"testing"
-	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/avito-hack/backend/internal/module/user/api"
-	"github.com/avito-hack/backend/internal/module/user/app"
-	"github.com/avito-hack/backend/internal/module/user/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
-	"github.com/avito-hack/backend/internal/shared/validate"
-	"github.com/avito-hack/backend/internal/shared/vo"
 )
-
-const testPassword = "correct horse battery"
-
-var fixedNow = time.Date(2026, time.April, 1, 10, 0, 0, 0, time.UTC)
-
-type fixedClock struct{}
-
-func (fixedClock) Now() time.Time { return fixedNow }
-
-type passthroughTx struct{}
-
-func (passthroughTx) WithTx(ctx context.Context, fn func(context.Context) error) error {
-	return fn(ctx)
-}
-
-type stubTokens struct{}
-
-func (stubTokens) Issue(auth.Actor) (string, time.Time, error) {
-	return "signed.jwt.token", fixedNow.Add(time.Hour), nil
-}
-
-type memoryUsers struct {
-	byID    map[uuid.UUID]*domain.User
-	byEmail map[string]*domain.User
-}
-
-func newMemoryUsers() *memoryUsers {
-	return &memoryUsers{byID: map[uuid.UUID]*domain.User{}, byEmail: map[string]*domain.User{}}
-}
-
-func (m *memoryUsers) Save(_ context.Context, user *domain.User) error {
-	m.byID[user.ID()] = user
-	m.byEmail[user.Email().String()] = user
-
-	return nil
-}
-
-func (m *memoryUsers) ByID(_ context.Context, id uuid.UUID) (*domain.User, error) {
-	user, ok := m.byID[id]
-	if !ok {
-		return nil, domain.ErrUserNotFound
-	}
-
-	return user, nil
-}
-
-func (m *memoryUsers) ByEmail(_ context.Context, email vo.Email) (*domain.User, error) {
-	user, ok := m.byEmail[email.String()]
-	if !ok {
-		return nil, domain.ErrUserNotFound
-	}
-
-	return user, nil
-}
-
-func (m *memoryUsers) ExistsByEmail(_ context.Context, email vo.Email) (bool, error) {
-	_, ok := m.byEmail[email.String()]
-
-	return ok, nil
-}
-
-func newRouter(t *testing.T, repo *memoryUsers, actor *auth.Actor) http.Handler {
-	t.Helper()
-
-	handlers := api.NewHandlers(api.Deps{
-		Register:      app.NewRegisterUserHandler(repo, passthroughTx{}, fixedClock{}, nil),
-		Login:         app.NewLoginUserHandler(repo, stubTokens{}),
-		GetProfile:    app.NewGetProfileHandler(repo),
-		UpdateProfile: app.NewUpdateProfileHandler(repo, passthroughTx{}, fixedClock{}),
-		Validator:     validate.New(),
-		MaxBodyBytes:  1 << 20,
-		Authenticate: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if actor == nil {
-					w.WriteHeader(http.StatusUnauthorized)
-
-					return
-				}
-
-				next.ServeHTTP(w, r.WithContext(auth.WithActor(r.Context(), *actor)))
-			})
-		},
-	})
-
-	router := chi.NewRouter()
-	handlers.RegisterRoutes(router)
-
-	return router
-}
-
-func do(t *testing.T, router http.Handler, method, path, body string) *httptest.ResponseRecorder {
-	t.Helper()
-
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	return rec
-}
-
-func decodeBody(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
-	t.Helper()
-
-	var body map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-
-	return body
-}
 
 func TestRegisterEndpoint(t *testing.T) {
 	t.Parallel()
@@ -143,11 +24,71 @@ func TestRegisterEndpoint(t *testing.T) {
 	require.Equal(t, http.StatusCreated, rec.Code)
 
 	body := decodeBody(t, rec)
-	assert.Equal(t, "new@example.com", body["email"])
-	assert.Equal(t, "Ivan", body["full_name"])
-	assert.Equal(t, "user", body["role"])
-	assert.NotEmpty(t, body["id"])
+	assert.Equal(t, "signed.jwt.token", body["token"])
+
+	user, ok := body["user"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "new@example.com", user["email"])
+	assert.Equal(t, "Ivan", user["full_name"])
+	assert.Equal(t, "user", user["role"])
+	assert.NotEmpty(t, user["id"])
 	assert.Len(t, repo.byID, 1)
+}
+
+func TestRegisterEndpointReturnsSameEnvelopeAsLogin(t *testing.T) {
+	t.Parallel()
+
+	repo := newMemoryUsers()
+	router := newRouter(t, repo, nil)
+
+	registerRec := do(t, router, http.MethodPost, "/auth/register",
+		`{"email":"envelope@example.com","password":"`+testPassword+`","full_name":"Ivan"}`)
+	require.Equal(t, http.StatusCreated, registerRec.Code)
+
+	loginRec := do(t, router, http.MethodPost, "/auth/login",
+		`{"email":"envelope@example.com","password":"`+testPassword+`"}`)
+	require.Equal(t, http.StatusOK, loginRec.Code)
+
+	registerBody := decodeBody(t, registerRec)
+	loginBody := decodeBody(t, loginRec)
+
+	assert.Equal(t, keysOf(loginBody), keysOf(registerBody))
+	assert.NotEmpty(t, registerBody["token"])
+	assert.NotContains(t, registerBody, "expires_at")
+}
+
+func TestRegisterTokenAuthenticatesFollowUpRequest(t *testing.T) {
+	t.Parallel()
+
+	repo := newMemoryUsers()
+	rec := do(t, newRouter(t, repo, nil), http.MethodPost, "/auth/register",
+		`{"email":"session@example.com","password":"`+testPassword+`","full_name":"Ivan"}`)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	body := decodeBody(t, rec)
+	require.NotEmpty(t, body["token"])
+
+	user, ok := body["user"].(map[string]any)
+	require.True(t, ok)
+
+	id, err := uuid.Parse(user["id"].(string))
+	require.NoError(t, err)
+
+	actor := auth.Actor{ID: id, Role: auth.RoleUser}
+	meRec := do(t, newRouter(t, repo, &actor), http.MethodGet, "/users/me", "")
+
+	require.Equal(t, http.StatusOK, meRec.Code)
+	assert.Equal(t, "session@example.com", decodeBody(t, meRec)["email"])
+}
+
+func keysOf(m map[string]any) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
 func TestRegisterEndpointRejectsBadPayloads(t *testing.T) {
@@ -207,7 +148,7 @@ func TestLoginEndpoint(t *testing.T) {
 
 	body := decodeBody(t, rec)
 	assert.Equal(t, "signed.jwt.token", body["token"])
-	assert.NotEmpty(t, body["expires_at"])
+	assert.NotContains(t, body, "expires_at")
 	require.Contains(t, body, "user")
 }
 

@@ -87,7 +87,7 @@ func TestUUIDParam(t *testing.T) {
 	t.Run("missing", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := httpx.UUIDParam(httptest.NewRequest(http.MethodGet, "/", nil), "id")
+		_, err := httpx.UUIDParam(httptest.NewRequest(http.MethodGet, "/", http.NoBody), "id")
 
 		require.Error(t, err)
 	})
@@ -101,7 +101,7 @@ func TestOptionalUUIDQuery(t *testing.T) {
 	t.Run("present", func(t *testing.T) {
 		t.Parallel()
 
-		req := httptest.NewRequest(http.MethodGet, "/?owner_id="+id.String(), nil)
+		req := httptest.NewRequest(http.MethodGet, "/?owner_id="+id.String(), http.NoBody)
 
 		parsed, ok, err := httpx.OptionalUUIDQuery(req, "owner_id")
 
@@ -113,7 +113,7 @@ func TestOptionalUUIDQuery(t *testing.T) {
 	t.Run("absent", func(t *testing.T) {
 		t.Parallel()
 
-		parsed, ok, err := httpx.OptionalUUIDQuery(httptest.NewRequest(http.MethodGet, "/", nil), "owner_id")
+		parsed, ok, err := httpx.OptionalUUIDQuery(httptest.NewRequest(http.MethodGet, "/", http.NoBody), "owner_id")
 
 		require.NoError(t, err)
 		assert.False(t, ok)
@@ -123,7 +123,7 @@ func TestOptionalUUIDQuery(t *testing.T) {
 	t.Run("malformed", func(t *testing.T) {
 		t.Parallel()
 
-		req := httptest.NewRequest(http.MethodGet, "/?owner_id=zzz", nil)
+		req := httptest.NewRequest(http.MethodGet, "/?owner_id=zzz", http.NoBody)
 
 		_, ok, err := httpx.OptionalUUIDQuery(req, "owner_id")
 
@@ -154,7 +154,7 @@ func TestIntQuery(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			value, err := httpx.IntQuery(httptest.NewRequest(http.MethodGet, tc.url, nil), "limit", 7)
+			value, err := httpx.IntQuery(httptest.NewRequest(http.MethodGet, tc.url, http.NoBody), "limit", 7)
 
 			if tc.wantErr {
 				var invalid *domainerr.InvalidError
@@ -173,7 +173,7 @@ func TestIntQuery(t *testing.T) {
 func requestWithParam(t *testing.T, name, value string) *http.Request {
 	t.Helper()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	routeCtx := chi.NewRouteContext()
 	routeCtx.URLParams.Add(name, value)
 

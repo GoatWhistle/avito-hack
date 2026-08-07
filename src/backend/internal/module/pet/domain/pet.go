@@ -7,14 +7,17 @@ import (
 )
 
 const (
-	initialLevel      = 1
-	initialSatiety    = 70
-	initialHappiness  = 70
-	initialEnergy     = 100
-	initialFreezes    = 0
-	maxParameterValue = 100
+	initialLevel     = 1
+	initialSatiety   = 70
+	initialHappiness = 70
+	initialEnergy    = 100
+	initialFreezes   = 0
 
-	strokeHappinessGain = 5
+	MaxParameterValue   = 100
+	StrokeHappinessGain = 5
+
+	maxParameterValue   = MaxParameterValue
+	strokeHappinessGain = StrokeHappinessGain
 )
 
 type Pet struct {
@@ -34,6 +37,8 @@ type Pet struct {
 	hatchedAt       *time.Time
 	lastDecayTime   time.Time
 	updatedAt       time.Time
+
+	interactionVersion int64
 }
 
 func New(userID uuid.UUID, now time.Time) *Pet {
@@ -69,6 +74,8 @@ type RestoreParams struct {
 	HatchedAt       *time.Time
 	LastDecayTime   time.Time
 	UpdatedAt       time.Time
+
+	InteractionVersion int64
 }
 
 func Restore(p RestoreParams) *Pet {
@@ -77,13 +84,36 @@ func Restore(p RestoreParams) *Pet {
 		nextLevelXP: nextThreshold(p.Level), satiety: p.Satiety, happiness: p.Happiness,
 		energy: p.Energy, streakDays: p.StreakDays, freezes: p.Freezes,
 		lastCheckInDate: cloneTime(p.LastCheckInDate), hatchedAt: cloneTime(p.HatchedAt),
-		lastDecayTime:   p.LastDecayTime, updatedAt: p.UpdatedAt,
+		lastDecayTime: p.LastDecayTime, updatedAt: p.UpdatedAt,
+		interactionVersion: p.InteractionVersion,
 	}
 }
 
 func (p *Pet) Stroke(now time.Time) {
 	p.happiness = min(p.happiness+strokeHappinessGain, maxParameterValue)
+	p.interactionVersion++
 	p.updatedAt = now
+}
+
+func (p *Pet) InteractionVersion() int64 { return p.interactionVersion }
+
+func (p *Pet) ApplyHotState(happiness, satiety int, version int64, updatedAt time.Time) error {
+	if happiness < 0 || happiness > maxParameterValue ||
+		satiety < 0 || satiety > maxParameterValue || version < 0 {
+		return ErrInvalidAction
+	}
+	if version < p.interactionVersion {
+		return ErrInvalidAction
+	}
+
+	p.happiness = happiness
+	p.satiety = satiety
+	p.interactionVersion = version
+	if updatedAt.After(p.updatedAt) {
+		p.updatedAt = updatedAt
+	}
+
+	return nil
 }
 
 func (p *Pet) IsHatched() bool { return p.hatchedAt != nil }

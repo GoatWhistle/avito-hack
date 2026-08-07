@@ -35,30 +35,23 @@ var (
 	cachedHash password.Hash
 )
 
-func mustHash(t *testing.T, plain string) password.Hash {
+func mustHash(t *testing.T) password.Hash {
 	t.Helper()
 
-	if plain == defaultPassword {
-		hashOnce.Do(func() {
-			hash, err := password.NewHash(defaultPassword)
-			require.NoError(t, err)
-			cachedHash = hash
-		})
+	hashOnce.Do(func() {
+		hash, err := password.NewHash(defaultPassword)
+		require.NoError(t, err)
+		cachedHash = hash
+	})
 
-		return cachedHash
-	}
-
-	hash, err := password.NewHash(plain)
-	require.NoError(t, err)
-
-	return hash
+	return cachedHash
 }
 
 func TestNewUserValidation(t *testing.T) {
 	t.Parallel()
 
 	email := mustEmail(t, "user@example.com")
-	hash := mustHash(t, defaultPassword)
+	hash := mustHash(t)
 
 	tests := []struct {
 		name      string
@@ -152,7 +145,7 @@ func TestUserAcceptsLongFullName(t *testing.T) {
 	t.Parallel()
 
 	email := mustEmail(t, "edge@example.com")
-	hash := mustHash(t, defaultPassword)
+	hash := mustHash(t)
 
 	for _, length := range []int{1, 100, 500} {
 		user, err := domain.NewUser(domain.NewUserParams{
@@ -169,8 +162,8 @@ func TestUserAuthenticate(t *testing.T) {
 
 	user, err := domain.NewUser(domain.NewUserParams{
 		Email:        mustEmail(t, "auth@example.com"),
-		PasswordHash: mustHash(t, defaultPassword),
-		FullName:  "Auth",
+		PasswordHash: mustHash(t),
+		FullName:     "Auth",
 		Now:          now,
 	})
 	require.NoError(t, err)
@@ -184,8 +177,8 @@ func TestUserRename(t *testing.T) {
 
 	user, err := domain.NewUser(domain.NewUserParams{
 		Email:        mustEmail(t, "rename@example.com"),
-		PasswordHash: mustHash(t, defaultPassword),
-		FullName:  "Before",
+		PasswordHash: mustHash(t),
+		FullName:     "Before",
 		Now:          now,
 	})
 	require.NoError(t, err)
@@ -201,31 +194,12 @@ func TestUserRename(t *testing.T) {
 	assert.Equal(t, later, user.UpdatedAt())
 }
 
-func TestUserChangePassword(t *testing.T) {
-	t.Parallel()
-
-	user, err := domain.NewUser(domain.NewUserParams{
-		Email:        mustEmail(t, "pwd@example.com"),
-		PasswordHash: mustHash(t, defaultPassword),
-		FullName:  "Pwd",
-		Now:          now,
-	})
-	require.NoError(t, err)
-
-	later := now.Add(2 * time.Hour)
-	user.ChangePassword(mustHash(t, "another secret pass"), later)
-
-	require.NoError(t, user.Authenticate("another secret pass"))
-	assert.Error(t, user.Authenticate(defaultPassword))
-	assert.Equal(t, later, user.UpdatedAt())
-}
-
 func TestRestoreUserKeepsAllFields(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
 	email := mustEmail(t, "restore@example.com")
-	hash := mustHash(t, defaultPassword)
+	hash := mustHash(t)
 	updated := now.Add(time.Hour)
 
 	user := domain.RestoreUser(domain.RestoreUserParams{

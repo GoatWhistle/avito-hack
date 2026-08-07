@@ -1,0 +1,86 @@
+{
+  "hero": {
+    "badge": "Gamification that works for the marketplace",
+    "title": "Noti the raccoon grows from what you do on Avito",
+    "subtitle": "Not a \"feed me\" button, but a mirror of your activity: post a listing and your pet eats and grows, sell an item and it celebrates, add a favorite and it cheers up, drop by today and your streak lives on.",
+    "start": "Get started",
+    "signIn": "Sign in",
+    "toPet": "Go to my pet",
+    "note": "Sign up in a minute — your pet hatches after the first action"
+  },
+  "loop": {
+    "title": "How it works",
+    "subtitle": "A real action on the marketplace — an instant reaction from your pet",
+    "publish": {
+      "action": "You post a listing",
+      "result": "The pet eats and grows"
+    },
+    "sold": {
+      "action": "You sell an item",
+      "result": "The pet celebrates, big bonus"
+    },
+    "favorite": {
+      "action": "You add a favorite",
+      "result": "The pet cheers up"
+    },
+    "visit": {
+      "action": "You drop by today",
+      "result": "Your check-in streak lives on"
+    }
+  },
+  "features": {
+    "title": "What is inside",
+    "levels": {
+      "title": "15 levels",
+      "text": "Fixed experience thresholds, a reward on every level and progress to the next one always in sight"
+    },
+    "streak": {
+      "title": "Streaks with freezes",
+      "text": "Check in daily to keep your streak. Miss a day and a freeze you earned earlier saves it"
+    },
+    "rewards": {
+      "title": "Promo code rewards",
+      "text": "Discounts on promotion, delivery and Autoteka. Each code is signed, bound to you and used once"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "text": "Top players and your closest rivals — see who to chase and how much experience is left"
+    },
+    "realtime": {
+      "title": "Realtime over WebSocket",
+      "text": "Hatching, experience gains and level ups reach the screen without reloading the page"
+    },
+    "summary": {
+      "title": "Daily pet summary",
+      "text": "A first-person recap: what changed, what you earned and what your listings are missing"
+    }
+  },
+  "value": {
+    "title": "Why Avito benefits",
+    "targeted": {
+      "title": "Targeted actions, not idle clicks",
+      "text": "The loop rewards listings, content quality and completed deals instead of mindless tapping"
+    },
+    "quality": {
+      "title": "Better listings",
+      "text": "The pet points out what a listing lacks — which directly lifts marketplace conversion"
+    },
+    "retention": {
+      "title": "Retention",
+      "text": "Check-in streaks and decaying pet stats give a reason to open the app every day"
+    },
+    "monetization": {
+      "title": "Monetization",
+      "text": "Rewards introduce paid marketplace services through a free trial"
+    }
+  },
+  "cta": {
+    "title": "Get your own Noti in a minute",
+    "text": "Sign up, post your first listing — and watch the egg hatch in real time",
+    "start": "Get started",
+    "leaderboard": "View the leaderboard"
+  },
+  "avatar": {
+    "name": "Noti"
+  }
+}

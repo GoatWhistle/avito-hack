@@ -1,9 +1,7 @@
 package app_test
 
 import (
-	"context"
 	"errors"
-	"io"
 	"strings"
 	"testing"
 
@@ -15,93 +13,6 @@ import (
 	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
 )
-
-type stubStorage struct {
-	saved       int
-	removed     int
-	lastType    string
-	saveErr     error
-	returnedURL string
-}
-
-func (s *stubStorage) Save(
-	_ context.Context, _ uuid.UUID, content io.Reader, contentType string,
-) (app.StoredFile, error) {
-	if s.saveErr != nil {
-		return app.StoredFile{}, s.saveErr
-	}
-
-	body, err := io.ReadAll(content)
-	if err != nil {
-		return app.StoredFile{}, err
-	}
-
-	s.saved++
-	s.lastType = contentType
-
-	return app.StoredFile{Name: "photo.jpg", ContentType: contentType, Size: int64(len(body))}, nil
-}
-
-func (s *stubStorage) Delete(_ context.Context, _ uuid.UUID, _ string) error {
-	s.removed++
-
-	return nil
-}
-
-func (s *stubStorage) URL(_ uuid.UUID, name string) string {
-	if s.returnedURL != "" {
-		return s.returnedURL
-	}
-
-	return "/media/" + name
-}
-
-type countingPhotos struct {
-	stubPhotos
-	added    []*domain.Photo
-	deleted  int
-	countErr error
-	addErr   error
-}
-
-func (c *countingPhotos) Add(_ context.Context, photo *domain.Photo) error {
-	if c.addErr != nil {
-		return c.addErr
-	}
-
-	c.added = append(c.added, photo)
-
-	return nil
-}
-
-func (c *countingPhotos) CountByItemID(_ context.Context, _ uuid.UUID) (int, error) {
-	if c.countErr != nil {
-		return 0, c.countErr
-	}
-
-	return c.count, nil
-}
-
-func (c *countingPhotos) ByItemID(_ context.Context, itemID uuid.UUID) ([]*domain.Photo, error) {
-	if c.countErr != nil {
-		return nil, c.countErr
-	}
-
-	result := make([]*domain.Photo, 0, len(c.added))
-	for _, photo := range c.added {
-		if photo.ItemID() == itemID {
-			result = append(result, photo)
-		}
-	}
-
-	return result, nil
-}
-
-func (c *countingPhotos) DeleteByID(_ context.Context, _, _ uuid.UUID) (string, error) {
-	c.deleted++
-
-	return "/media/photo.jpg", nil
-}
 
 func TestAddPhotoStoresAtNextPosition(t *testing.T) {
 	t.Parallel()
@@ -223,6 +134,43 @@ func TestAddPhotoPropagatesFailures(t *testing.T) {
 	}
 }
 
+func TestDeletePhotoRemovesFileAfterCommit(t *testing.T) {
+	t.Parallel()
+
+	ownerID := uuid.New()
+	item := itemWithStatus(t, ownerID, domain.StatusDraft)
+	photos := &countingPhotos{}
+	storage := &stubStorage{}
+
+	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{})
+
+	err := handler.Handle(t.Context(), app.DeletePhotoCommand{
+		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: ownerID,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, photos.deleted)
+	assert.Equal(t, 1, storage.removed)
+}
+
+func TestDeletePhotoKeepsFileOnRollback(t *testing.T) {
+	t.Parallel()
+
+	item := itemWithStatus(t, uuid.New(), domain.StatusDraft)
+	photos := &countingPhotos{}
+	storage := &stubStorage{}
+
+	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{})
+
+	err := handler.Handle(t.Context(), app.DeletePhotoCommand{
+		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: uuid.New(),
+	})
+
+	require.ErrorIs(t, err, domainerr.ErrForbidden)
+	assert.Equal(t, 0, photos.deleted)
+	assert.Equal(t, 0, storage.removed)
+}
+
 func TestAddPhotoRejectsEmptyStorageURL(t *testing.T) {
 	t.Parallel()
 
@@ -242,4 +190,3 @@ func TestAddPhotoRejectsEmptyStorageURL(t *testing.T) {
 	require.ErrorAs(t, err, &invalid)
 	assert.Equal(t, "url", invalid.Field)
 }
-

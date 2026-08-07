@@ -96,7 +96,7 @@ func TestAuthenticate(t *testing.T) {
 				seen   auth.Actor
 			)
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			if tc.header != "" {
 				req.Header.Set("Authorization", tc.header)
 			}
@@ -139,7 +139,7 @@ func TestOptionalAuthenticate(t *testing.T) {
 				seen   auth.Actor
 			)
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			if tc.header != "" {
 				req.Header.Set("Authorization", tc.header)
 			}
@@ -196,7 +196,7 @@ func TestRequireRole(t *testing.T) {
 				seen   auth.Actor
 			)
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			if tc.actor != nil {
 				req = req.WithContext(auth.WithActor(req.Context(), *tc.actor))
 			}

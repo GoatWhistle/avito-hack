@@ -20,14 +20,3 @@ func TestClockReturnsUTC(t *testing.T) {
 	assert.False(t, now.Before(before))
 	assert.False(t, now.After(after))
 }
-
-func TestFixedClockAlwaysReturnsSameValue(t *testing.T) {
-	t.Parallel()
-
-	value := time.Date(2026, time.December, 31, 23, 59, 59, 0, time.UTC)
-	fixed := clock.NewFixed(value)
-
-	assert.Equal(t, value, fixed.Now())
-	assert.Equal(t, value, fixed.Now())
-	assert.Equal(t, fixed.Now(), fixed.Now())
-}

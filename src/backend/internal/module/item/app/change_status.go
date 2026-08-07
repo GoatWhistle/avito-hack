@@ -51,9 +51,9 @@ func (h *ChangeStatusHandler) Handle(ctx context.Context, cmd ChangeStatusComman
 	var updated *domain.Item
 
 	err := events.PublishAfterCommit(ctx, h.bus, h.tx, func(ctx context.Context, out *events.Outbox) error {
-		item, err := h.items.ByIDForUpdate(ctx, cmd.ItemID)
-		if err != nil {
-			return fmt.Errorf("load item: %w", err)
+		item, loadErr := h.items.ByIDForUpdate(ctx, cmd.ItemID)
+		if loadErr != nil {
+			return fmt.Errorf("load item: %w", loadErr)
 		}
 
 		if err := authorize(item, cmd); err != nil {
@@ -68,7 +68,12 @@ func (h *ChangeStatusHandler) Handle(ctx context.Context, cmd ChangeStatusComman
 			return err
 		}
 
-		if event, ok := h.statusEvent(ctx, item, cmd.Action); ok {
+		event, ok, err := h.statusEvent(ctx, item, cmd.Action)
+		if err != nil {
+			return err
+		}
+
+		if ok {
 			out.Add(event)
 		}
 
@@ -87,7 +92,7 @@ func (h *ChangeStatusHandler) statusEvent(
 	ctx context.Context,
 	item *domain.Item,
 	action StatusAction,
-) (events.Event, bool) {
+) (events.Event, bool, error) {
 	var eventType events.Type
 
 	switch action {
@@ -96,26 +101,33 @@ func (h *ChangeStatusHandler) statusEvent(
 	case ActionSell:
 		eventType = events.TypeItemSold
 	case ActionSubmit, ActionArchive, ActionRestore:
-		return events.Event{}, false
+		return events.Event{}, false, nil
 	default:
-		return events.Event{}, false
+		return events.Event{}, false, nil
 	}
 
-	return events.New(eventType, item.OwnerID(), item.ID(), h.clock.Now()).
-		WithPayload(itemPayload(item, photoCount(ctx, h.photos, item.ID()))), true
+	count, err := photoCount(ctx, h.photos, item.ID())
+	if err != nil {
+		return events.Event{}, false, err
+	}
+
+	event := events.New(eventType, item.OwnerID(), item.ID(), h.clock.Now()).
+		WithPayload(itemPayload(item, count))
+
+	return event, true, nil
 }
 
-func photoCount(ctx context.Context, photos domain.PhotoRepository, itemID uuid.UUID) int {
+func photoCount(ctx context.Context, photos domain.PhotoRepository, itemID uuid.UUID) (int, error) {
 	if photos == nil {
-		return 0
+		return 0, nil
 	}
 
 	count, err := photos.CountByItemID(ctx, itemID)
 	if err != nil {
-		return 0
+		return 0, fmt.Errorf("count item photos: %w", err)
 	}
 
-	return count
+	return count, nil
 }
 
 func itemPayload(item *domain.Item, photoCount int) events.Payload {

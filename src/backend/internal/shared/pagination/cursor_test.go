@@ -83,6 +83,11 @@ func TestDecodeCursorFailures(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "nil uuid is rejected",
+			raw:     base64.RawURLEncoding.EncodeToString([]byte("2026-02-03T14:00:00Z|" + uuid.Nil.String())),
+			wantErr: true,
+		},
+		{
 			name:    "separator without payload",
 			raw:     base64.RawURLEncoding.EncodeToString([]byte("|")),
 			wantErr: true,

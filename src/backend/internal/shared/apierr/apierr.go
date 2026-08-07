@@ -28,15 +28,15 @@ const (
 	MessageConflict     = "state conflict"
 )
 
-type errorBody struct {
+type ErrorBody struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
 	Field     string `json:"field,omitempty"`
 	RequestID string `json:"request_id,omitempty"`
 }
 
-type errorEnvelope struct {
-	Error errorBody `json:"error"`
+type ErrorEnvelope struct {
+	Error ErrorBody `json:"error"`
 }
 
 func Write(w http.ResponseWriter, r *http.Request, err error) {
@@ -56,11 +56,11 @@ func Write(w http.ResponseWriter, r *http.Request, err error) {
 		)
 	}
 
-	respond(w, status, errorEnvelope{Error: body})
+	respond(w, status, ErrorEnvelope{Error: body})
 }
 
-func classify(r *http.Request, err error) (int, errorBody) {
-	body := errorBody{RequestID: middleware.GetReqID(r.Context())}
+func classify(r *http.Request, err error) (int, ErrorBody) {
+	body := ErrorBody{RequestID: middleware.GetReqID(r.Context())}
 
 	var (
 		invalid  *domainerr.InvalidError
@@ -99,14 +99,14 @@ func classify(r *http.Request, err error) (int, errorBody) {
 }
 
 func WriteBadRequest(w http.ResponseWriter, r *http.Request, message string) {
-	respond(w, http.StatusBadRequest, errorEnvelope{Error: errorBody{
+	respond(w, http.StatusBadRequest, ErrorEnvelope{Error: ErrorBody{
 		Code:      CodeBadRequest,
 		Message:   message,
 		RequestID: middleware.GetReqID(r.Context()),
 	}})
 }
 
-func respond(w http.ResponseWriter, status int, payload errorEnvelope) {
+func respond(w http.ResponseWriter, status int, payload ErrorEnvelope) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 

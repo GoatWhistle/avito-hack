@@ -1,0 +1,27 @@
+export type { components, operations, paths } from './schema'
+
+export type {
+  SchemaActivateRewardResponse as ApiActivateRewardResponse,
+  SchemaBadge as ApiBadge,
+  SchemaChangeStatusRequest as ApiChangeStatusRequest,
+  SchemaCheckInResult as ApiCheckInResult,
+  SchemaCreateItemRequest as ApiCreateItemRequest,
+  SchemaErrorEnvelope as ApiErrorEnvelopeSchema,
+  SchemaFavorite as ApiFavorite,
+  SchemaFavoriteListResponse as ApiFavoriteListResponse,
+  SchemaItem as ApiItem,
+  SchemaItemListResponse as ApiItemListResponse,
+  SchemaItemStatus as ApiItemStatus,
+  SchemaLeaderboardEntry as ApiLeaderboardEntry,
+  SchemaLoginRequest as ApiLoginRequest,
+  SchemaPet as ApiPet,
+  SchemaProgress as ApiProgress,
+  SchemaRegisterRequest as ApiRegisterRequest,
+  SchemaRewardCatalogResponse as ApiRewardCatalogResponse,
+  SchemaSession as ApiSession,
+  SchemaUpdateItemRequest as ApiUpdateItemRequest,
+  SchemaUpdateProfileRequest as ApiUpdateProfileRequest,
+  SchemaUser as ApiUser,
+  SchemaUserReward as ApiUserReward,
+  SchemaUserRewardListResponse as ApiUserRewardListResponse,
+} from './schema'

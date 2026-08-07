@@ -2,13 +2,14 @@ SHELL := /bin/bash
 
 BACKEND_DIR := $(CURDIR)/src/backend
 FRONTEND_DIR := $(CURDIR)/src/frontend
+INTEGRATION_DIR := $(CURDIR)/tests/integration
 
 SERVICE ?=
 LOGS_TAIL ?=
 
 PROD_COMPOSE := -f docker-compose.yml -f docker-compose.prod.yml
 
-.PHONY: help init lint test build up dev dev-down down logs clean migrate \
+.PHONY: help init lint test test-integration api-spec api-generate build up dev dev-down down logs clean migrate \
         migrate-down migrate-status seed psql prod-up prod-down prod-logs prod-cert
 
 help:
@@ -17,6 +18,9 @@ help:
 	@echo "  init            - Create .env and install backend and frontend dependencies"
 	@echo "  lint            - Lint Go and frontend, check file size limit and locale sync"
 	@echo "  test            - Run backend and frontend tests with coverage"
+	@echo "  test-integration- Run end-to-end tests against a running stack (needs 'make up')"
+	@echo "  api-spec        - Regenerate docs/openapi.yaml from the swaggo annotations in Go"
+	@echo "  api-generate    - Regenerate the frontend API client from docs/openapi.yaml"
 	@echo " "
 	@echo "  build           - Build docker images (use SERVICE=... for a single service)"
 	@echo "  up              - Start the stack and wait until healthy (use SERVICE=...)"
@@ -41,13 +45,15 @@ help:
 init:
 	@test -f .env || cp .env.example .env
 	cd "$(BACKEND_DIR)" && go mod download
-	cd "$(FRONTEND_DIR)" && npm ci --silent
+	cd "$(FRONTEND_DIR)" && npm install --silent --no-audit --no-fund
 	@echo " "
-	@echo "Environment ready. Fill in POSTGRES_PASSWORD and JWT_SECRET in .env"
+	@echo "Environment ready. .env holds working local defaults;"
+	@echo "replace the secrets before exposing the stack outside localhost."
 	@echo " "
 
 lint:
 	cd "$(BACKEND_DIR)" && golangci-lint run --config ../../.golangci.yaml ./...
+	cd "$(INTEGRATION_DIR)" && go vet -tags=integration ./...
 	cd "$(FRONTEND_DIR)" && npm run lint -- --max-warnings=0
 	cd "$(FRONTEND_DIR)" && npm run typecheck
 	@bash ./scripts/check-file-length.sh
@@ -61,6 +67,24 @@ test:
 	cd "$(FRONTEND_DIR)" && npm run test:coverage
 	@echo " "
 	@echo "Tests completed!"
+
+# Integration tests skip themselves unless the stack is up and INTEGRATION=1 is set.
+test-integration:
+	cd "$(INTEGRATION_DIR)" && INTEGRATION=1 go test -tags=integration -count=1 -v ./...
+	@echo " "
+	@echo "Integration tests completed!"
+
+api-spec:
+	@bash ./scripts/generate-openapi.sh
+	@echo " "
+	@echo "docs/openapi.yaml regenerated from the Go annotations"
+	@echo "Run 'make api-generate' to refresh the frontend client too."
+	@echo " "
+
+api-generate:
+	cd "$(FRONTEND_DIR)" && npm run api:generate
+	@echo " "
+	@echo "API client regenerated from docs/openapi.yaml"
 
 build:
 	@if [ -n "$(SERVICE)" ]; then \

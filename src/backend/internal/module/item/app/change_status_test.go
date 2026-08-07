@@ -3,7 +3,6 @@ package app_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -13,85 +12,7 @@ import (
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/events"
-	"github.com/avito-hack/backend/internal/shared/vo"
 )
-
-var fixedTime = time.Date(2026, time.January, 1, 12, 0, 0, 0, time.UTC)
-
-type fakeClock struct{}
-
-func (fakeClock) Now() time.Time { return fixedTime }
-
-type passthroughTx struct{}
-
-func (passthroughTx) WithTx(ctx context.Context, fn func(context.Context) error) error {
-	return fn(ctx)
-}
-
-type stubRepository struct {
-	item  *domain.Item
-	saved *domain.Item
-}
-
-func (s *stubRepository) Save(_ context.Context, item *domain.Item) error {
-	s.saved = item
-
-	return nil
-}
-
-func (s *stubRepository) ByID(_ context.Context, _ uuid.UUID) (*domain.Item, error) {
-	return s.item, nil
-}
-
-func (s *stubRepository) ByIDForUpdate(_ context.Context, _ uuid.UUID) (*domain.Item, error) {
-	return s.item, nil
-}
-
-func (s *stubRepository) Delete(_ context.Context, _ uuid.UUID) error { return nil }
-
-type stubPhotos struct{ count int }
-
-func (s *stubPhotos) Add(_ context.Context, _ *domain.Photo) error { return nil }
-
-func (s *stubPhotos) ByItemID(_ context.Context, _ uuid.UUID) ([]*domain.Photo, error) {
-	return nil, nil
-}
-
-func (s *stubPhotos) CountByItemID(_ context.Context, _ uuid.UUID) (int, error) {
-	return s.count, nil
-}
-
-func (s *stubPhotos) DeleteByID(_ context.Context, _, _ uuid.UUID) (string, error) {
-	return "", nil
-}
-
-func newDraftItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
-	t.Helper()
-
-	item, err := domain.NewItem(domain.NewItemParams{
-		OwnerID:     ownerID,
-		Title:       "MacBook Pro",
-		Description: "description",
-		Price:       vo.MustMoney(1000),
-		Now:         fixedTime,
-	})
-	require.NoError(t, err)
-
-	return item
-}
-
-func newPublishedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
-	t.Helper()
-
-	item := newDraftItem(t, ownerID)
-	require.NoError(t, item.Publish(fixedTime))
-
-	return item
-}
-
-func newHandler(repo *stubRepository, bus events.Publisher) *app.ChangeStatusHandler {
-	return app.NewChangeStatusHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus)
-}
 
 func TestChangeStatusHandler_OwnerPublishesDraft(t *testing.T) {
 	t.Parallel()

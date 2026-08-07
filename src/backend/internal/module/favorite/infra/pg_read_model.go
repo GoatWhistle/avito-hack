@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/avito-hack/backend/internal/module/favorite/app"
@@ -33,28 +34,17 @@ func (m *PgReadModel) List(ctx context.Context, f app.ListFilter) ([]app.Favorit
 		cursorAt, cursorID = f.Cursor.CreatedAt, f.Cursor.ID
 	}
 
-	rows, err := postgres.QuerierFrom(ctx, m.pool).Query(ctx, listQuery, f.UserID, cursorAt, cursorID, f.Limit)
-	if err != nil {
-		return nil, fmt.Errorf("query favorites: %w", err)
-	}
-	defer rows.Close()
+	return postgres.QueryAll(ctx, postgres.QuerierFrom(ctx, m.pool), f.Limit, scanFavoriteItem,
+		listQuery, f.UserID, cursorAt, cursorID, f.Limit)
+}
 
-	items := make([]app.FavoriteItem, 0, f.Limit)
+func scanFavoriteItem(row pgx.Row) (app.FavoriteItem, error) {
+	var item app.FavoriteItem
 
-	for rows.Next() {
-		var item app.FavoriteItem
-
-		if err := rows.Scan(&item.ItemID, &item.OwnerID, &item.Title,
-			&item.PriceKopeks, &item.Status, &item.CreatedAt, &item.PhotoURL); err != nil {
-			return nil, fmt.Errorf("scan favorite: %w", err)
-		}
-
-		items = append(items, item)
+	if err := row.Scan(&item.ItemID, &item.OwnerID, &item.Title,
+		&item.PriceKopeks, &item.Status, &item.CreatedAt, &item.PhotoURL); err != nil {
+		return app.FavoriteItem{}, fmt.Errorf("scan favorite: %w", err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate favorites: %w", err)
-	}
-
-	return items, nil
+	return item, nil
 }

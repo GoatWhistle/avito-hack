@@ -1,0 +1,6 @@
+.env
+node_modules/
+build/
+.react-router/
+app/styles/tokens.generated.css
+coverage/

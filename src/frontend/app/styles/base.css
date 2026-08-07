@@ -1,0 +1,49 @@
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground text-base;
+  }
+
+  h1 {
+    @apply font-heading text-3xl leading-tight font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply font-heading text-2xl leading-snug font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply font-heading text-xl leading-snug font-medium;
+  }
+
+  h4 {
+    @apply font-heading text-lg leading-snug font-medium;
+  }
+
+  a {
+    @apply underline-offset-4;
+  }
+
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

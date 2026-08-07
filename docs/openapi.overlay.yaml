@@ -1,0 +1,851 @@
+info:
+  summary: REST и WebSocket API маркетплейса с геймификацией (питомец-енот)
+  description: |
+    API объявлений с игровым слоем: пользователь заводит объявления, добавляет фотографии,
+    ведёт избранное, а параллельно развивает питомца — за действия в маркетплейсе
+    начисляется опыт, растут уровень и стрик, открываются награды.
+
+    ## Конверт ошибок
+
+    Все ошибки возвращаются единым конвертом `ErrorEnvelope`:
+
+    ```json
+    {"error": {"code": "validation_error", "message": "title must be at least 3 characters", "field": "title", "request_id": "..."}}
+    ```
+
+    Поля `field` и `request_id` опциональны и опускаются, когда пусты.
+    Коды: `validation_error`, `bad_request`, `unauthorized`, `forbidden`,
+    `not_found`, `conflict`, `internal_error`.
+
+    ## Авторизация
+
+    JWT (HS256) передаётся в заголовке `Authorization: Bearer <token>`.
+    Срок жизни токена лежит в клейме `exp` внутри самого токена — отдельного поля
+    `expires_at` в ответах на регистрацию и вход нет. В клеймах также присутствуют
+    `sub` (идентификатор пользователя) и `role` (`user` | `moderator` | `admin`).
+    WebSocket авторизуется query-параметром `token`, так как браузерный
+    WebSocket API не позволяет задавать заголовки.
+
+    ## Пагинация
+
+    Списки используют keyset-курсоры, непрозрачные для клиента (base64url).
+    В проекте два независимых формата курсора:
+
+    - **Временной** (`created_at|id`) — объявления, избранное, история сводок.
+    - **Лидербордный** (`level|xp|user_id`) — только `GET /leaderboard`.
+
+    Курсоры не взаимозаменяемы. Ответ содержит `next_cursor`; поле отсутствует,
+    когда страница последняя. Параметр `limit` по умолчанию 20, максимум 100;
+    значения вне диапазона молча нормализуются, а не отклоняются.
+
+    ## Деньги
+
+    Цена объявления — целое число копеек в поле `price`. 1500000 означает 15 000 ₽.
+
+    ## Тело запроса
+
+    JSON-декодер работает в строгом режиме: неизвестные поля в теле приводят
+    к ответу 400 с кодом `bad_request`.
+
+servers:
+  - url: http://localhost:8080
+    description: Локальная разработка
+  - url: /
+    description: Тот же хост, что и фронтенд (за общим reverse-proxy)
+
+tags:
+  - name: Auth
+    description: Регистрация и вход. Единственные публичные операции с побочными эффектами.
+  - name: Users
+    description: Профиль текущего пользователя.
+  - name: Items
+    description: Объявления — создание, редактирование, смена статуса, публичные списки.
+  - name: Photos
+    description: Фотографии объявлений. Загрузка через multipart, раздача через `/uploads`.
+  - name: Favorites
+    description: Избранные объявления пользователя.
+  - name: Pet
+    description: Состояние питомца, поглаживание, ежедневный чек-ин, прогресс.
+  - name: Rewards
+    description: Каталог наград, выданные награды и их активация.
+  - name: Leaderboard
+    description: Рейтинг пользователей по уровню и опыту.
+  - name: Summary
+    description: |
+      Ежедневные сводки достижений: что сделано за день, сколько опыта набрано,
+      как это отразилось на питомце. Текст собирается шаблоном либо языковой
+      моделью — источник виден в поле `generated_by`.
+  - name: Raccoon
+    description: Альтернативное представление питомца (енот) — профиль, бейджи, получение промокода.
+  - name: System
+
+paths:
+  /api/v1/ws:
+    get:
+      operationId: petWebSocket
+      tags: [WebSocket]
+      summary: WebSocket-канал питомца
+      description: |
+        Апгрейд HTTP-соединения до WebSocket для получения событий питомца
+        в реальном времени и выполнения лёгких действий без REST-запросов.
+
+        ## Подключение
+
+        ```
+        const ws = new WebSocket(`wss://host/api/v1/ws?token=${jwt}`);
+        ```
+
+        Авторизация — query-параметр `token` с тем же JWT, что и в
+        `Authorization: Bearer`. Заголовок здесь не используется, так как
+        браузерный WebSocket API не позволяет его задать. Отсутствующий или
+        невалидный токен даёт обычный HTTP-ответ 401 с конвертом `ErrorEnvelope` —
+        апгрейд не происходит.
+
+        Origin проверяется по списку `AllowedOrigins` из конфигурации;
+        запрос с чужого источника отклоняется на этапе рукопожатия.
+
+        ## Формат сообщений
+
+        Обе стороны обмениваются JSON-текстовыми кадрами.
+
+        Клиент → сервер (`WSClientMessage`):
+
+        ```json
+        {"type": "pet.get", "request_id": "req-1"}
+        ```
+
+        Сервер → клиент (`WSServerMessage`):
+
+        ```json
+        {"type": "pet.state", "request_id": "req-1", "payload": { ... }}
+        ```
+
+        Поле `request_id` необязательно. Если клиент его прислал, сервер
+        вернёт то же значение в ответе — так соотносятся запрос и ответ.
+        Широковещательные события (`pet.updated`, `xp.gained` и прочие)
+        приходят без `request_id`, потому что не являются ответом на запрос.
+
+        ## Сообщения клиента
+
+        | `type` | Действие | Ответ |
+        |---|---|---|
+        | `ping` | Проверка живости на уровне приложения | `pong` без payload |
+        | `pet.get` | Запросить текущее состояние | `pet.state` |
+        | `pet.pet` | Погладить питомца | `pet.state` с обновлённым состоянием |
+
+        Неизвестный `type` даёт `error` с кодом `unknown_message`.
+        Ошибка при выполнении действия даёт `error` с кодом `internal_error`.
+
+        ## Сообщения сервера
+
+        | `type` | Payload | Когда приходит |
+        |---|---|---|
+        | `pet.state` | `Pet` | Ответ на `pet.get` или `pet.pet` |
+        | `pet.updated` | `Pet` | Состояние изменилось любым путём, включая REST |
+        | `pet.hatched` | `Pet` | Питомец вылупился из яйца |
+        | `xp.gained` | `WSXPGainedPayload` | Начислен опыт |
+        | `level.up` | `WSLevelUpPayload` | Достигнут новый уровень |
+        | `reward.granted` | `WSRewardGrantedPayload` | Выдана награда |
+        | `streak.updated` | `WSStreakUpdatedPayload` | Изменился стрик |
+        | `error` | `WSErrorPayload` | Ошибка обработки сообщения |
+        | `pong` | отсутствует | Ответ на `ping` |
+
+        Широковещательные события рассылаются на ВСЕ активные соединения
+        пользователя, поэтому действие в одной вкладке немедленно
+        отражается в остальных.
+
+        ## Таймауты и лимиты
+
+        - Размер входящего кадра — не более 4096 байт; превышение закрывает
+          соединение со статусом 1007 (`invalid frame payload data`).
+        - Сервер шлёт протокольный ping каждые 30 секунд; отсутствие
+          понга закрывает соединение со статусом 1001 (`going away`).
+        - Если клиент молчит дольше 90 секунд, чтение обрывается по таймауту.
+          Прикладной `ping` сбрасывает этот таймер — его стоит слать
+          с интервалом порядка 30 секунд.
+        - Исходящая очередь на соединение — 32 сообщения. При переполнении
+          новые события ТИХО ОТБРАСЫВАЮТСЯ, соединение не закрывается.
+          Медленный клиент теряет события, поэтому состояние, критичное
+          для отображения, стоит периодически подтверждать через `pet.get`.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: JWT доступа — тот же, что и в заголовке `Authorization`.
+          schema:
+            type: string
+        - name: Upgrade
+          in: header
+          required: true
+          schema:
+            type: string
+            const: websocket
+        - name: Connection
+          in: header
+          required: true
+          schema:
+            type: string
+            const: Upgrade
+        - name: Sec-WebSocket-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            const: '13'
+        - name: Sec-WebSocket-Key
+          in: header
+          required: true
+          description: Base64-ключ рукопожатия, генерируется клиентом.
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Протокол переключён на WebSocket
+          headers:
+            Upgrade:
+              schema:
+                type: string
+                const: websocket
+            Connection:
+              schema:
+                type: string
+                const: Upgrade
+            Sec-WebSocket-Accept:
+              schema:
+                type: string
+        '401':
+          description: Токен отсутствует или невалиден — апгрейд не выполнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Origin не входит в список разрешённых
+
+  /healthz:
+    get:
+      operationId: health
+      tags: [System]
+      summary: Проверка живости
+      description: |
+        Всегда отвечает 200, пока процесс жив. Зависимости не проверяет —
+        подходит для liveness-пробы, но не для readiness.
+      security: []
+      responses:
+        '200':
+          description: Процесс жив
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+              examples:
+                default:
+                  value:
+                    status: ok
+
+  /readyz:
+    get:
+      operationId: ready
+      tags: [System]
+      summary: Проверка готовности
+      description: |
+        Пингует базу данных с таймаутом 2 секунды. Недоступность БД даёт 503 —
+        readiness-проба для оркестратора.
+      security: []
+      responses:
+        '200':
+          description: Сервис готов принимать трафик
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ready
+        '503':
+          description: База данных недоступна
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: unavailable
+
+  /metrics:
+    get:
+      operationId: metrics
+      tags: [System]
+      summary: Метрики Prometheus
+      description: |
+        Метрики в текстовом формате Prometheus: счётчики и гистограммы
+        HTTP-запросов из middleware, плюс стандартные метрики Go-рантайма.
+        Эндпоинт не защищён — в продакшене его следует закрывать на уровне
+        reverse-proxy.
+      security: []
+      responses:
+        '200':
+          description: Метрики
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /uploads/{itemID}/{filename}:
+    get:
+      operationId: getUpload
+      tags: [System]
+      summary: Файл фотографии объявления
+      description: |
+        Раздача загруженных фотографий с диска. Путь имеет ровно два
+        сегмента — идентификатор объявления и имя файла; любая другая
+        глубина вложенности даёт 404.
+
+        Доступ ограничен видимостью объявления: файл отдаётся, только если
+        объявление не удалено и находится в статусе `published` или `sold`.
+        Фотографии черновиков и архива недоступны даже владельцу по прямой
+        ссылке — они возвращают 404.
+
+        Ответ снабжается заголовками `Cache-Control: private, max-age=86400`
+        и `X-Content-Type-Options: nosniff`.
+
+        Префикс пути задаётся настройкой `UPLOAD_URL`; при пустом значении
+        раздача не монтируется вовсе.
+      security: []
+      parameters:
+        - name: itemID
+          in: path
+          required: true
+          description: Идентификатор объявления. Невалидный UUID даёт 404.
+          schema:
+            type: string
+            format: uuid
+        - name: filename
+          in: path
+          required: true
+          description: Имя файла на диске.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Содержимое файла
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: private, max-age=86400
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Файл не найден или объявление невидимо
+        '503':
+          description: Не удалось проверить видимость объявления
+
+  /api/v1/summary/today:
+    get:
+      operationId: getTodaySummary
+      tags: [Summary]
+      summary: Сводка за сегодня
+      description: |
+        Сводка достижений за текущий день: сколько опыта набрано, какие
+        действия совершены, изменился ли уровень, состояние питомца, стрик
+        и позиция в рейтинге. Поле `generated_by` показывает, собран ли
+        текст шаблоном (`template`) или языковой моделью (`llm`).
+
+        Поле `advice` — опциональная подсказка следующего действия,
+        иногда с привязкой к конкретному объявлению (`item_id`).
+      responses:
+        '200':
+          description: Сводка за сегодня
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailySummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/summary/history:
+    get:
+      operationId: getSummaryHistory
+      tags: [Summary]
+      summary: История сводок
+      description: |
+        Постраничная история ежедневных сводок, свежие сверху.
+        Пагинация — временной курсор.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/TimeCursor'
+      responses:
+        '200':
+          description: Страница сводок
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailySummaryListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT, подписанный HS256. Клеймы: `sub` — UUID пользователя,
+        `role` — роль, `exp` — момент истечения, `iat` — момент выпуска,
+        `jti` — уникальный идентификатор токена.
+
+        Просроченный токен и токен с неверной подписью одинаково
+        дают 401 с кодом `unauthorized`.
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: |
+        Размер страницы. По умолчанию 20, максимум 100. Значения вне
+        диапазона нормализуются молча: 0 и отрицательные превращаются
+        в 20, значения больше 100 — в 100. Нечисловое значение даёт 400.
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+    TimeCursor:
+      name: cursor
+      in: query
+      required: false
+      description: |
+        Непрозрачный курсор из `next_cursor` предыдущей страницы —
+        base64url от `created_at|id`. Отсутствие означает первую страницу.
+        Испорченное значение даёт 400 с `field: cursor`.
+      schema:
+        type: string
+    ItemID:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор объявления.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: |
+        Некорректный запрос — нарушение валидации (`validation_error`)
+        либо неразбираемое тело или неизвестное поле в нём (`bad_request`).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            validation:
+              value:
+                error:
+                  code: validation_error
+                  message: title must be at least 3 characters
+                  field: title
+                  request_id: 9f2a1b3c
+            malformed:
+              value:
+                error:
+                  code: bad_request
+                  message: 'malformed request body: json: unknown field "titel"'
+                  request_id: 9f2a1b3c
+    Unauthorized:
+      description: Токен отсутствует, просрочен или невалиден.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            default:
+              value:
+                error:
+                  code: unauthorized
+                  message: authentication required
+                  request_id: 9f2a1b3c
+    Forbidden:
+      description: Ресурс существует, но действие над ним запрещено.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            default:
+              value:
+                error:
+                  code: forbidden
+                  message: access forbidden
+    NotFound:
+      description: Ресурс не найден либо скрыт от текущего пользователя.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            default:
+              value:
+                error:
+                  code: not_found
+                  message: resource not found
+    Conflict:
+      description: Действие противоречит текущему состоянию ресурса.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            default:
+              value:
+                error:
+                  code: conflict
+                  message: state conflict
+    InternalError:
+      description: |
+        Внутренняя ошибка. Детали наружу не раскрываются, но `request_id`
+        позволяет найти запись в логах.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            default:
+              value:
+                error:
+                  code: internal_error
+                  message: internal server error
+                  request_id: 9f2a1b3c
+
+  schemas:
+    ItemStatus:
+      type: string
+      description: |
+        Статус объявления. `sold` — терминальный, из него переходов нет.
+      enum: [draft, moderation, published, sold, archived]
+    ItemAttributes:
+      type: object
+      description: |
+        Произвольные атрибуты объявления — плоский словарь строк.
+        Не более 50 пар.
+      additionalProperties:
+        type: string
+      maxProperties: 50
+    RewardKind:
+      type: string
+      description: Тип награды — промокод, полезное действие или косметика.
+      enum: [promo, utility, cosmetic]
+    RewardConditionType:
+      type: string
+      description: Тип условия открытия награды.
+      enum: [level, streak, achievement]
+    RewardStatus:
+      type: string
+      description: Состояние выданной награды.
+      enum: [granted, activated, expired]
+    WSClientMessage:
+      type: object
+      description: |
+        Сообщение клиента в WebSocket. Полезной нагрузки у клиентских
+        сообщений нет — действие полностью задаётся полем `type`.
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: |
+            `ping` — проверка живости, `pet.get` — запрос состояния,
+            `pet.pet` — погладить питомца.
+          enum: [ping, pet.get, pet.pet]
+        request_id:
+          type: string
+          description: |
+            Произвольный идентификатор запроса. Сервер вернёт его в ответе,
+            что позволяет соотнести ответ с запросом. Можно не передавать.
+    WSServerMessage:
+      type: object
+      description: |
+        Сообщение сервера в WebSocket. Тип payload определяется полем `type`
+        согласно таблице в описании `GET /api/v1/ws`.
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum:
+            - pet.state
+            - pet.updated
+            - pet.hatched
+            - xp.gained
+            - level.up
+            - reward.granted
+            - streak.updated
+            - error
+            - pong
+        request_id:
+          type: string
+          description: |
+            Копия `request_id` из запроса клиента. Отсутствует
+            у широковещательных событий.
+        payload:
+          description: |
+            Содержимое события. Отсутствует у `pong`. Для `pet.state`,
+            `pet.updated` и `pet.hatched` это `Pet`; для остальных —
+            соответствующая `WS*Payload`-схема.
+          oneOf:
+            - $ref: '#/components/schemas/Pet'
+            - $ref: '#/components/schemas/WSXPGainedPayload'
+            - $ref: '#/components/schemas/WSLevelUpPayload'
+            - $ref: '#/components/schemas/WSRewardGrantedPayload'
+            - $ref: '#/components/schemas/WSStreakUpdatedPayload'
+            - $ref: '#/components/schemas/WSErrorPayload'
+    WSXPGainedPayload:
+      type: object
+      description: Payload события `xp.gained`.
+      required: [amount, reason, total]
+      properties:
+        amount:
+          type: integer
+          description: Сколько опыта начислено этим событием.
+        reason:
+          type: string
+          description: Код причины начисления — какое действие его вызвало.
+        total:
+          type: integer
+          minimum: 0
+          description: Опыт в пределах текущего уровня после начисления.
+    WSLevelUpPayload:
+      type: object
+      description: Payload события `level.up`.
+      required: [level]
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          description: Новый достигнутый уровень.
+    WSRewardGrantedPayload:
+      type: object
+      description: |
+        Payload события `reward.granted`. Промокода здесь нет — награда
+        только выдана; код появляется после активации.
+      required: [reward_id, title]
+      properties:
+        reward_id:
+          type: string
+        title:
+          type: string
+    WSStreakUpdatedPayload:
+      type: object
+      description: Payload события `streak.updated`.
+      required: [days, milestone]
+      properties:
+        days:
+          type: integer
+          minimum: 0
+          description: Длина серии после обновления.
+        milestone:
+          type: boolean
+          description: Взят ли рубежный день серии.
+    WSErrorPayload:
+      type: object
+      description: |
+        Payload события `error`. Формат отличается от HTTP-конверта
+        `ErrorEnvelope` — здесь плоский объект без обёртки и без `request_id`.
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            `unknown_message` — неизвестный тип сообщения,
+            `internal_error` — не удалось выполнить действие.
+          enum: [unknown_message, internal_error]
+        message:
+          type: string
+    SummarySource:
+      type: string
+      description: Чем сгенерирован текст сводки.
+      enum: [template, llm]
+    SummaryAdvice:
+      type: object
+      description: Подсказка следующего действия, иногда с привязкой к объявлению.
+      required: [text, action]
+      properties:
+        text:
+          type: string
+        item_id:
+          type: string
+          format: uuid
+          description: Объявление, к которому относится совет. Опускается, если совет общий.
+        action:
+          type: string
+          description: Машиночитаемый код рекомендуемого действия.
+    SummaryAction:
+      type: object
+      description: Агрегат по одному типу действия за день.
+      required: [action, count, amount]
+      properties:
+        action:
+          type: string
+          description: Код действия.
+        count:
+          type: integer
+          minimum: 0
+          description: Сколько раз действие совершено.
+        amount:
+          type: integer
+          description: Суммарный опыт, начисленный за эти действия.
+    SummaryFacts:
+      type: object
+      description: Числовая часть сводки — то, из чего строится текст.
+      required:
+        - total_xp
+        - actions
+        - level
+        - previous_level
+        - leveled_up
+        - xp
+        - next_level_xp
+        - xp_to_next_level
+        - rewards
+        - badges
+        - stage
+        - state
+        - satiety
+        - happiness
+        - energy
+        - streak_days
+        - streak_broken
+        - issues_count
+      properties:
+        total_xp:
+          type: integer
+          description: Весь опыт, набранный за день.
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummaryAction'
+        level:
+          type: integer
+          minimum: 1
+        previous_level:
+          type: integer
+          minimum: 1
+        leveled_up:
+          type: boolean
+        xp:
+          type: integer
+          minimum: 0
+        next_level_xp:
+          type: integer
+          minimum: 0
+        xp_to_next_level:
+          type: integer
+          minimum: 0
+        rewards:
+          type: array
+          description: Идентификаторы наград за день. Пустой массив вместо `null`.
+          items:
+            type: string
+        badges:
+          type: array
+          description: Идентификаторы бейджей за день. Пустой массив вместо `null`.
+          items:
+            type: string
+        stage:
+          $ref: '#/components/schemas/PetStage'
+        state:
+          $ref: '#/components/schemas/PetState'
+        satiety:
+          type: integer
+          minimum: 0
+          maximum: 100
+        happiness:
+          type: integer
+          minimum: 0
+          maximum: 100
+        energy:
+          type: integer
+          minimum: 0
+          maximum: 100
+        streak_days:
+          type: integer
+          minimum: 0
+        streak_broken:
+          type: boolean
+        leaderboard_rank:
+          type: integer
+          minimum: 1
+          description: Позиция в рейтинге. Опускается, если неизвестна.
+        issues_count:
+          type: integer
+          minimum: 0
+          description: Сколько проблем питомца зафиксировано за день.
+    DailySummary:
+      type: object
+      description: Ежедневная сводка достижений.
+      required: [id, date, message, generated_by, facts, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: Календарный день сводки в формате `YYYY-MM-DD`.
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: Текст сводки для показа пользователю.
+        advice:
+          $ref: '#/components/schemas/SummaryAdvice'
+        generated_by:
+          $ref: '#/components/schemas/SummarySource'
+        facts:
+          $ref: '#/components/schemas/SummaryFacts'
+        created_at:
+          type: string
+          format: date-time
+    DailySummaryListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailySummary'
+        next_cursor:
+          type: string

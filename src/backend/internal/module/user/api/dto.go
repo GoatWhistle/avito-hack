@@ -10,7 +10,7 @@ import (
 
 type registerRequest struct {
 	Email    string `json:"email"     validate:"required,email"`
-	Password string `json:"password"  validate:"required"`
+	Password string `json:"password"  validate:"required,min=8,max=72" minLength:"8" maxLength:"72"`
 	FullName string `json:"full_name" validate:"required"`
 }
 
@@ -32,9 +32,8 @@ type userResponse struct {
 }
 
 type sessionResponse struct {
-	Token     string       `json:"token"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	User      userResponse `json:"user"`
+	Token string       `json:"token"`
+	User  userResponse `json:"user"`
 }
 
 func toUserResponse(u *domain.User) userResponse {

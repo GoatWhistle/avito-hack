@@ -32,13 +32,13 @@ func NewEarnedBadge(badge Badge, userID uuid.UUID, earnedAt time.Time) EarnedBad
 	return EarnedBadge{badge: badge, userID: userID, earnedAt: earnedAt}
 }
 
-func (e EarnedBadge) Badge() Badge         { return e.badge }
-func (e EarnedBadge) UserID() uuid.UUID    { return e.userID }
-func (e EarnedBadge) EarnedAt() time.Time  { return e.earnedAt }
-func (e EarnedBadge) ID() string           { return e.badge.id }
-func (e EarnedBadge) Name() string         { return e.badge.name }
-func (e EarnedBadge) Description() string  { return e.badge.description }
-func (e EarnedBadge) IconURL() string      { return e.badge.iconURL }
+func (e EarnedBadge) Badge() Badge        { return e.badge }
+func (e EarnedBadge) UserID() uuid.UUID   { return e.userID }
+func (e EarnedBadge) EarnedAt() time.Time { return e.earnedAt }
+func (e EarnedBadge) ID() string          { return e.badge.id }
+func (e EarnedBadge) Name() string        { return e.badge.name }
+func (e EarnedBadge) Description() string { return e.badge.description }
+func (e EarnedBadge) IconURL() string     { return e.badge.iconURL }
 
 const badgeRaccoonFriend = "raccoon_friend"
 

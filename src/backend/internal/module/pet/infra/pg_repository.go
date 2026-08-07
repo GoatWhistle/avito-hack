@@ -9,13 +9,15 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/avito-hack/backend/internal/module/pet/app"
 	"github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/postgres"
 )
 
 const petColumns = `id, user_id, name, stage, level, xp, next_level_xp, satiety, happiness, energy,
-	streak_days, freezes, last_checkin_date, hatched_at, last_decay_time, updated_at`
+	streak_days, freezes, last_checkin_date, hatched_at, last_decay_time, updated_at,
+	interaction_version`
 
 type PgRepository struct {
 	pool *pgxpool.Pool
@@ -43,8 +45,9 @@ func (r *PgRepository) ByUserIDForUpdate(ctx context.Context, userID uuid.UUID) 
 func (r *PgRepository) Save(ctx context.Context, pet *domain.Pet) error {
 	const query = `INSERT INTO pets (
 		id, user_id, name, stage, level, xp, next_level_xp, satiety, happiness, energy,
-		streak_days, freezes, last_checkin_date, hatched_at, last_decay_time, updated_at
-	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		streak_days, freezes, last_checkin_date, hatched_at, last_decay_time, updated_at,
+		interaction_version
+	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 	ON CONFLICT (user_id) DO UPDATE SET
 		name = EXCLUDED.name, stage = EXCLUDED.stage, level = EXCLUDED.level,
 		xp = EXCLUDED.xp, next_level_xp = EXCLUDED.next_level_xp,
@@ -53,16 +56,44 @@ func (r *PgRepository) Save(ctx context.Context, pet *domain.Pet) error {
 		last_checkin_date = EXCLUDED.last_checkin_date,
 		hatched_at = EXCLUDED.hatched_at,
 		last_decay_time = EXCLUDED.last_decay_time,
-		updated_at = EXCLUDED.updated_at`
+		updated_at = EXCLUDED.updated_at,
+		interaction_version = GREATEST(pets.interaction_version, EXCLUDED.interaction_version)`
 
 	_, err := postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query,
 		pet.ID(), pet.UserID(), pet.Name(), pet.Stage(), pet.Level(), pet.XP(), pet.NextLevelXP(),
 		pet.Satiety(), pet.Happiness(), pet.Energy(), pet.StreakDays(), pet.Freezes(),
 		pet.LastCheckInDate(), pet.HatchedAt(), pet.LastDecayTime(), pet.UpdatedAt(),
+		pet.InteractionVersion(),
 	)
 	if err != nil {
 		return fmt.Errorf("save pet: %w", err)
 	}
+	return nil
+}
+
+func (r *PgRepository) SaveHotStates(ctx context.Context, states []app.HotState) (err error) {
+	const query = `UPDATE pets SET
+		happiness = $2, satiety = $3, interaction_version = $4, updated_at = GREATEST(updated_at, $5)
+	WHERE user_id = $1 AND interaction_version < $4`
+
+	batch := &pgx.Batch{}
+	for _, state := range states {
+		batch.Queue(query, state.UserID, state.Happiness, state.Satiety, state.Version, state.UpdatedAt)
+	}
+
+	results := postgres.QuerierFrom(ctx, r.pool).SendBatch(ctx, batch)
+	defer func() {
+		if closeErr := results.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close hot pet states batch: %w", closeErr)
+		}
+	}()
+
+	for range states {
+		if _, execErr := results.Exec(); execErr != nil {
+			return fmt.Errorf("save hot pet states: %w", execErr)
+		}
+	}
+
 	return nil
 }
 
@@ -73,6 +104,7 @@ func (r *PgRepository) queryOne(ctx context.Context, query string, userID uuid.U
 		&p.ID, &p.UserID, &p.Name, &stage, &p.Level, &p.XP, &p.NextLevelXP,
 		&p.Satiety, &p.Happiness, &p.Energy, &p.StreakDays, &p.Freezes,
 		&p.LastCheckInDate, &p.HatchedAt, &p.LastDecayTime, &p.UpdatedAt,
+		&p.InteractionVersion,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domainerr.ErrNotFound

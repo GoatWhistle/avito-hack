@@ -1,0 +1,148 @@
+.pet-avatar {
+  --pet-fur-base: oklch(0.55 0.03 250);
+  --pet-fur-light: oklch(0.68 0.025 250);
+  --pet-fur-dark: oklch(0.42 0.03 250);
+  --pet-fur-belly: oklch(0.93 0.008 250);
+  --pet-mask-dark: oklch(0.3 0.02 250);
+  --pet-mask-light: oklch(0.97 0.005 250);
+  --pet-nose: oklch(0.24 0.015 250);
+  --pet-eye-white: var(--color-neutral-0, oklch(1 0 0));
+  --pet-eye-pupil: oklch(0.22 0.015 250);
+  --pet-accent-blue: var(--color-brand-500, oklch(0.7072 0.1679 242.04));
+  --pet-accent-green: var(--color-grass-500, oklch(0.7916 0.2243 148.73));
+  --pet-accent-pink: oklch(0.72 0.16 5);
+  --pet-egg-shell: oklch(0.95 0.012 250);
+  --pet-egg-crack: oklch(0.74 0.02 250);
+  --pet-gold: var(--color-warning-400, oklch(0.812 0.152 78.5));
+  --pet-flame: var(--color-warning-500, oklch(0.712 0.158 70.67));
+  --pet-aura: var(--color-grass-400, oklch(0.826 0.196 148.73));
+  --pet-shadow: var(--pet-fur-dark);
+
+  --pet-ease-out: var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  --pet-ease-emphasized: var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1));
+  --pet-duration-fast: var(--duration-fast, 140ms);
+
+  --pet-breath-duration: 3.4s;
+  --pet-sway-duration: 6s;
+  --pet-size: 280px;
+
+  display: block;
+  width: 100%;
+  max-width: var(--pet-size);
+  height: auto;
+  overflow: visible;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pet-avatar--sm {
+  --pet-size: 120px;
+}
+
+.pet-avatar--md {
+  --pet-size: 190px;
+}
+
+.pet-avatar--lg {
+  --pet-size: 280px;
+}
+
+.pet-avatar--xl {
+  --pet-size: 380px;
+}
+
+.pet-avatar:focus-visible {
+  outline: 3px solid var(--ring, var(--pet-accent-blue));
+  outline-offset: 6px;
+  border-radius: var(--radius-lg, 0.75rem);
+}
+
+.pet-avatar__body {
+  transform-origin: 100px 150px;
+  animation: pet-breath var(--pet-breath-duration) ease-in-out infinite;
+}
+
+.pet-avatar__head {
+  transform-origin: 100px 92px;
+  animation: pet-sway var(--pet-sway-duration) ease-in-out infinite;
+}
+
+.pet-avatar__tail {
+  transform-origin: 140px 148px;
+  animation: pet-tail 2.8s ease-in-out infinite;
+}
+
+.pet-avatar__pupil {
+  transition: transform var(--pet-duration-fast) var(--pet-ease-out);
+}
+
+.pet-avatar__lid {
+  transform-origin: center;
+  transform: scaleY(0);
+  transition: transform 90ms var(--pet-ease-out);
+}
+
+.pet-avatar__lid--closed {
+  transform: scaleY(1);
+}
+
+.pet-avatar__belly {
+  transform-origin: 100px 158px;
+}
+
+.pet-avatar__aura {
+  transform-origin: 100px 120px;
+  animation: pet-aura 2.6s ease-in-out infinite;
+}
+
+.pet-avatar__spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pet-spark 1.6s var(--pet-ease-out) infinite;
+}
+
+.pet-avatar__zzz {
+  opacity: 0;
+  animation: pet-zzz 3.2s ease-in-out infinite;
+}
+
+.pet-avatar__zzz--b {
+  animation-delay: 0.95s;
+}
+
+.pet-avatar__zzz--c {
+  animation-delay: 1.9s;
+}
+
+.pet-avatar__heart {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pet-heart 1.15s var(--pet-ease-out) forwards;
+}
+
+.pet-avatar__heart--b {
+  animation-delay: 0.12s;
+}
+
+.pet-avatar__heart--c {
+  animation-delay: 0.24s;
+}
+
+.pet-avatar__confetti {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pet-confetti 1.5s var(--pet-ease-out) forwards;
+}
+
+.pet-avatar__shell {
+  transform-origin: 100px 130px;
+}
+
+.pet-avatar__flash {
+  opacity: 0;
+  transform-origin: 100px 120px;
+}

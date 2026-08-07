@@ -81,6 +81,8 @@ type cachedPet struct {
 	HatchedAt       *time.Time   `json:"hatched_at,omitempty"`
 	LastDecayTime   time.Time    `json:"last_decay_time"`
 	UpdatedAt       time.Time    `json:"updated_at"`
+
+	InteractionVersion int64 `json:"interaction_version"`
 }
 
 func toCachedPet(p *domain.Pet) cachedPet {
@@ -89,7 +91,8 @@ func toCachedPet(p *domain.Pet) cachedPet {
 		NextLevelXP: p.NextLevelXP(), Satiety: p.Satiety(), Happiness: p.Happiness(),
 		Energy: p.Energy(), StreakDays: p.StreakDays(), Freezes: p.Freezes(),
 		LastCheckInDate: p.LastCheckInDate(), HatchedAt: p.HatchedAt(),
-		LastDecayTime:   p.LastDecayTime(), UpdatedAt: p.UpdatedAt(),
+		LastDecayTime: p.LastDecayTime(), UpdatedAt: p.UpdatedAt(),
+		InteractionVersion: p.InteractionVersion(),
 	}
 }
 
@@ -99,6 +102,7 @@ func (p cachedPet) toDomain() *domain.Pet {
 		NextLevelXP: p.NextLevelXP, Satiety: p.Satiety, Happiness: p.Happiness,
 		Energy: p.Energy, StreakDays: p.StreakDays, Freezes: p.Freezes,
 		LastCheckInDate: p.LastCheckInDate, HatchedAt: p.HatchedAt,
-		LastDecayTime:   p.LastDecayTime, UpdatedAt: p.UpdatedAt,
+		LastDecayTime: p.LastDecayTime, UpdatedAt: p.UpdatedAt,
+		InteractionVersion: p.InteractionVersion,
 	})
 }
