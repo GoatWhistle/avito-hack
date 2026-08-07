@@ -20,8 +20,8 @@ export const API_ENDPOINTS = {
     me: `${FAVORITE}`,
   },
   pet: {
-    checkin: `${PET}/checkin`,
     me: `${PET}/me`,
+    checkin: `${PET}/checkin`,
     stroke: `${PET}/actions/stroke`,
   },
   rewards: {
