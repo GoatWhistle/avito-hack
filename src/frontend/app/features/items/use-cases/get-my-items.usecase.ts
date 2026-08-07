@@ -2,12 +2,12 @@ import {
   itemRepository,
   type ItemRepository,
 } from '#/features/items/repository/item.repository'
-import type { ItemRequest } from '#/features/items/types/item.request'
+import type { ItemsRequest } from '#/features/items/types/items.request'
 
 export class GetMyItemsUseCase {
   constructor(private readonly repository: ItemRepository) {}
 
-  execute(params: ItemRequest) {
+  execute(params: ItemsRequest) {
     return this.repository.findMy(params)
   }
 }
