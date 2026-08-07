@@ -5,4 +5,4 @@ export const API_ENDPOINTS = {
     signUp: `${AUTH}/register`,
     signIn: `${AUTH}/login`,
   },
-}
+} as const
