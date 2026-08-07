@@ -1,5 +1,5 @@
-const AUTH = 'auth/'
-const USER = 'users/'
+const AUTH = 'auth'
+const USER = 'users'
 
 export const API_ENDPOINTS = {
   auth: {
