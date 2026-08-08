@@ -1,16 +1,16 @@
 export class LocalTokenStorage {
-  private readonly KEY = 'token'
+  private static readonly KEY = 'token'
 
   get() {
-    return localStorage.getItem(this.KEY)
+    return localStorage.getItem(LocalTokenStorage.KEY)
   }
 
   set(token: string) {
-    localStorage.setItem(this.KEY, token)
+    localStorage.setItem(LocalTokenStorage.KEY, token)
   }
 
   remove() {
-    localStorage.removeItem(this.KEY)
+    localStorage.removeItem(LocalTokenStorage.KEY)
   }
 }
 

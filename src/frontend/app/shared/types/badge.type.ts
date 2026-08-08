@@ -2,6 +2,6 @@ export interface Badge {
   id: string
   name: string
   description: string
-  iconUrl: string
-  earnedAt: Date
+  icon_url: string
+  earned_at: Date
 }

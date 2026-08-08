@@ -12,9 +12,12 @@ export class AuthRepository {
   constructor(private readonly httpClient: AxiosInstance) {}
 
   async auth(request: AuthRequest, mode: AuthMode) {
-    const { data } = await this.httpClient.post<Session>(mode, request)
+    const response = await this.httpClient.post<Session>(
+      API_ENDPOINTS.auth[mode],
+      request,
+    )
 
-    return data
+    return response.data
   }
 }
 

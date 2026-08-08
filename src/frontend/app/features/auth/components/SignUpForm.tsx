@@ -45,6 +45,7 @@ export function SignUpForm() {
                   <Input
                     id={field.name}
                     name={field.name}
+                    type="password"
                     value={field.state.value}
                     onChange={e => field.handleChange(e.target.value)}
                   />
@@ -54,7 +55,7 @@ export function SignUpForm() {
           />
 
           <form.Field
-            name="fullName"
+            name="full_name"
             children={field => {
               return (
                 <Field>
