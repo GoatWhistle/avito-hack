@@ -7,6 +7,7 @@ import {
   activationErrorKey,
   formatDate,
   isExpired,
+  rewardText,
 } from '#/features/rewards/lib'
 import type { MyRewardItem } from '#/features/rewards/types'
 
@@ -18,6 +19,11 @@ const statusTone: Record<string, string> = {
 
 export function PromoCodeCard({ item }: { item: MyRewardItem }) {
   const { t, i18n } = useTranslation('rewards')
+  const { t: tCatalog } = useTranslation('catalog')
+  const text = rewardText(tCatalog, item.reward_id, {
+    title: item.title,
+    description: item.description,
+  })
   const [confirming, setConfirming] = useState(false)
   const { copied, copy } = useCopyToClipboard()
   const activate = useActivateReward()
@@ -36,10 +42,10 @@ export function PromoCodeCard({ item }: { item: MyRewardItem }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="line-clamp-2 font-medium text-balance text-foreground">
-              {item.title}
+              {text.title}
             </h3>
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-              {item.description}
+              {text.description}
             </p>
           </div>
           <span

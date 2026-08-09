@@ -1,0 +1,140 @@
+{
+  "summary": {
+    "emptyOpening": "I missed you all day.",
+    "emptyClosing": "Drop by tomorrow — we'll catch up together.",
+    "activeOpening": "That was a good day!",
+    "justVisited": "You stopped by, and that alone is enough.",
+    "hungry": "I'm a little hungry, but I'm managing.",
+    "xp": "You earned {{count}} XP.",
+    "levelUp": "I grew to level {{level}}.",
+    "streak_one": "The streak is {{count}} day strong.",
+    "streak_other": "The streak is {{count}} days strong.",
+    "streakBroken": "The streak ended, but that's alright — we'll start over.",
+    "rankImproved": "We climbed from {{previous}} to {{rank}} on the leaderboard.",
+    "rankHeld": "We're holding {{rank}} on the leaderboard.",
+    "action": {
+      "favorite_one": "You added {{count}} listing to favorites.",
+      "favorite_other": "You added {{count}} listings to favorites.",
+      "item_viewed_one": "You viewed {{count}} listing.",
+      "item_viewed_other": "You viewed {{count}} listings.",
+      "item_published_one": "You published {{count}} listing.",
+      "item_published_other": "You published {{count}} listings.",
+      "item_updated_one": "You updated {{count}} listing.",
+      "item_updated_other": "You updated {{count}} listings.",
+      "item_improved_one": "You improved {{count}} listing.",
+      "item_improved_other": "You improved {{count}} listings.",
+      "item_sold_one": "You sold {{count}} listing.",
+      "item_sold_other": "You sold {{count}} listings.",
+      "quality_listing_one": "You polished {{count}} listing.",
+      "quality_listing_other": "You polished {{count}} listings."
+    }
+  },
+  "advice": {
+    "add_photo": "\"{{title}}\" has no photos at all — listings with photos sell noticeably faster.",
+    "add_photo_generic": "One of your listings has no photos at all — listings with photos sell noticeably faster.",
+    "set_price": "\"{{title}}\" has no price, and buyers usually scroll past those.",
+    "set_price_generic": "One of your listings has no price, and buyers usually scroll past those.",
+    "expand_description": "The description on \"{{title}}\" is very short — a couple of lines about condition would help a lot.",
+    "expand_description_generic": "The description on one of your listings is very short — a couple of lines about condition would help a lot.",
+    "refresh_listing": "\"{{title}}\" hasn't been updated in a while — bump it so new buyers see it.",
+    "refresh_listing_generic": "One of your listings hasn't been updated in a while — bump it so new buyers see it.",
+    "check_in": "Your listings are in good shape — come by tomorrow, we'll check in and keep the streak going.",
+    "check_in_generic": "Your listings are in good shape — come by tomorrow, we'll check in and keep the streak going."
+  },
+  "badge": {
+    "explorer": {
+      "name": "Explorer",
+      "description": "Add 5 listings to favorites"
+    },
+    "curious_eye": {
+      "name": "Curious Eye",
+      "description": "View 10 listings"
+    },
+    "first_listing": {
+      "name": "First Listing",
+      "description": "Publish 1 listing"
+    },
+    "nothing_hidden": {
+      "name": "Nothing Hidden",
+      "description": "Improve 3 of your listings"
+    },
+    "green_planet": {
+      "name": "Green Planet",
+      "description": "Sell 5 listings"
+    },
+    "charged_streak": {
+      "name": "Charged Streak",
+      "description": "Open the app 14 days in a row"
+    },
+    "raccoon_friend": {
+      "name": "Raccoon's Friend",
+      "description": "Reach level 10"
+    },
+    "quest_runner": {
+      "name": "Quest Runner",
+      "description": "Complete 3 quests in a day"
+    }
+  },
+  "reward": {
+    "starter_status": {
+      "title": "\"Newcomer\" status",
+      "description": "Access to the Raccoon"
+    },
+    "raccoon_accessory": {
+      "title": "Cap and glasses for the Raccoon",
+      "description": "Pet customization"
+    },
+    "services_discount_10": {
+      "title": "10% off \"Highlight\"",
+      "description": "Discount on paid promotion services"
+    },
+    "attentive_badge": {
+      "title": "\"Attentive\" badge",
+      "description": "A badge for your profile"
+    },
+    "listing_badge_or_delivery_discount": {
+      "title": "Listing badge",
+      "description": "A 3-day badge or 20% off delivery"
+    },
+    "raccoon_avatar_frame": {
+      "title": "Colored avatar frame",
+      "description": "A frame for your Raccoon avatar"
+    },
+    "favorites_personal_offer": {
+      "title": "Personal promo code",
+      "description": "A special offer on your favorite items"
+    },
+    "dialogue_master_badge": {
+      "title": "\"Listing Master\" badge",
+      "description": "A badge for your profile"
+    },
+    "autoteka_discount_30": {
+      "title": "30% off Autoteka",
+      "description": "Discount on a vehicle history report"
+    },
+    "free_delivery_500": {
+      "title": "Free delivery",
+      "description": "A promo code for delivery up to 500 ₽"
+    },
+    "xl_listing_discount_50": {
+      "title": "50% off an XL listing",
+      "description": "Discount on the \"XL listing\" service"
+    },
+    "treasure_hunter_badge": {
+      "title": "\"Treasure Hunter\" badge",
+      "description": "A badge for your profile"
+    },
+    "views_boost_24h": {
+      "title": "Views boost",
+      "description": "A free service for 24 hours"
+    },
+    "raccoon_sticker_pack": {
+      "title": "Raccoon sticker pack",
+      "description": "Exclusive stickers for Avito chats"
+    },
+    "free_delivery_and_avito_guru_badge": {
+      "title": "Coupon and \"Avito Guru\" badge",
+      "description": "Free delivery and top loyalty status"
+    }
+  }
+}

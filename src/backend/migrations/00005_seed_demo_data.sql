@@ -20,16 +20,16 @@ INSERT INTO pets (
     satiety, happiness, energy, streak_days, last_checkin_date, last_decay_time, updated_at, freezes, hatched_at
 ) VALUES
     ('e0000000-0000-4000-a000-000000000001', 'd0000000-0000-4000-a000-000000000001', 'Ноти',     'legend', 15, 455, 0,   92, 88, 100, 41, current_date,     now() - interval '1 hour',   now(), 3, now() - interval '58 days'),
-    ('e0000000-0000-4000-a000-000000000002', 'd0000000-0000-4000-a000-000000000002', 'Полоскун', 'adult',  13, 312, 350, 78, 74, 95,  22, current_date,     now() - interval '2 hours',  now(), 2, now() - interval '53 days'),
-    ('e0000000-0000-4000-a000-000000000003', 'd0000000-0000-4000-a000-000000000003', 'Тишка',    'adult',  12, 265, 290, 64, 81, 88,  17, current_date,     now() - interval '3 hours',  now(), 1, now() - interval '48 days'),
-    ('e0000000-0000-4000-a000-000000000004', 'd0000000-0000-4000-a000-000000000004', 'Рокки',    'adult',  11, 208, 240, 55, 69, 76,  14, current_date,     now() - interval '5 hours',  now(), 1, now() - interval '43 days'),
-    ('e0000000-0000-4000-a000-000000000005', 'd0000000-0000-4000-a000-000000000005', 'Бублик',   'adult',  10, 168, 195, 47, 72, 64,  11, current_date,     now() - interval '6 hours',  now(), 0, now() - interval '38 days'),
-    ('e0000000-0000-4000-a000-000000000006', 'd0000000-0000-4000-a000-000000000006', 'Мокко',    'teen',   8,  104, 122, 38, 58, 55,  8,  current_date,     now() - interval '9 hours',  now(), 0, now() - interval '33 days'),
-    ('e0000000-0000-4000-a000-000000000007', 'd0000000-0000-4000-a000-000000000007', 'Персик',   'teen',   7,  84,  95,  30, 47, 42,  6,  current_date - 1, now() - interval '20 hours', now(), 0, now() - interval '28 days'),
-    ('e0000000-0000-4000-a000-000000000008', 'd0000000-0000-4000-a000-000000000008', 'Тучка',    'teen',   6,  58,  72,  26, 35, 31,  4,  current_date - 1, now() - interval '26 hours', now(), 0, now() - interval '23 days'),
-    ('e0000000-0000-4000-a000-000000000009', 'd0000000-0000-4000-a000-000000000009', 'Кекс',     'baby',   4,  27,  35,  61, 66, 82,  3,  current_date,     now() - interval '4 hours',  now(), 1, now() - interval '18 days'),
-    ('e0000000-0000-4000-a000-00000000000a', 'd0000000-0000-4000-a000-00000000000a', 'Тими',     'baby',   3,  15,  22,  44, 52, 70,  2,  current_date,     now() - interval '7 hours',  now(), 0, now() - interval '10 days'),
-    ('e0000000-0000-4000-a000-00000000000b', 'd0000000-0000-4000-a000-00000000000b', 'Соня',     'baby',   2,  7,   12,  18, 24, 12,  1,  current_date - 3, now() - interval '3 days',   now(), 0, now() - interval '4 days'),
+    ('e0000000-0000-4000-a000-000000000002', 'd0000000-0000-4000-a000-000000000002', 'Ноти', 'adult',  13, 312, 350, 78, 74, 95,  22, current_date,     now() - interval '2 hours',  now(), 2, now() - interval '53 days'),
+    ('e0000000-0000-4000-a000-000000000003', 'd0000000-0000-4000-a000-000000000003', 'Ноти',    'adult',  12, 265, 290, 64, 81, 88,  17, current_date,     now() - interval '3 hours',  now(), 1, now() - interval '48 days'),
+    ('e0000000-0000-4000-a000-000000000004', 'd0000000-0000-4000-a000-000000000004', 'Ноти',    'adult',  11, 208, 240, 55, 69, 76,  14, current_date,     now() - interval '5 hours',  now(), 1, now() - interval '43 days'),
+    ('e0000000-0000-4000-a000-000000000005', 'd0000000-0000-4000-a000-000000000005', 'Ноти',   'adult',  10, 168, 195, 47, 72, 64,  11, current_date,     now() - interval '6 hours',  now(), 0, now() - interval '38 days'),
+    ('e0000000-0000-4000-a000-000000000006', 'd0000000-0000-4000-a000-000000000006', 'Ноти',    'teen',   8,  104, 122, 38, 58, 55,  8,  current_date,     now() - interval '9 hours',  now(), 0, now() - interval '33 days'),
+    ('e0000000-0000-4000-a000-000000000007', 'd0000000-0000-4000-a000-000000000007', 'Ноти',   'teen',   7,  84,  95,  30, 47, 42,  6,  current_date - 1, now() - interval '20 hours', now(), 0, now() - interval '28 days'),
+    ('e0000000-0000-4000-a000-000000000008', 'd0000000-0000-4000-a000-000000000008', 'Ноти',    'teen',   6,  58,  72,  26, 35, 31,  4,  current_date - 1, now() - interval '26 hours', now(), 0, now() - interval '23 days'),
+    ('e0000000-0000-4000-a000-000000000009', 'd0000000-0000-4000-a000-000000000009', 'Ноти',     'baby',   4,  27,  35,  61, 66, 82,  3,  current_date,     now() - interval '4 hours',  now(), 1, now() - interval '18 days'),
+    ('e0000000-0000-4000-a000-00000000000a', 'd0000000-0000-4000-a000-00000000000a', 'Ноти',     'baby',   3,  15,  22,  44, 52, 70,  2,  current_date,     now() - interval '7 hours',  now(), 0, now() - interval '10 days'),
+    ('e0000000-0000-4000-a000-00000000000b', 'd0000000-0000-4000-a000-00000000000b', 'Ноти',     'baby',   2,  7,   12,  18, 24, 12,  1,  current_date - 3, now() - interval '3 days',   now(), 0, now() - interval '4 days'),
     ('e0000000-0000-4000-a000-00000000000c', 'd0000000-0000-4000-a000-00000000000c', '',         'egg',    1,  0,   5,   70, 70, 100, 0,  NULL,             now(),                       now(), 0, NULL)
 ON CONFLICT (id) DO NOTHING;
 

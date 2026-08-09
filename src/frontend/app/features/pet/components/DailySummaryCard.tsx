@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
+import { adviceText, summaryMessage } from '#/features/pet/lib'
 import type { DailySummary } from '#/features/pet/types'
 
 export interface DailySummaryCardProps {
@@ -16,8 +17,13 @@ export function DailySummaryCard({
   onDismiss,
 }: DailySummaryCardProps) {
   const { t } = useTranslation('pet')
+  const { t: tCatalog } = useTranslation('catalog')
   const advice = summary.advice
   const itemId = advice?.item_id
+  const message =
+    summary.generated_by === 'template'
+      ? summaryMessage(tCatalog, summary.facts)
+      : summary.message
 
   return (
     <section
@@ -43,7 +49,7 @@ export function DailySummaryCard({
       </div>
 
       <blockquote className="border-l-2 border-primary/40 pl-3 text-sm leading-relaxed text-foreground">
-        {summary.message}
+        {message}
       </blockquote>
 
       <dl className="grid grid-cols-3 gap-2 text-center">
@@ -63,7 +69,9 @@ export function DailySummaryCard({
 
       {advice !== null && advice !== undefined && (
         <div className="flex flex-col gap-2 rounded-lg bg-muted px-3 py-2.5">
-          <p className="text-sm text-foreground">{advice.text}</p>
+          <p className="text-sm text-foreground">
+            {adviceText(tCatalog, advice)}
+          </p>
           {typeof itemId === 'string' && itemId !== '' && (
             <Button
               size="sm"

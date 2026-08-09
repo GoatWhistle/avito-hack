@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	DefaultName = "Ноти"
+
 	initialLevel     = 1
 	initialSatiety   = 70
 	initialHappiness = 70
@@ -49,6 +51,7 @@ func New(userID uuid.UUID, now time.Time) *Pet {
 	return &Pet{
 		id:            uuid.New(),
 		userID:        userID,
+		name:          DefaultName,
 		stage:         stageForLevel(initialLevel),
 		level:         initialLevel,
 		nextLevelXP:   nextThreshold(initialLevel),
@@ -142,9 +145,17 @@ func (p *Pet) Hatch(now time.Time) bool {
 	return true
 }
 
-func (p *Pet) ID() uuid.UUID               { return p.id }
-func (p *Pet) UserID() uuid.UUID           { return p.userID }
-func (p *Pet) Name() string                { return p.name }
+func (p *Pet) ID() uuid.UUID     { return p.id }
+func (p *Pet) UserID() uuid.UUID { return p.userID }
+
+func (p *Pet) Name() string {
+	if p.name == "" {
+		return DefaultName
+	}
+
+	return p.name
+}
+
 func (p *Pet) Stage() Stage                { return p.stage }
 func (p *Pet) Level() int                  { return p.level }
 func (p *Pet) XP() int                     { return p.xp }

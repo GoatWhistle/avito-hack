@@ -1,4 +1,5 @@
 import ruAuth from './locales/ru/auth.json'
+import ruCatalog from './locales/ru/catalog.json'
 import ruCommon from './locales/ru/common.json'
 import ruErrors from './locales/ru/errors.json'
 import ruItems from './locales/ru/items.json'
@@ -11,6 +12,7 @@ import ruRewards from './locales/ru/rewards.json'
 import ruValidation from './locales/ru/validation.json'
 
 import enAuth from './locales/en/auth.json'
+import enCatalog from './locales/en/catalog.json'
 import enCommon from './locales/en/common.json'
 import enErrors from './locales/en/errors.json'
 import enItems from './locales/en/items.json'
@@ -28,6 +30,7 @@ export const namespaces = [
   'pet',
   'rewards',
   'quests',
+  'catalog',
   'items',
   'landing',
   'leaderboard',
@@ -53,6 +56,7 @@ export const resources = {
     pet: ruPet,
     rewards: ruRewards,
     quests: ruQuests,
+    catalog: ruCatalog,
     items: ruItems,
     landing: ruLanding,
     leaderboard: ruLeaderboard,
@@ -66,6 +70,7 @@ export const resources = {
     pet: enPet,
     rewards: enRewards,
     quests: enQuests,
+    catalog: enCatalog,
     items: enItems,
     landing: enLanding,
     leaderboard: enLeaderboard,

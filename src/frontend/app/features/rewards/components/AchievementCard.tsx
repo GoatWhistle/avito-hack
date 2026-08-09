@@ -4,6 +4,7 @@ import { cn } from '#/lib/utils'
 import {
   badgeProgress,
   badgeRemainingLabel,
+  badgeText,
   formatDate,
 } from '#/features/rewards/lib'
 import type { BadgeItem } from '#/features/rewards/types'
@@ -15,10 +16,15 @@ export interface AchievementCardProps {
 
 export function AchievementCard({ badge }: AchievementCardProps) {
   const { t, i18n } = useTranslation('rewards')
+  const { t: tCatalog } = useTranslation('catalog')
   const earned = Boolean(badge.earned_at)
   const progress = badgeProgress(badge)
   const remaining = badgeRemainingLabel(t, badge)
   const showProgress = !earned && progress.hasProgress
+  const text = badgeText(tCatalog, badge.id, {
+    title: badge.name,
+    description: badge.description,
+  })
 
   return (
     <li className="flex">
@@ -56,10 +62,10 @@ export function AchievementCard({ badge }: AchievementCardProps) {
 
           <div className="flex min-w-0 flex-col gap-1">
             <p className="line-clamp-2 text-sm leading-tight font-semibold wrap-anywhere text-balance text-foreground">
-              {badge.name}
+              {text.title}
             </p>
             <p className="line-clamp-2 text-xs leading-snug font-medium wrap-anywhere text-muted-foreground">
-              {badge.description}
+              {text.description}
             </p>
           </div>
 
@@ -69,7 +75,7 @@ export function AchievementCard({ badge }: AchievementCardProps) {
                 <ProgressBar
                   value={progress.percent}
                   label={t('badges.progressMeter', {
-                    name: badge.name,
+                    name: text.title,
                     current: progress.current,
                     target: progress.target,
                   })}

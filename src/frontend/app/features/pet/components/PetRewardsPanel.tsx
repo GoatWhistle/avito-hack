@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { useRewardCatalog } from '#/features/rewards'
+import { rewardText } from '#/features/rewards/lib'
 import type { RewardGroup, RewardProgress } from '#/features/rewards'
 
 const VISIBLE_LIMIT = 3
@@ -65,38 +66,51 @@ export function PetRewardsPanel() {
 
       <ul className="flex flex-col gap-3">
         {upcoming.map((entry) => (
-          <li key={entry.reward.id} className="flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-sm font-medium text-foreground">
-                {entry.reward.title}
-              </span>
-              <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                {t('rewards.progress', {
-                  current: entry.current,
-                  target: entry.target,
-                })}
-              </span>
-            </div>
-
-            <div
-              role="meter"
-              aria-valuenow={entry.percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={t('rewards.meterLabel', {
-                title: entry.reward.title,
-                percent: entry.percent,
-              })}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
-            >
-              <div
-                className="h-full rounded-full bg-accent transition-[width] duration-500 ease-out"
-                style={{ width: `${entry.percent}%` }}
-              />
-            </div>
-          </li>
+          <UpcomingRewardRow key={entry.reward.id} entry={entry} />
         ))}
       </ul>
     </section>
+  )
+}
+
+function UpcomingRewardRow({ entry }: { entry: RewardProgress }) {
+  const { t } = useTranslation('pet')
+  const { t: tCatalog } = useTranslation('catalog')
+  const title = rewardText(tCatalog, entry.reward.id, {
+    title: entry.reward.title,
+    description: entry.reward.description,
+  }).title
+
+  return (
+    <li className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="truncate text-sm font-medium text-foreground">
+          {title}
+        </span>
+        <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+          {t('rewards.progress', {
+            current: entry.current,
+            target: entry.target,
+          })}
+        </span>
+      </div>
+
+      <div
+        role="meter"
+        aria-valuenow={entry.percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={t('rewards.meterLabel', {
+          title,
+          percent: entry.percent,
+        })}
+        className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      >
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-500 ease-out"
+          style={{ width: `${entry.percent}%` }}
+        />
+      </div>
+    </li>
   )
 }

@@ -1,10 +1,7 @@
-import { Flame, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, SidebarHeader } from '#/components/ui'
-import { useBadges } from '#/features/rewards'
 import type { LevelProgress } from '#/features/pet/lib'
 import type { Pet } from '#/features/pet/types'
-import { HudChip } from './HudChip'
 
 export interface DashboardHeaderProps {
   pet: Pet
@@ -13,7 +10,6 @@ export interface DashboardHeaderProps {
 
 export function DashboardHeader({ pet, progress }: DashboardHeaderProps) {
   const { t } = useTranslation('pet')
-  const { data: badges } = useBadges()
   const { level, xp, nextLevelXp, xpToNext, percent, isMaxLevel } = progress
 
   return (
@@ -75,14 +71,6 @@ export function DashboardHeader({ pet, progress }: DashboardHeaderProps) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <HudChip icon={Flame} tone="streak">
-              {t('dashboard.hud.streak', { count: pet.streak_days })}
-            </HudChip>
-            <HudChip icon={Star} tone="xp">
-              {t('dashboard.hud.badges', { count: badges?.length ?? 0 })}
-            </HudChip>
-          </div>
         </CardContent>
       </Card>
     </SidebarHeader>

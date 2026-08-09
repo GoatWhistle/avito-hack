@@ -4,7 +4,6 @@ import {
   isLegendStage,
   lottieSourceFor,
   RACCOON_ADULT_SRC,
-  RACCOON_TEEN_SRC,
 } from './lottie-sources'
 import type { PetStage } from './types'
 
@@ -62,9 +61,9 @@ describe('lottie source mapping', () => {
     }
   })
 
-  it('uses the young raccoon for the early stages', () => {
-    for (const stage of ['baby', 'teen'] as PetStage[]) {
-      expect(lottieSourceFor(stage)).toBe(RACCOON_TEEN_SRC)
+  it('uses the animated raccoon on every stage', () => {
+    for (const stage of ['baby', 'teen', 'adult', 'legend'] as PetStage[]) {
+      expect(lottieSourceFor(stage)).toBe(RACCOON_ADULT_SRC)
     }
   })
 

@@ -64,11 +64,13 @@
 }
 
 .pet-lottie[data-stage='baby'] {
-  --pet-lottie-grow: 0.62;
+  --pet-lottie-zoom: 1.15;
+  --pet-lottie-grow: 0.82;
 }
 
 .pet-lottie[data-stage='teen'] {
-  --pet-lottie-grow: 0.84;
+  --pet-lottie-zoom: 1.15;
+  --pet-lottie-grow: 0.91;
 }
 
 .pet-lottie[data-stage='adult'] {

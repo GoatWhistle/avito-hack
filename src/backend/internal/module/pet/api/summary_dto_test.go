@@ -46,13 +46,17 @@ func TestToAdvicePayloadPopulated(t *testing.T) {
 	t.Parallel()
 
 	itemID := uuid.New()
-	advice := &domain.Advice{Text: "Добавь фото", ItemID: &itemID, Action: domain.AdviceAddPhoto}
+	advice := &domain.Advice{
+		Text: "Добавь фото", ItemID: &itemID,
+		ItemTitle: "Велосипед", Action: domain.AdviceAddPhoto,
+	}
 
 	got := toAdvicePayload(advice)
 
 	require.NotNil(t, got)
 	assert.Equal(t, "Добавь фото", got.Text)
 	assert.Equal(t, "add_photo", got.Action)
+	assert.Equal(t, "Велосипед", got.ItemTitle)
 	require.NotNil(t, got.ItemID)
 	assert.Equal(t, itemID, *got.ItemID)
 }

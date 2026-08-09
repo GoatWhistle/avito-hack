@@ -24,6 +24,7 @@ const summary: DailySummary = {
   advice: {
     text: 'Добавьте фото в объявление о велосипеде',
     item_id: 'item-42',
+    item_title: 'Велосипед',
     action: 'add_photo',
   },
   generated_by: 'llm',
@@ -64,7 +65,7 @@ describe('daily summary', () => {
     const card = await screen.findByTestId('daily-summary')
     expect(card).toHaveTextContent('три объявления стали лучше')
     expect(card).toHaveTextContent('+34')
-    expect(card).toHaveTextContent('Добавьте фото')
+    expect(card).toHaveTextContent('нет ни одной фотографии')
 
     expect(screen.getByRole('link', { name: /исправить/i })).toHaveAttribute(
       'href',

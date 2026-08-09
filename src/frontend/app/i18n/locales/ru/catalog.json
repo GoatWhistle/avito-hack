@@ -1,0 +1,156 @@
+{
+  "summary": {
+    "emptyOpening": "Скучал по тебе весь день.",
+    "emptyClosing": "Загляни завтра — вместе наверстаем.",
+    "activeOpening": "Хороший вышел день!",
+    "justVisited": "Ты заглянул ко мне, и этого уже достаточно.",
+    "hungry": "Я немного проголодался, но я справляюсь.",
+    "xp": "Ты набрал {{count}} XP.",
+    "levelUp": "Я подрос до {{level}} уровня.",
+    "streak_one": "Серия держится уже {{count}} день подряд.",
+    "streak_few": "Серия держится уже {{count}} дня подряд.",
+    "streak_many": "Серия держится уже {{count}} дней подряд.",
+    "streak_other": "Серия держится уже {{count}} дней подряд.",
+    "streakBroken": "Серия оборвалась, но это не страшно — начнём заново.",
+    "rankImproved": "В лидерборде поднялись с {{previous}} на {{rank}} место.",
+    "rankHeld": "Держим {{rank}} место в лидерборде.",
+    "action": {
+      "favorite_one": "Ты добавил {{count}} объявление в избранное.",
+      "favorite_few": "Ты добавил {{count}} объявления в избранное.",
+      "favorite_many": "Ты добавил {{count}} объявлений в избранное.",
+      "favorite_other": "Ты добавил {{count}} объявлений в избранное.",
+      "item_viewed_one": "Ты посмотрел {{count}} объявление.",
+      "item_viewed_few": "Ты посмотрел {{count}} объявления.",
+      "item_viewed_many": "Ты посмотрел {{count}} объявлений.",
+      "item_viewed_other": "Ты посмотрел {{count}} объявлений.",
+      "item_published_one": "Ты опубликовал {{count}} объявление.",
+      "item_published_few": "Ты опубликовал {{count}} объявления.",
+      "item_published_many": "Ты опубликовал {{count}} объявлений.",
+      "item_published_other": "Ты опубликовал {{count}} объявлений.",
+      "item_updated_one": "Ты обновил {{count}} объявление.",
+      "item_updated_few": "Ты обновил {{count}} объявления.",
+      "item_updated_many": "Ты обновил {{count}} объявлений.",
+      "item_updated_other": "Ты обновил {{count}} объявлений.",
+      "item_improved_one": "Ты улучшил {{count}} объявление.",
+      "item_improved_few": "Ты улучшил {{count}} объявления.",
+      "item_improved_many": "Ты улучшил {{count}} объявлений.",
+      "item_improved_other": "Ты улучшил {{count}} объявлений.",
+      "item_sold_one": "Ты продал {{count}} объявление.",
+      "item_sold_few": "Ты продал {{count}} объявления.",
+      "item_sold_many": "Ты продал {{count}} объявлений.",
+      "item_sold_other": "Ты продал {{count}} объявлений.",
+      "quality_listing_one": "Ты оформил {{count}} объявление.",
+      "quality_listing_few": "Ты оформил {{count}} объявления.",
+      "quality_listing_many": "Ты оформил {{count}} объявлений.",
+      "quality_listing_other": "Ты оформил {{count}} объявлений."
+    }
+  },
+  "advice": {
+    "add_photo": "У объявления «{{title}}» нет ни одной фотографии — с фото такие продаются заметно быстрее.",
+    "add_photo_generic": "У одного из ваших объявлений нет фотографий — с фото такие продаются заметно быстрее.",
+    "set_price": "В объявлении «{{title}}» не указана цена, покупатели такие обычно пролистывают.",
+    "set_price_generic": "В одном из ваших объявлений не указана цена, покупатели такие обычно пролистывают.",
+    "expand_description": "Описание у «{{title}}» совсем короткое — пара строк про состояние и комплект сильно помогут.",
+    "expand_description_generic": "Описание у одного из ваших объявлений совсем короткое — пара строк про состояние и комплект сильно помогут.",
+    "refresh_listing": "Объявление «{{title}}» давно не обновлялось, подними его — покажется новым покупателям.",
+    "refresh_listing_generic": "Одно из ваших объявлений давно не обновлялось, поднимите его — покажется новым покупателям.",
+    "check_in": "Объявления у тебя в порядке — заходи завтра, отметимся и продолжим серию.",
+    "check_in_generic": "Объявления у тебя в порядке — заходи завтра, отметимся и продолжим серию."
+  },
+  "badge": {
+    "explorer": {
+      "name": "Исследователь",
+      "description": "Добавить 5 объявлений в избранное"
+    },
+    "curious_eye": {
+      "name": "Любопытный глаз",
+      "description": "Посмотреть 10 объявлений"
+    },
+    "first_listing": {
+      "name": "Первое объявление",
+      "description": "Опубликовать 1 объявление"
+    },
+    "nothing_hidden": {
+      "name": "Ничего не скроешь",
+      "description": "Улучшить 3 своих объявления"
+    },
+    "green_planet": {
+      "name": "Зелёная планета",
+      "description": "Продать 5 объявлений"
+    },
+    "charged_streak": {
+      "name": "Заряженный стрик",
+      "description": "Заходить в приложение 14 дней подряд"
+    },
+    "raccoon_friend": {
+      "name": "Друг Енота",
+      "description": "Достичь 10 уровня"
+    },
+    "quest_runner": {
+      "name": "Исполнительный",
+      "description": "Выполнить 3 задания за день"
+    }
+  },
+  "reward": {
+    "starter_status": {
+      "title": "Статус «Новичок»",
+      "description": "Доступ к Еноту"
+    },
+    "raccoon_accessory": {
+      "title": "Кепка и очки для Енота",
+      "description": "Кастомизация питомца"
+    },
+    "services_discount_10": {
+      "title": "Скидка 10% на «Выделение»",
+      "description": "Скидка на платные услуги продвижения"
+    },
+    "attentive_badge": {
+      "title": "Бейдж «Внимательный»",
+      "description": "Бейдж в профиль"
+    },
+    "listing_badge_or_delivery_discount": {
+      "title": "Значок на объявление",
+      "description": "Значок на 3 дня или −20% на доставку"
+    },
+    "raccoon_avatar_frame": {
+      "title": "Цветная рамка аватарки",
+      "description": "Рамка для аватарки Енота"
+    },
+    "favorites_personal_offer": {
+      "title": "Персональный промокод",
+      "description": "Спецпредложение на товары из избранного"
+    },
+    "dialogue_master_badge": {
+      "title": "Бейдж «Мастер объявлений»",
+      "description": "Бейдж в профиль"
+    },
+    "autoteka_discount_30": {
+      "title": "Скидка 30% на Автотеку",
+      "description": "Скидка на отчёт о проверке авто"
+    },
+    "free_delivery_500": {
+      "title": "Бесплатная доставка",
+      "description": "Промокод на доставку до 500 ₽"
+    },
+    "xl_listing_discount_50": {
+      "title": "Скидка 50% на XL-объявление",
+      "description": "Скидка на услугу «XL-объявление»"
+    },
+    "treasure_hunter_badge": {
+      "title": "Бейдж «Охотник за сокровищами»",
+      "description": "Бейдж в профиль"
+    },
+    "views_boost_24h": {
+      "title": "Увеличение просмотров",
+      "description": "Бесплатная услуга на 24 часа"
+    },
+    "raccoon_sticker_pack": {
+      "title": "Стикер-пачка с Енотом",
+      "description": "Эксклюзивные стикеры для чатов Авито"
+    },
+    "free_delivery_and_avito_guru_badge": {
+      "title": "Купон и бейдж «Гуру Авито»",
+      "description": "Бесплатная доставка и топ-статус лояльности"
+    }
+  }
+}

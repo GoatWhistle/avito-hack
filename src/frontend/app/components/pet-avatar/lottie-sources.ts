@@ -6,8 +6,8 @@ export const RACCOON_TEEN_SRC = '/lottie/raccoon-teen.json'
 export const RACCOON_ADULT_SRC = '/lottie/raccoon-adult.json'
 
 export const LOTTIE_SOURCES: Record<PetStage, string> = {
-  baby: RACCOON_TEEN_SRC,
-  teen: RACCOON_TEEN_SRC,
+  baby: RACCOON_ADULT_SRC,
+  teen: RACCOON_ADULT_SRC,
   adult: RACCOON_ADULT_SRC,
   legend: RACCOON_ADULT_SRC,
 }

@@ -27,8 +27,9 @@ func BuildAdvice(facts DayFacts) *Advice {
 	itemID := issue.ItemID
 
 	return &Advice{
-		Text:   fmt.Sprintf(adviceTexts[issue.Kind], issue.Title),
-		ItemID: &itemID,
-		Action: adviceActions[issue.Kind],
+		Text:      fmt.Sprintf(adviceTexts[issue.Kind], issue.Title),
+		ItemID:    &itemID,
+		ItemTitle: issue.Title,
+		Action:    adviceActions[issue.Kind],
 	}
 }

@@ -1,6 +1,7 @@
 import { CheckCircle2, Flame, Gift, PartyPopper, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '#/components/ui'
+import { rewardText } from '#/features/rewards/lib'
 import type { CelebrationBanner as BannerData } from '#/features/pet/hooks'
 
 const ICON = {
@@ -20,7 +21,12 @@ export function CelebrationBanner({
   onDismiss,
 }: CelebrationBannerProps) {
   const { t } = useTranslation('pet')
+  const { t: tCatalog } = useTranslation('catalog')
   const Icon = ICON[banner.kind]
+  const rewardTitle = rewardText(tCatalog, banner.rewardId ?? '', {
+    title: banner.title ?? '',
+    description: '',
+  }).title
 
   const text =
     banner.kind === 'levelUp'
@@ -31,7 +37,7 @@ export function CelebrationBanner({
             xp: banner.xp ?? 0,
           })
         : banner.kind === 'reward'
-          ? t('events.rewardGranted', { title: banner.title ?? '' })
+          ? t('events.rewardGranted', { title: rewardTitle })
           : t('streak.milestone', { count: banner.days ?? 0 })
 
   return (

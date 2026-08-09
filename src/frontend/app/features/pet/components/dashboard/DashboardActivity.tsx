@@ -29,7 +29,7 @@ export function DashboardActivity({
   const { t } = useTranslation('pet')
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-4 lg:max-h-[calc(100dvh-9.5rem)] lg:min-h-[calc(100dvh-9.5rem)]">
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-4 lg:h-[calc(100dvh-9.5rem)]">
       <div className="flex w-full min-h-0 flex-1 flex-col items-center justify-center gap-4">
         <p
           data-testid="pet-speech"

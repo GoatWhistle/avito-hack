@@ -42,5 +42,6 @@ export type {
   StreakRuleView,
 } from './streak-rules'
 export { buildAvatarLabels } from './pet-avatar-labels'
+export { adviceText, summaryMessage } from './summary-text'
 export { petSpeech } from './pet-speech'
 export type { PetSpeechInput, PetSpeechKey } from './pet-speech'

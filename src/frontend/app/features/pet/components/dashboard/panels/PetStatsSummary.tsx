@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '#/components/ui'
 import { useBadges } from '#/features/rewards'
+import { badgeText } from '#/features/rewards/lib'
 import { levelProgress } from '#/features/pet/lib'
 import type { Pet } from '#/features/pet/types'
 
@@ -32,10 +33,20 @@ function SummaryTile({ label, value, testId }: SummaryTileProps) {
 
 export function PetStatsSummary({ pet }: PetStatsSummaryProps) {
   const { t } = useTranslation('pet')
+  const { t: tCatalog } = useTranslation('catalog')
   const { data: badges } = useBadges()
   const { level, xp, isMaxLevel } = levelProgress(pet)
-  const badgeCount = badges?.length ?? 0
-  const earned = badges?.map((badge) => badge.name).filter(Boolean) ?? []
+  const earnedBadges = badges?.filter((badge) => badge.earned_at !== '') ?? []
+  const badgeCount = earnedBadges.length
+  const earned = earnedBadges
+    .map(
+      (badge) =>
+        badgeText(tCatalog, badge.id, {
+          title: badge.name,
+          description: badge.description,
+        }).title,
+    )
+    .filter(Boolean)
 
   return (
     <Card size="sm" data-testid="pet-stats-summary">

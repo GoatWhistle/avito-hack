@@ -29,6 +29,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Продление сессии
+         * @description Перевыпускает JWT для владельца действующего токена: клиент обменивает
+         *     ещё живой токен на новый с продлённым `exp` и новым `jti`. Это скользящее
+         *     окно — отдельного refresh-токена в системе нет, поэтому истёкший токен
+         *     продлить нельзя и остаётся только повторный вход.
+         *
+         *     Ответ совпадает по форме с `POST /api/v1/auth/login`. Старый токен
+         *     продолжает действовать до собственного `exp`: ревокации нет.
+         */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -40,7 +66,7 @@ export interface paths {
         put?: never;
         /**
          * Регистрация пользователя
-         * @description Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `egg`.
+         * @description Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `baby`.
          *
          *     Не идемпотентна: повторная регистрация того же e-mail даёт 409.
          *     Ответ совпадает по форме с `POST /api/v1/auth/login` — сразу приходит
@@ -98,6 +124,11 @@ export interface paths {
          *     даёт 409 (`action has already been performed today`). Именно этот
          *     конфликт — нормальный, ожидаемый ответ для клиента, который
          *     не знает, был ли уже чек-ин.
+         *
+         *     Эндпоинт сохранён для обратной совместимости. Клиенту он больше
+         *     не нужен: `GET /api/v1/pet` засчитывает чек-ин сам и сообщает об этом
+         *     полями `checkin_applied` и `checkin`. Оба пути делят одно состояние,
+         *     поэтому после автоматического чек-ина этот вызов вернёт 409.
          *
          *     Логика стрика:
          *
@@ -345,6 +376,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/items/{id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Засчитать просмотр объявления
+         * @description Отмечает, что пользователь открыл карточку объявления. Опыт начисляется
+         *     только за уникальные объявления и не более установленного дневного лимита,
+         *     поэтому повторные открытия и перезагрузки страницы ничего не дают.
+         *     Просмотр собственного объявления опыт не приносит.
+         */
+        post: operations["viewItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/items/mine": {
         parameters: {
             query?: never;
@@ -377,7 +431,9 @@ export interface paths {
          * Рейтинг пользователей
          * @description Рейтинг по уровню, затем по опыту, затем по идентификатору (для
          *     устойчивости порядка). Поле `my_rank` — позиция владельца токена;
-         *     `null`, если она неизвестна.
+         *     `null`, если она неизвестна или не запрашивалась. Подсчёт ранга —
+         *     самая дорогая часть запроса, поэтому он выполняется только при
+         *     `with_my_rank=true` или `around=me`.
          *
          *     Пагинация использует ОТДЕЛЬНЫЙ формат курсора (`level|xp|user_id`),
          *     несовместимый с временным курсором остальных списков. Передача
@@ -413,10 +469,62 @@ export interface paths {
          *     прошедшему с `last_decay_time`. Поэтому два последовательных чтения
          *     без действий пользователя могут вернуть разные значения характеристик
          *     и производное поле `state`.
+         *
+         *     Второй побочный эффект — автоматический чек-ин. Если за текущие сутки
+         *     по московскому времени чек-ина ещё не было, он засчитывается прямо здесь:
+         *     начисляется опыт, продлевается серия, выдаются награды. Тогда
+         *     `checkin_applied` равно `true`, а объект `checkin` содержит начисленный
+         *     опыт, уровень и параметры серии — этого достаточно, чтобы показать тост.
+         *     Повторные чтения в тот же день ничего не меняют и возвращают
+         *     `checkin_applied: false` без объекта `checkin`. Операция идемпотентна
+         *     в пределах суток: параллельные запросы сериализуются блокировкой строки
+         *     питомца, поэтому опыт начисляется ровно один раз.
+         *     Явный `POST /api/v1/checkin` продолжает работать и остаётся
+         *     единственным способом получить полный ответ `CheckInResult`.
+         *
+         *     `feed_available_at` — момент, когда снова можно кормить (RFC3339).
+         *     `null` означает, что кормление доступно прямо сейчас.
          */
         get: operations["getPet"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pet/actions/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Покормить питомца
+         * @description Повышает `satiety`. Тело запроса не требуется.
+         *
+         *     Не идемпотентна, но эффект ограничен: сытость упирается в потолок 100,
+         *     а частота ограничена кулдауном в 5 часов. Повторный вызов внутри кулдауна
+         *     возвращает 200 с неизменённой сытостью, а не ошибку — клиенту не нужно
+         *     отличать «покормили» от «уже сыт».
+         *
+         *     `feed_available_at` в ответе — момент, когда кормление снова станет
+         *     доступным (RFC3339). Значение `null` означает «доступно сейчас»;
+         *     после успешного кормления там будет время на 5 часов вперёд,
+         *     по нему клиент строит обратный отсчёт.
+         *
+         *     Опыт за кормление не начисляется: это забота о питомце, а не целевое
+         *     действие на площадке. Влияние косвенное — сытость ниже 30 включает
+         *     штрафной множитель опыта, и кормление его снимает.
+         *
+         *     Побочный эффект: всем активным WebSocket-соединениям пользователя
+         *     рассылается `pet.updated`.
+         */
+        post: operations["feedPet"];
         delete?: never;
         options?: never;
         head?: never;
@@ -440,10 +548,8 @@ export interface paths {
          *     в потолок 100, а частота ограничена внутренним лимитом действий —
          *     превышение даёт 409 (`action limit reached`).
          *
-         *     Побочный эффект: если питомец на стадии `egg` и условия вылупления
-         *     выполнены, вызов может привести к вылуплению — тогда подписчикам
-         *     WebSocket уходит событие `pet.hatched`. Всем активным соединениям
-         *     пользователя также рассылается `pet.updated`.
+         *     Побочный эффект: всем активным WebSocket-соединениям пользователя
+         *     рассылается `pet.updated`.
          */
         post: operations["strokePet"];
         delete?: never;
@@ -472,6 +578,56 @@ export interface paths {
         get: operations["getProgress"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ежедневные задания
+         * @description Набор заданий на текущий день. Состав заданий детерминирован: он
+         *     зависит от пользователя и календарной даты (МСК), поэтому в течение
+         *     суток список не меняется между запросами.
+         *
+         *     Прогресс не хранится отдельным счётчиком, а вычисляется из журнала
+         *     начислений опыта за текущие сутки, поэтому он не может разойтись
+         *     с реальными действиями. `completed` — задание выполнено,
+         *     `claimed` — награда за него уже начислена.
+         */
+        get: operations["listDailyQuests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quests/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Забрать награды за выполненные задания
+         * @description Начисляет опыт за все выполненные, но ещё не оплаченные задания дня.
+         *     Идемпотентна: награда за каждое задание выдаётся не более одного раза
+         *     в сутки, повторный вызов ничего не начисляет и возвращает то же
+         *     состояние списка.
+         */
+        post: operations["claimDailyQuests"];
         delete?: never;
         options?: never;
         head?: never;
@@ -898,12 +1054,35 @@ export interface components {
             reward_id?: string;
             status?: string;
         };
+        "api.checkInInfo": {
+            level?: number;
+            next_level_xp?: number;
+            previous_level?: number;
+            streak?: components["schemas"]["Streak"];
+            unlocked_rewards?: string[];
+            xp_granted?: number;
+        };
+        "api.questItem": {
+            action?: string;
+            claimed?: boolean;
+            completed?: boolean;
+            id?: string;
+            progress_current?: number;
+            reward_xp?: number;
+            target?: number;
+        };
+        "api.QuestListResponse": {
+            items?: components["schemas"]["api.questItem"][];
+            next_cursor?: string;
+        };
         Badge: {
             description?: string;
             earned_at?: string;
             icon_url?: string;
             id?: string;
             name?: string;
+            progress_current?: number;
+            progress_target?: number;
         };
         ChangeStatusRequest: {
             /** @enum {string} */
@@ -1039,7 +1218,10 @@ export interface components {
             password: string;
         };
         Pet: {
+            checkin?: components["schemas"]["api.checkInInfo"];
+            checkin_applied?: boolean;
             energy?: number;
+            feed_available_at?: string;
             freezes?: number;
             happiness?: number;
             hatched_at?: string;
@@ -1059,7 +1241,7 @@ export interface components {
             xp?: number;
         };
         /** @enum {string} */
-        PetStage: "egg" | "baby" | "teen" | "adult" | "legend";
+        PetStage: "baby" | "teen" | "adult" | "legend";
         /** @enum {string} */
         PetState: "happy" | "neutral" | "sad" | "sleeping";
         Progress: {
@@ -1152,6 +1334,8 @@ export interface components {
              * @description Объявление, к которому относится совет. Опускается, если совет общий.
              */
             item_id?: string;
+            /** @description Заголовок объявления для подстановки в локализованный текст совета. */
+            item_title?: string;
             text: string;
         };
         /** @description Числовая часть сводки — то, из чего строится текст. */
@@ -1381,6 +1565,9 @@ export interface components {
     pathItems: never;
 }
 export type SchemaActivateRewardResponse = components['schemas']['ActivateRewardResponse'];
+export type SchemaApiCheckInInfo = components['schemas']['api.checkInInfo'];
+export type SchemaApiQuestItem = components['schemas']['api.questItem'];
+export type SchemaApiQuestListResponse = components['schemas']['api.QuestListResponse'];
 export type SchemaBadge = components['schemas']['Badge'];
 export type SchemaChangeStatusRequest = components['schemas']['ChangeStatusRequest'];
 export type SchemaCheckInResult = components['schemas']['CheckInResult'];
@@ -1476,6 +1663,53 @@ export interface operations {
             };
             /** @description Неверный e-mail или пароль */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Выдан новый токен */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            /** @description Токен отсутствует, истёк или повреждён */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Пользователь удалён */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2318,6 +2552,63 @@ export interface operations {
             };
         };
     };
+    viewItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор объявления */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Просмотр учтён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     listMyItems: {
         parameters: {
             query?: {
@@ -2381,6 +2672,8 @@ export interface operations {
                 cursor?: string;
                 /** @description Размер страницы. По умолчанию 20, максимум 100. */
                 limit?: number;
+                /** @description Значение `true` — посчитать и вернуть `my_rank`. */
+                with_my_rank?: boolean;
             };
             header?: never;
             path?: never;
@@ -2436,6 +2729,53 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Состояние питомца */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    feedPet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Обновлённое состояние питомца */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2558,6 +2898,82 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listDailyQuests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Задания на сегодня */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["api.QuestListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    claimDailyQuests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Состояние заданий после начисления */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["api.QuestListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

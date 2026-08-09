@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const DEFAULT_PET_NAME = 'Ноти'
+
 export const petStageSchema = z.enum(['baby', 'teen', 'adult', 'legend'])
 export const petStateSchema = z.enum(['happy', 'neutral', 'sad', 'sleeping'])
 
@@ -32,7 +34,9 @@ export type CheckInInfo = z.infer<typeof checkInInfoSchema>
 export const petSchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  name: z.string(),
+  name: z
+    .string()
+    .transform((value) => (value.trim() === '' ? DEFAULT_PET_NAME : value)),
   stage: petStageSchema,
   state: petStateSchema,
   level: z.number(),

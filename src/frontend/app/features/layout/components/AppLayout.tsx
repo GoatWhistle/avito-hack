@@ -28,10 +28,10 @@ export function AppLayout({ children }: PropsWithChildren) {
         id="main"
         tabIndex={-1}
         className={cn(
-          'w-full flex-1 pb-20 lg:pb-6',
+          'w-full flex-1 pb-20',
           isPetSection
-            ? 'px-0 py-0'
-            : 'mx-auto max-w-content px-3 py-4 sm:px-4 sm:py-6',
+            ? 'px-0 py-0 lg:pb-0'
+            : 'mx-auto max-w-content px-3 py-4 sm:px-4 sm:py-6 lg:pb-6',
         )}
       >
         {children}

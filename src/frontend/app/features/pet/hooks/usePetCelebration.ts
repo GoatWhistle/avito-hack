@@ -12,6 +12,7 @@ export interface XpToast {
 export interface CelebrationBanner {
   kind: 'levelUp' | 'reward' | 'streak' | 'checkIn'
   level?: number
+  rewardId?: string
   title?: string
   days?: number
   xp?: number
@@ -72,7 +73,11 @@ export const usePetCelebration = (): PetCelebration => {
 
           return
         case 'reward.granted':
-          setBanner({ kind: 'reward', title: event.payload.title })
+          setBanner({
+            kind: 'reward',
+            rewardId: event.payload.reward_id,
+            title: event.payload.title,
+          })
 
           return
         case 'streak.updated':

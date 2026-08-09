@@ -60,14 +60,14 @@ describe('PetDashboard', () => {
     expect(within(stats).queryByText('Стрик (дней)')).not.toBeInTheDocument()
   })
 
-  it('keeps xp, badges and the streak inside the pet card', async () => {
+  it('keeps xp progress inside the pet card without extra chips', async () => {
     renderDashboard()
     await screen.findByRole('heading', { name: 'Ноти' })
 
     const card = screen.getByTestId('pet-card')
     expect(within(card).getByText('15 / 22 XP')).toBeInTheDocument()
-    expect(within(card).getByText('1 бейджей')).toBeInTheDocument()
-    expect(within(card).getByText('4 дн.')).toBeInTheDocument()
+    expect(within(card).queryByText('1 бейджей')).not.toBeInTheDocument()
+    expect(within(card).queryByText('4 дн.')).not.toBeInTheDocument()
     expect(
       within(card).getByRole('progressbar', {
         name: 'Прогресс до уровня 4, осталось 7 XP',

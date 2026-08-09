@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Button, Card, CardContent } from '#/components/ui'
 import { cn } from '#/lib/utils'
-import { isActivatable } from '#/features/rewards/lib'
+import { isActivatable, rewardText } from '#/features/rewards/lib'
 import type { RewardTrackEntry } from '#/features/rewards/types'
 import { RewardCodeReveal } from './RewardCodeReveal'
 import {
@@ -29,7 +29,12 @@ export function RewardLevelCard({
   code,
 }: RewardLevelCardProps) {
   const { t } = useTranslation('rewards')
+  const { t: tCatalog } = useTranslation('catalog')
   const { reward, state, level, current, target } = entry
+  const text = rewardText(tCatalog, reward.id, {
+    title: reward.title,
+    description: reward.description,
+  })
   const revealed = code || entry.code
   const canActivate = isActivatable(state)
   const cardState = rewardCardState(state)
@@ -78,11 +83,11 @@ export function RewardLevelCard({
                       : (REWARD_KIND_ICON[reward.kind] ?? '🎁')}
                   </span>
                   <h3 className="min-w-0 text-sm leading-tight font-bold wrap-anywhere text-balance text-foreground">
-                    {reward.title}
+                    {text.title}
                   </h3>
                 </div>
                 <p className="line-clamp-2 text-xs leading-snug wrap-anywhere text-muted-foreground">
-                  {reward.description}
+                  {text.description}
                 </p>
               </div>
             </div>

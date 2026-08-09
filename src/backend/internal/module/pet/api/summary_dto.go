@@ -9,9 +9,10 @@ import (
 )
 
 type advicePayload struct {
-	Text   string     `json:"text"`
-	ItemID *uuid.UUID `json:"item_id,omitempty"`
-	Action string     `json:"action"`
+	Text      string     `json:"text"`
+	ItemID    *uuid.UUID `json:"item_id,omitempty"`
+	ItemTitle string     `json:"item_title,omitempty"`
+	Action    string     `json:"action"`
 }
 
 type summaryActionPayload struct {
@@ -72,7 +73,8 @@ func toAdvicePayload(advice *domain.Advice) *advicePayload {
 	}
 
 	return &advicePayload{
-		Text: advice.Text, ItemID: advice.ItemID, Action: string(advice.Action),
+		Text: advice.Text, ItemID: advice.ItemID, ItemTitle: advice.ItemTitle,
+		Action: string(advice.Action),
 	}
 }
 

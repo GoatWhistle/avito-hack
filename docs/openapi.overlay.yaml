@@ -709,6 +709,9 @@ components:
           type: string
           format: uuid
           description: Объявление, к которому относится совет. Опускается, если совет общий.
+        item_title:
+          type: string
+          description: Заголовок объявления для подстановки в локализованный текст совета.
         action:
           type: string
           description: Машиночитаемый код рекомендуемого действия.

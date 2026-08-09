@@ -22,3 +22,5 @@ export {
   trackSummary,
 } from './track'
 export { activationErrorKey, loadErrorKey, toApiError } from './errors'
+export { badgeText, rewardText } from './catalog'
+export type { CatalogText } from './catalog'

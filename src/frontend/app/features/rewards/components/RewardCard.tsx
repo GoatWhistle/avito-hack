@@ -1,7 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '#/components/ui'
 import { cn } from '#/lib/utils'
-import { conditionLabel, remainingLabel } from '#/features/rewards/lib'
+import {
+  conditionLabel,
+  remainingLabel,
+  rewardText,
+} from '#/features/rewards/lib'
 import type { RewardProgress } from '#/features/rewards/types'
 import { ProgressBar } from './ProgressBar'
 
@@ -12,7 +16,12 @@ type RewardCardProps = {
 
 export function RewardCard({ entry, highlighted = false }: RewardCardProps) {
   const { t } = useTranslation('rewards')
+  const { t: tCatalog } = useTranslation('catalog')
   const { reward } = entry
+  const text = rewardText(tCatalog, reward.id, {
+    title: reward.title,
+    description: reward.description,
+  })
   const isAvailable = reward.unlocked || reward.claimed
   const condition = conditionLabel(
     t,
@@ -48,10 +57,10 @@ export function RewardCard({ entry, highlighted = false }: RewardCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="line-clamp-2 font-medium text-balance text-foreground">
-              {reward.title}
+              {text.title}
             </h3>
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-              {reward.description}
+              {text.description}
             </p>
           </div>
           <span
@@ -78,7 +87,7 @@ export function RewardCard({ entry, highlighted = false }: RewardCardProps) {
             value={entry.percent}
             tone={tone}
             label={t('progressLabel', {
-              title: reward.title,
+              title: text.title,
               percent: entry.percent,
             })}
           />

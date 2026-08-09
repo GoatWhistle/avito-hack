@@ -14,6 +14,7 @@ export type AdviceAction = z.infer<typeof adviceActionSchema>
 export const adviceSchema = z.object({
   text: z.string(),
   item_id: z.string().nullish(),
+  item_title: z.string().nullish(),
   action: z.string(),
 })
 

@@ -653,6 +653,9 @@ components:
                     description: Объявление, к которому относится совет. Опускается, если совет общий.
                     format: uuid
                     type: string
+                item_title:
+                    description: Заголовок объявления для подстановки в локализованный текст совета.
+                    type: string
                 text:
                     type: string
             required:

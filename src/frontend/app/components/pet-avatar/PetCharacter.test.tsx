@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PetCharacter } from './PetCharacter'
-import { RACCOON_ADULT_SRC, RACCOON_TEEN_SRC } from './lottie-sources'
+import { RACCOON_ADULT_SRC } from './lottie-sources'
 import type { PetStage } from './types'
 
 type Listener = (...args: unknown[]) => void
@@ -62,8 +62,8 @@ afterEach(() => {
 
 describe('PetCharacter renders the designer raccoon everywhere', () => {
   it.each<[PetStage, string]>([
-    ['baby', RACCOON_TEEN_SRC],
-    ['teen', RACCOON_TEEN_SRC],
+    ['baby', RACCOON_ADULT_SRC],
+    ['teen', RACCOON_ADULT_SRC],
     ['adult', RACCOON_ADULT_SRC],
     ['legend', RACCOON_ADULT_SRC],
   ])('uses a designer animation on stage %s', (stage, src) => {

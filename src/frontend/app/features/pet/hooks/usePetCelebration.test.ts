@@ -90,7 +90,11 @@ describe('usePetCelebration', () => {
       payload: { reward_id: 'r1', title: 'Промокод' },
     })
 
-    expect(result.current.banner).toEqual({ kind: 'reward', title: 'Промокод' })
+    expect(result.current.banner).toEqual({
+      kind: 'reward',
+      rewardId: 'r1',
+      title: 'Промокод',
+    })
   })
 
   it('only banners a streak milestone', () => {
