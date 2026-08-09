@@ -42,11 +42,13 @@ describe('StreakMechanicsCard', () => {
   })
 
   it('shows days remaining before the multiplier turns on', async () => {
-    renderWithProviders(<StreakMechanicsCard pet={makePet({ streak_days: 2 })} />)
-
-    expect(await screen.findByTestId('streak-rule-badge-bonus')).toHaveTextContent(
-      '5',
+    renderWithProviders(
+      <StreakMechanicsCard pet={makePet({ streak_days: 2 })} />,
     )
+
+    expect(
+      await screen.findByTestId('streak-rule-badge-bonus'),
+    ).toHaveTextContent('5')
   })
 
   it('marks the multiplier active for a long streak', async () => {
@@ -54,9 +56,9 @@ describe('StreakMechanicsCard', () => {
       <StreakMechanicsCard pet={makePet({ streak_days: 41 })} />,
     )
 
-    expect(await screen.findByTestId('streak-rule-badge-bonus')).toHaveTextContent(
-      'Активен',
-    )
+    expect(
+      await screen.findByTestId('streak-rule-badge-bonus'),
+    ).toHaveTextContent('Активен')
   })
 
   it('reports freezes as unavailable when the pet holds none', async () => {

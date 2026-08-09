@@ -1,6 +1,9 @@
 import type { AxiosInstance } from 'axios'
 import { httpClient } from '#/api'
-import { questListResponseSchema, type QuestItem } from '#/features/quests/types'
+import {
+  questListResponseSchema,
+  type QuestItem,
+} from '#/features/quests/types'
 
 export class QuestsRepository {
   constructor(private readonly httpClient: AxiosInstance) {}

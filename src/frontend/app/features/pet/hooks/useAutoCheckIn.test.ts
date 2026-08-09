@@ -53,7 +53,10 @@ describe('useAutoCheckIn', () => {
     )
 
     rerender({
-      pet: makeCheckedInPet({}, { streak: { ...makeCheckInInfo().streak, days: 6 } }),
+      pet: makeCheckedInPet(
+        {},
+        { streak: { ...makeCheckInInfo().streak, days: 6 } },
+      ),
     })
 
     expect(celebration.showCheckIn).toHaveBeenCalledTimes(2)

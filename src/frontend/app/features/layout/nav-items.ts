@@ -1,10 +1,4 @@
-import {
-  Heart,
-  Package,
-  PawPrint,
-  Store,
-  type LucideIcon,
-} from 'lucide-react'
+import { Heart, Package, PawPrint, Store, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   key: 'pet' | 'items' | 'myItems' | 'favorites'

@@ -1,11 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as RewardsModule from '#/features/rewards'
-import {
-  makeCheckedInPet,
-  makePet,
-  renderWithProviders,
-} from '../test-utils'
+import { makeCheckedInPet, makePet, renderWithProviders } from '../test-utils'
 import { PetDashboard } from './PetDashboard'
 
 const state = vi.fn()
@@ -79,9 +75,7 @@ describe('PetDashboard', () => {
     renderDashboard()
     await screen.findByRole('heading', { name: 'Ноти' })
 
-    expect(
-      screen.queryByText('15 XP · до ур. 4: 7 XP'),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText('15 XP · до ур. 4: 7 XP')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'Ноти · ур. 3' }),
     ).not.toBeInTheDocument()
@@ -137,9 +131,9 @@ describe('PetDashboard', () => {
 
     const tracker = screen.getByRole('region', { name: 'Стрик' })
     expect(tracker).toHaveTextContent('6-я неделя серии')
-    expect(
-      within(tracker).getAllByLabelText(/отмечено сегодня$/),
-    ).toHaveLength(6)
+    expect(within(tracker).getAllByLabelText(/отмечено сегодня$/)).toHaveLength(
+      6,
+    )
   })
 
   it('banners the streak when the backend applied a check-in', async () => {

@@ -51,7 +51,9 @@ export const streakRules = (pet: Pet): StreakRuleView[] => {
       key: 'bonus',
       icon: '🔥',
       tone: isBonusActive(streakDays) ? 'active' : 'pending',
-      badgeCount: isBonusActive(streakDays) ? streakDays : daysToBonus(streakDays),
+      badgeCount: isBonusActive(streakDays)
+        ? streakDays
+        : daysToBonus(streakDays),
     },
     { key: 'reset', icon: '⏳', tone: 'muted', badgeCount: STREAK_RESET_HOURS },
     {

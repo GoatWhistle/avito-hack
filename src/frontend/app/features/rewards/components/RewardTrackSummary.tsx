@@ -34,7 +34,10 @@ export function RewardTrackSummary({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-2.5">
-        <p id="reward-track-title" className="text-sm font-bold text-foreground">
+        <p
+          id="reward-track-title"
+          className="text-sm font-bold text-foreground"
+        >
           {t('track.counter', { claimed, total })}
         </p>
 

@@ -6,7 +6,10 @@ export interface AchievementsSummaryProps {
   total: number
 }
 
-export function AchievementsSummary({ earned, total }: AchievementsSummaryProps) {
+export function AchievementsSummary({
+  earned,
+  total,
+}: AchievementsSummaryProps) {
   const { t } = useTranslation('rewards')
   const percent = total > 0 ? Math.round((earned / total) * 100) : 0
 

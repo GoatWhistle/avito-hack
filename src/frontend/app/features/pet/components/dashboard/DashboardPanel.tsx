@@ -29,7 +29,10 @@ export function DashboardPanel({ children }: DashboardPanelProps) {
       aria-label={t('dashboard.panelLabel')}
       className="w-full min-w-0 self-start [--sidebar-width:22rem] lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100dvh-9.5rem)] lg:w-(--sidebar-width) lg:shrink-0 xl:[--sidebar-width:24rem]"
     >
-      <SidebarContent className="scrollbar-thin min-h-0 px-0" ref={containerRef}>
+      <SidebarContent
+        className="scrollbar-thin min-h-0 px-0"
+        ref={containerRef}
+      >
         {children}
       </SidebarContent>
     </Sidebar>

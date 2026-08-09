@@ -130,9 +130,9 @@ describe('AuthScreen', () => {
     expect(screen.getByRole('tab', { name: 'Войти' })).toHaveAttribute(
       'data-active',
     )
-    expect(screen.getByRole('tab', { name: 'Регистрация' })).not.toHaveAttribute(
-      'data-active',
-    )
+    expect(
+      screen.getByRole('tab', { name: 'Регистрация' }),
+    ).not.toHaveAttribute('data-active')
 
     cleanup()
     renderWithShell(<AuthScreen mode="signUp" />)

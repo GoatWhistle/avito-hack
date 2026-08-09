@@ -20,7 +20,10 @@ function MedalIcon({ medal }: { medal: 'gold' | 'silver' | 'bronze' }) {
   const Icon = MEDAL_ICON[medal]
 
   return (
-    <Icon aria-hidden="true" className={cn('size-[1.125rem]', MEDAL_TONE[medal])} />
+    <Icon
+      aria-hidden="true"
+      className={cn('size-[1.125rem]', MEDAL_TONE[medal])}
+    />
   )
 }
 

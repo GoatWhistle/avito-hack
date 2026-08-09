@@ -70,7 +70,8 @@ export const summaryMessage = (
   }
 
   const activity = activitySentence(t, facts)
-  const xp = facts.total_xp > 0 ? t('summary.xp', { count: facts.total_xp }) : ''
+  const xp =
+    facts.total_xp > 0 ? t('summary.xp', { count: facts.total_xp }) : ''
   const levelUp = facts.leveled_up
     ? t('summary.levelUp', { level: facts.level })
     : ''
@@ -89,10 +90,7 @@ export const summaryMessage = (
     .join(' ')
 }
 
-export const adviceText = (
-  t: TFunction<'catalog'>,
-  advice: Advice,
-): string => {
+export const adviceText = (t: TFunction<'catalog'>, advice: Advice): string => {
   const title = advice.item_title ?? ''
   const key = `advice.${advice.action}` as 'advice.check_in'
   const generic = `${key}_generic` as 'advice.check_in'

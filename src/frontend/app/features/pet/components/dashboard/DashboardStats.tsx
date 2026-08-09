@@ -68,10 +68,7 @@ export function DashboardStats({ pet, feed }: DashboardStatsProps) {
                       onFeed={feed.run}
                     />
                   ) : (
-                    <span
-                      aria-hidden="true"
-                      className="size-7 shrink-0"
-                    />
+                    <span aria-hidden="true" className="size-7 shrink-0" />
                   )}
                 </div>
               </div>

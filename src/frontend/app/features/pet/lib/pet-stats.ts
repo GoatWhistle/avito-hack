@@ -58,12 +58,7 @@ export const levelProgress = (pet: Pet): LevelProgress => {
 }
 
 export type NextStepKey =
-  | 'checkIn'
-  | 'feedHungry'
-  | 'cheerUp'
-  | 'rest'
-  | 'keepGoing'
-  | 'maxLevel'
+  'checkIn' | 'feedHungry' | 'cheerUp' | 'rest' | 'keepGoing' | 'maxLevel'
 
 export interface NextStepInput {
   pet: Pet

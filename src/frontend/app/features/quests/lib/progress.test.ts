@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { QuestItem } from '#/features/quests/types'
-import { summarizeQuests, toQuestProgress, toQuestProgressList } from './progress'
+import {
+  summarizeQuests,
+  toQuestProgress,
+  toQuestProgressList,
+} from './progress'
 
 const makeQuest = (overrides: Partial<QuestItem> = {}): QuestItem => ({
   id: 'favorite_three',

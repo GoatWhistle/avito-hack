@@ -70,7 +70,6 @@ export function DashboardHeader({ pet, progress }: DashboardHeaderProps) {
                 : t('nextLevel.xpCounter', { xp, total: nextLevelXp })}
             </p>
           </div>
-
         </CardContent>
       </Card>
     </SidebarHeader>

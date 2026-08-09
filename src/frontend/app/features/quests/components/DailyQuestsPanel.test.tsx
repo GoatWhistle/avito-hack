@@ -36,7 +36,12 @@ describe('DailyQuestsPanel', () => {
   it('renders each quest with its progress', async () => {
     today.mockResolvedValue([
       makeQuest({ progress_current: 1 }),
-      makeQuest({ id: 'sell_one', action: 'item_sold', target: 1, reward_xp: 15 }),
+      makeQuest({
+        id: 'sell_one',
+        action: 'item_sold',
+        target: 1,
+        reward_xp: 15,
+      }),
     ])
 
     renderWithProviders(<DailyQuestsPanel />)

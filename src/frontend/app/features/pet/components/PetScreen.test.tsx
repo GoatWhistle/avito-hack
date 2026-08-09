@@ -3,11 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '#/api/api-error'
 import { PetScreen } from './PetScreen'
-import {
-  makeCheckedInPet,
-  makePet,
-  renderWithProviders,
-} from './test-utils'
+import { makeCheckedInPet, makePet, renderWithProviders } from './test-utils'
 
 const state = vi.fn()
 const stroke = vi.fn()
