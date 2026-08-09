@@ -32,7 +32,6 @@
     }
   },
   "stage": {
-    "egg": "Яйцо",
     "baby": "Малыш",
     "teen": "Подросток",
     "adult": "Взрослый",
@@ -48,8 +47,19 @@
   "emotion": {
     "eating": "ест",
     "celebrate": "празднует",
-    "levelup": "получил новый уровень",
-    "hatching": "вылупляется"
+    "levelup": "получил новый уровень"
+  },
+  "nextLevel": {
+    "title": "Следующий уровень",
+    "level": "Уровень {{level}}",
+    "remaining_one": "Осталось набрать {{count}} XP",
+    "remaining_few": "Осталось набрать {{count}} XP",
+    "remaining_many": "Осталось набрать {{count}} XP",
+    "xpCounter": "{{xp}} / {{total}} XP",
+    "xpTotal": "Всего {{xp}} XP",
+    "maxTitle": "Максимальный уровень",
+    "maxBadge": "Легенда",
+    "progressLabel": "Прогресс до следующего уровня: {{percent}}%"
   },
   "level": {
     "toNext": "До {{level}} уровня осталось {{count}} XP",
@@ -62,11 +72,18 @@
     "stroke": "Погладить",
     "strokeAria": "Погладить питомца",
     "strokeHint": "нажмите, чтобы погладить",
-    "checkIn": "Отметиться",
-    "checkingIn": "Отмечаемся…",
-    "checkedIn": "Вы уже отметились сегодня",
-    "checkedInShort": "Отмечено",
-    "dismiss": "Закрыть"
+    "feed": "Покормить",
+    "feeding": "Кормим…",
+    "feedAria": "Покормить питомца и поднять сытость",
+    "feedFull": "Питомец сыт",
+    "feedCooldown": "Снова покормить можно через {{time}}",
+    "checkedInShort": "Отмечено сегодня",
+    "dismiss": "Закрыть",
+    "checkedInStreak_one": "Серия {{count}} день · следующая отметка завтра",
+    "checkedInStreak_few": "Серия {{count}} дня · следующая отметка завтра",
+    "checkedInStreak_many": "Серия {{count}} дней · следующая отметка завтра",
+    "checkedInStreak_other": "Серия {{count}} дней · следующая отметка завтра",
+    "checkedInNext": "Следующая отметка завтра"
   },
   "streak": {
     "label": "Серия",
@@ -92,12 +109,33 @@
     "feedHungry": "Питомец голоден: обновите или улучшите объявление, чтобы его покормить",
     "cheerUp": "Погладьте питомца, чтобы поднять настроение и множитель опыта",
     "rest": "Энергия на нуле — дайте питомцу отдохнуть и вернитесь позже",
-    "hatch": "Отметьтесь, чтобы яйцо вылупилось",
     "keepGoing": "Всё отлично: продолжайте отмечаться и улучшать объявления",
     "maxLevel": "Максимальный уровень взят — держите серию и собирайте награды"
   },
+  "hud": {
+    "title": "{{name}} · уровень {{level}}",
+    "streak": "серия {{count}} дн."
+  },
+  "speech": {
+    "aria": "{{name}} говорит:",
+    "hungry": "Я такой голодный… Обнови объявление — и мне сразу полегчает!",
+    "tired": "У меня совсем нет сил, я немножко подремлю. Загляни попозже.",
+    "lonely": "Мне грустновато. Погладишь меня?",
+    "checkIn": "Ты сегодня ещё не отмечался! Давай, а то серия сгорит.",
+    "streak": "Мы с тобой держим серию — я тобой горжусь!",
+    "legend": "Я легенда, и всё благодаря тебе. Спасибо!",
+    "happy": "У меня всё отлично! Пойдём улучшать объявления?"
+  },
+  "rewards": {
+    "title": "Ближайшие награды",
+    "all": "Все",
+    "empty": "Все награды уже открыты",
+    "error": "Не удалось загрузить награды",
+    "progress": "{{current}} / {{target}}",
+    "meterLabel": "{{title}}: открыто на {{percent}}%"
+  },
   "summary": {
-    "title": "Сводка от {{name}}",
+    "title": "Записка: {{name}}",
     "xpEarned": "Опыт за день",
     "fix": "Исправить"
   },
@@ -110,16 +148,81 @@
   "events": {
     "xpGained": "+{{amount}} XP",
     "levelUp": "Новый уровень: {{level}}",
-    "hatched": "Питомец вылупился!",
-    "rewardGranted": "Получена награда: {{title}}"
+    "rewardGranted": "Получена награда: {{title}}",
+    "checkInApplied_one": "Серия {{count}} день · +{{xp}} XP за сегодня",
+    "checkInApplied_few": "Серия {{count}} дня · +{{xp}} XP за сегодня",
+    "checkInApplied_many": "Серия {{count}} дней · +{{xp}} XP за сегодня",
+    "checkInApplied_other": "Серия {{count}} дней · +{{xp}} XP за сегодня"
   },
-  "hatching": {
-    "title": "Яйцо вот-вот треснет",
-    "hint": "Отмечайтесь каждый день, чтобы питомец вылупился"
+  "dashboard": {
+    "navLabel": "Разделы питомца",
+    "nav": {
+      "home": "Дом",
+      "rewards": "Награды",
+      "achievements": "Достижения",
+      "leaderboard": "Таблица лидеров",
+      "progress": "Прогресс"
+    },
+    "stageLevel": "{{stage}} · ур. {{level}}",
+    "statsLabel": "Параметры питомца",
+    "stat": {
+      "energy": "Энергия",
+      "happiness": "Счастье",
+      "satiety": "Сытость",
+      "streak": "Стрик (дней)",
+      "xp": "Опыт"
+    },
+    "hud": {
+      "badges": "{{count}} бейджей",
+      "streak": "{{count}} дн."
+    },
+    "speech": "Привет! Я {{name}}. Стадия: {{stage}}",
+    "streakTracker": "Стрик",
+    "streakDay": "День {{day}}",
+    "streakWeek_one": "{{count}}-я неделя серии",
+    "streakWeek_few": "{{count}}-я неделя серии",
+    "streakWeek_many": "{{count}}-я неделя серии",
+    "streakWeek_other": "{{count}}-я неделя серии",
+    "panelLabel": "Раздел питомца",
+    "backToMarket": "К объявлениям",
+    "openDashboard": "Открыть питомца",
+    "streakDayDone": "День {{day}}, отмечено сегодня"
   },
-  "hatch": {
-    "title": "Питомец вылупился!",
-    "description": "Теперь он растёт вместе с вами: отмечайтесь и улучшайте объявления, чтобы получать опыт",
-    "cta": "Познакомиться"
+  "summaryCard": {
+    "title": "Сводка",
+    "badges": "Бейджи",
+    "badgesEmpty": "Бейджи: нет",
+    "badgeList": "Бейджи: {{list}}"
+  },
+  "mechanics": {
+    "title": "Механика стрика",
+    "bonus": {
+      "title": "Множитель опыта",
+      "text": "Множитель x{{factor}} за ежедневную отметку действует с {{days}}-го дня серии"
+    },
+    "reset": {
+      "title": "Сброс",
+      "text": "Пропуск дня сбрасывает серию на 1 — отмечайтесь каждый день"
+    },
+    "freeze": {
+      "title": "Заморозка",
+      "text": "Заморозка спасает серию при пропуске одного дня. Выдаётся за рубежи {{milestones}} дней, не больше {{max}} штук"
+    },
+    "badge": {
+      "active": "Активен",
+      "unavailable": "Недоступно",
+      "daysLeft_one": "{{count}} дн.",
+      "daysLeft_few": "{{count}} дн.",
+      "daysLeft_many": "{{count}} дн.",
+      "daysLeft_other": "{{count}} дн.",
+      "hours_one": "{{count}} ч.",
+      "hours_few": "{{count}} ч.",
+      "hours_many": "{{count}} ч.",
+      "hours_other": "{{count}} ч.",
+      "freezesLeft_one": "{{count}} шт.",
+      "freezesLeft_few": "{{count}} шт.",
+      "freezesLeft_many": "{{count}} шт.",
+      "freezesLeft_other": "{{count}} шт."
+    }
   }
 }

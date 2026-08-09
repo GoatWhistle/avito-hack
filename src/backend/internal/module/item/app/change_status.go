@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -140,16 +141,18 @@ func itemPayload(item *domain.Item, photoCount int) events.Payload {
 	}
 }
 
+var moderatorActions = []StatusAction{ActionArchive}
+
 func authorize(item *domain.Item, cmd ChangeStatusCommand) error {
 	if item.IsOwnedBy(cmd.Actor.ID) {
 		return nil
 	}
 
-	if cmd.Action == ActionSell {
+	if !cmd.Actor.HasRole(auth.RoleModerator, auth.RoleAdmin) {
 		return domainerr.ErrForbidden
 	}
 
-	if !cmd.Actor.HasRole(auth.RoleModerator, auth.RoleAdmin) {
+	if !slices.Contains(moderatorActions, cmd.Action) {
 		return domainerr.ErrForbidden
 	}
 

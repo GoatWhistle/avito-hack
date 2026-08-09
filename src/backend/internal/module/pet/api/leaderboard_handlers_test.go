@@ -23,6 +23,7 @@ type stubLeaderboardRead struct {
 	lastFilter app.LeaderboardFilter
 	rank       int
 	hasRank    bool
+	rankCalls  int
 }
 
 func (s *stubLeaderboardRead) Page(_ context.Context, f app.LeaderboardFilter) ([]app.LeaderboardEntry, error) {
@@ -32,6 +33,8 @@ func (s *stubLeaderboardRead) Page(_ context.Context, f app.LeaderboardFilter) (
 }
 
 func (s *stubLeaderboardRead) RankOf(_ context.Context, _ uuid.UUID) (rank int, found bool, err error) {
+	s.rankCalls++
+
 	return s.rank, s.hasRank, nil
 }
 
@@ -98,7 +101,7 @@ func TestLeaderboardContract(t *testing.T) {
 	}
 
 	router := newLeaderboardRouter(read, auth.Actor{ID: userID, Role: auth.RoleUser})
-	rec, body := doLeaderboard(t, router, "/leaderboard")
+	rec, body := doLeaderboard(t, router, "/leaderboard?with_my_rank=true")
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.Len(t, body.Items, 2)
@@ -112,6 +115,25 @@ func TestLeaderboardContract(t *testing.T) {
 
 	require.NotNil(t, body.MyRank)
 	assert.Equal(t, 1, *body.MyRank)
+}
+
+func TestLeaderboardSkipsRankQueryByDefault(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	read := &stubLeaderboardRead{
+		entries: []app.LeaderboardEntry{{UserID: userID, Name: "Alice", Level: 9, XP: 900, Rank: 1}},
+		rank:    1,
+		hasRank: true,
+	}
+
+	router := newLeaderboardRouter(read, auth.Actor{ID: userID, Role: auth.RoleUser})
+	rec, body := doLeaderboard(t, router, "/leaderboard")
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Len(t, body.Items, 1)
+	assert.Nil(t, body.MyRank)
+	assert.Zero(t, read.rankCalls)
 }
 
 func TestLeaderboardMyRankNullWithoutPet(t *testing.T) {

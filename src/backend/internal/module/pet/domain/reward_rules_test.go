@@ -142,10 +142,16 @@ func TestRewardIDForLevel(t *testing.T) {
 func TestBadgesEarnedBy(t *testing.T) {
 	t.Parallel()
 
-	assert.Nil(t, BadgesEarnedBy(nil))
-	assert.Empty(t, BadgesEarnedBy(petAt(9, 0)))
-	assert.Equal(t, []string{"raccoon_friend"}, BadgesEarnedBy(petAt(10, 0)))
-	assert.Equal(t, []string{"raccoon_friend"}, BadgesEarnedBy(petAt(MaxLevel, 0)))
+	assert.Empty(t, BadgesEarnedBy(BadgeStats{}))
+	assert.Empty(t, BadgesEarnedBy(BadgeStats{Level: 9}))
+	assert.Contains(t, BadgesEarnedBy(BadgeStats{Level: 10}), "raccoon_friend")
+	assert.Contains(t, BadgesEarnedBy(BadgeStats{Level: MaxLevel}), "raccoon_friend")
+	assert.Contains(t, BadgesEarnedBy(BadgeStats{StreakDays: 14}), "charged_streak")
+	assert.Contains(
+		t,
+		BadgesEarnedBy(BadgeStats{Actions: map[Action]int{ActionFavorite: 5}}),
+		"explorer",
+	)
 }
 
 func TestBadgeAccessors(t *testing.T) {
@@ -174,10 +180,11 @@ func TestBadgeAccessors(t *testing.T) {
 func TestStageValidity(t *testing.T) {
 	t.Parallel()
 
-	for _, stage := range []Stage{StageEgg, StageBaby, StageTeen, StageAdult, StageLegend} {
+	for _, stage := range []Stage{StageBaby, StageTeen, StageAdult, StageLegend} {
 		assert.True(t, stage.Valid(), string(stage))
 	}
 
 	assert.False(t, Stage("").Valid())
+	assert.False(t, Stage("egg").Valid())
 	assert.False(t, Stage("ancient").Valid())
 }

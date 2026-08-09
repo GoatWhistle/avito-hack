@@ -33,14 +33,18 @@ describe('readOnboardingState', () => {
     )
 
     expect(readOnboardingState()).toEqual({
+      ...defaultOnboardingState,
       dismissed: true,
-      hatched: false,
-      celebrated: false,
     })
   })
 
   it('reads a fully stored state', () => {
-    const state = { dismissed: true, hatched: true, celebrated: true }
+    const state = {
+      ...defaultOnboardingState,
+      dismissed: true,
+      tourSeen: true,
+      tourRequested: true,
+    }
     window.localStorage.setItem(onboardingStorageKey, JSON.stringify(state))
 
     expect(readOnboardingState()).toEqual(state)
@@ -75,7 +79,11 @@ describe('readOnboardingState', () => {
 
 describe('writeOnboardingState', () => {
   it('round trips a state through storage', () => {
-    const state = { dismissed: true, hatched: true, celebrated: false }
+    const state = {
+      ...defaultOnboardingState,
+      dismissed: true,
+      tourSeen: true,
+    }
 
     writeOnboardingState(state)
 

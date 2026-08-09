@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
@@ -37,7 +38,7 @@ export function DailySummaryCard({
           onClick={onDismiss}
           aria-label={t('actions.dismiss')}
         >
-          <span aria-hidden="true">✕</span>
+          <X aria-hidden="true" className="size-4" />
         </Button>
       </div>
 

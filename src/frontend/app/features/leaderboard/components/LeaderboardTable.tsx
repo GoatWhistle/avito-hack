@@ -15,7 +15,7 @@ export function LeaderboardTable({
   const { t } = useTranslation('leaderboard')
 
   return (
-    <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
+    <div className="scrollbar-thin overflow-x-auto rounded-xl ring-1 ring-foreground/10">
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>

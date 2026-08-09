@@ -15,7 +15,7 @@ export function StreakCard({ days, freezes, atRisk }: StreakCardProps) {
     <section
       aria-labelledby="pet-streak-title"
       className={cn(
-        'flex items-center gap-3 rounded-xl px-4 py-3 ring-1 transition-colors',
+        'flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-4 py-3 ring-1 transition-colors',
         alive
           ? 'bg-warning-subtle ring-streak-flame/30'
           : 'bg-muted ring-border',
@@ -31,17 +31,17 @@ export function StreakCard({ days, freezes, atRisk }: StreakCardProps) {
         🔥
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className="flex min-w-32 flex-1 flex-col gap-0.5">
         <h2
           id="pet-streak-title"
           className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
         >
           {t('streak.label')}
         </h2>
-        <p className="truncate text-sm font-semibold text-foreground">
+        <p className="text-sm font-semibold text-balance text-foreground">
           {alive ? t('streak.days', { count: days }) : t('streak.empty')}
         </p>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="text-xs text-pretty text-muted-foreground">
           {atRisk
             ? t('streak.atRisk')
             : alive

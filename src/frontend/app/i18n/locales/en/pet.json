@@ -32,7 +32,6 @@
     }
   },
   "stage": {
-    "egg": "Egg",
     "baby": "Baby",
     "teen": "Teen",
     "adult": "Adult",
@@ -48,8 +47,18 @@
   "emotion": {
     "eating": "eating",
     "celebrate": "celebrating",
-    "levelup": "levelled up",
-    "hatching": "hatching"
+    "levelup": "levelled up"
+  },
+  "nextLevel": {
+    "title": "Next level",
+    "level": "Level {{level}}",
+    "remaining_one": "{{count}} XP to go",
+    "remaining_other": "{{count}} XP to go",
+    "xpCounter": "{{xp}} / {{total}} XP",
+    "xpTotal": "{{xp}} XP total",
+    "maxTitle": "Maximum level",
+    "maxBadge": "Legend",
+    "progressLabel": "Progress to the next level: {{percent}}%"
   },
   "level": {
     "toNext": "{{count}} XP left to level {{level}}",
@@ -62,11 +71,16 @@
     "stroke": "Stroke",
     "strokeAria": "Stroke your pet",
     "strokeHint": "click to stroke",
-    "checkIn": "Check in",
-    "checkingIn": "Checking in…",
-    "checkedIn": "You already checked in today",
-    "checkedInShort": "Checked in",
-    "dismiss": "Dismiss"
+    "feed": "Feed",
+    "feeding": "Feeding…",
+    "feedAria": "Feed your pet to raise satiety",
+    "feedFull": "Your pet is full",
+    "feedCooldown": "You can feed again in {{time}}",
+    "checkedInShort": "Checked in today",
+    "dismiss": "Dismiss",
+    "checkedInStreak_one": "{{count}} day streak · next check-in tomorrow",
+    "checkedInStreak_other": "{{count}} day streak · next check-in tomorrow",
+    "checkedInNext": "Next check-in tomorrow"
   },
   "streak": {
     "label": "Streak",
@@ -88,9 +102,30 @@
     "feedHungry": "Your pet is hungry: refresh or improve a listing to feed it",
     "cheerUp": "Stroke your pet to lift its mood and XP multiplier",
     "rest": "Energy is empty — let your pet rest and come back later",
-    "hatch": "Check in to hatch the egg",
     "keepGoing": "All good: keep checking in and improving your listings",
     "maxLevel": "Max level reached — keep the streak and collect rewards"
+  },
+  "hud": {
+    "title": "{{name}} · level {{level}}",
+    "streak": "{{count}}d streak"
+  },
+  "speech": {
+    "aria": "{{name}} says:",
+    "hungry": "I am so hungry… improve a listing and I will feel better right away!",
+    "tired": "I have no energy left, I will nap a little. Come back later.",
+    "lonely": "I feel a bit down. Will you stroke me?",
+    "checkIn": "You have not checked in today! Come on, or the streak burns out.",
+    "streak": "We are keeping the streak together — I am proud of you!",
+    "legend": "I am a legend, and it is all thanks to you. Thank you!",
+    "happy": "I am doing great! Shall we go improve some listings?"
+  },
+  "rewards": {
+    "title": "Rewards coming up",
+    "all": "All",
+    "empty": "Every reward is already unlocked",
+    "error": "Could not load rewards",
+    "progress": "{{current}} / {{target}}",
+    "meterLabel": "{{title}}: {{percent}}% unlocked"
   },
   "summary": {
     "title": "A note from {{name}}",
@@ -106,16 +141,71 @@
   "events": {
     "xpGained": "+{{amount}} XP",
     "levelUp": "Level up: {{level}}",
-    "hatched": "Your pet hatched!",
-    "rewardGranted": "Reward earned: {{title}}"
+    "rewardGranted": "Reward earned: {{title}}",
+    "checkInApplied_one": "{{count}} day streak · +{{xp}} XP today",
+    "checkInApplied_other": "{{count}} day streak · +{{xp}} XP today"
   },
-  "hatching": {
-    "title": "The egg is about to crack",
-    "hint": "Check in daily to hatch your pet"
+  "dashboard": {
+    "navLabel": "Pet sections",
+    "nav": {
+      "home": "Home",
+      "rewards": "Rewards",
+      "achievements": "Achievements",
+      "leaderboard": "Leaderboard",
+      "progress": "Progress"
+    },
+    "stageLevel": "{{stage}} · lvl {{level}}",
+    "statsLabel": "Pet stats",
+    "stat": {
+      "energy": "Energy",
+      "happiness": "Happiness",
+      "satiety": "Satiety",
+      "streak": "Streak (days)",
+      "xp": "Experience"
+    },
+    "hud": {
+      "badges": "{{count}} badges",
+      "streak": "{{count}} d."
+    },
+    "speech": "Hi! I am {{name}}. Stage: {{stage}}",
+    "streakTracker": "Streak",
+    "streakDay": "Day {{day}}",
+    "streakWeek_one": "Week {{count}} of the streak",
+    "streakWeek_other": "Week {{count}} of the streak",
+    "panelLabel": "Pet section",
+    "backToMarket": "To listings",
+    "openDashboard": "Open pet",
+    "streakDayDone": "Day {{day}}, checked in today"
   },
-  "hatch": {
-    "title": "Your pet hatched!",
-    "description": "It now grows with you: check in and improve your listings to earn experience",
-    "cta": "Say hello"
+  "summaryCard": {
+    "title": "Summary",
+    "badges": "Badges",
+    "badgesEmpty": "Badges: none",
+    "badgeList": "Badges: {{list}}"
+  },
+  "mechanics": {
+    "title": "Streak mechanics",
+    "bonus": {
+      "title": "XP multiplier",
+      "text": "The x{{factor}} daily check-in multiplier kicks in on day {{days}} of the streak"
+    },
+    "reset": {
+      "title": "Reset",
+      "text": "Missing a day resets the streak to 1 — check in every day"
+    },
+    "freeze": {
+      "title": "Freeze",
+      "text": "A freeze saves your streak when you miss a single day. Earned at the {{milestones}} day milestones, up to {{max}}"
+    },
+    "badge": {
+      "active": "Active",
+      "unavailable": "Unavailable",
+      "daysLeft_one": "{{count}} day",
+      "daysLeft_other": "{{count}} days",
+      "hours_one": "{{count}} h",
+      "hours_other": "{{count}} h",
+      "freezesLeft_one": "{{count}} left",
+      "freezesLeft_other": "{{count}} left"
+    }
   }
 }

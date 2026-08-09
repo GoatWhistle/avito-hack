@@ -1,5 +1,5 @@
-import { LeaderboardScreen } from '#/features/leaderboard'
+import { Navigate } from 'react-router'
 
 export default function LeaderboardRoute() {
-  return <LeaderboardScreen />
+  return <Navigate to="/pet/leaderboard" replace />
 }

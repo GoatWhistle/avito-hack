@@ -1,6 +1,4 @@
 -- +goose Up
--- satiety / happiness / energy хранятся на момент last_decay_time,
--- домен пересчитывает их лениво при чтении.
 CREATE TABLE pets (
     id                uuid PRIMARY KEY,
     user_id           uuid NOT NULL UNIQUE REFERENCES users (id) ON DELETE CASCADE,

@@ -1,6 +1,33 @@
 import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
+import { createElement } from 'react'
+
+vi.mock('@lottiefiles/dotlottie-react', () => ({
+  DotLottieReact: ({
+    src,
+    className,
+    dotLottieRefCallback,
+  }: {
+    src?: string
+    className?: string
+    dotLottieRefCallback?: (instance: unknown) => void
+  }) => {
+    dotLottieRefCallback?.({
+      addEventListener: (event: string, listener: () => void) => {
+        if (event === 'load') listener()
+      },
+      removeEventListener: () => {},
+    })
+
+    return createElement('canvas', {
+      'data-testid': 'dotlottie-canvas',
+      'data-src': src,
+      className,
+    })
+  },
+  setWasmUrl: vi.fn(),
+}))
 
 if (typeof window !== 'undefined') {
   Object.defineProperty(window.navigator, 'language', {

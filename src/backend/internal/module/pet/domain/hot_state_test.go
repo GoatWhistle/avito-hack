@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -87,10 +88,24 @@ func TestApplyHotStateAcceptsSameVersion(t *testing.T) {
 	assert.Equal(t, 75, pet.Happiness())
 }
 
-func TestHatchIsOneWay(t *testing.T) {
+func TestNewPetIsAlreadyHatched(t *testing.T) {
 	t.Parallel()
 
 	pet := New(petWithParams(50, 50, 100).UserID(), testTime())
+
+	assert.True(t, pet.IsHatched())
+	require.NotNil(t, pet.HatchedAt())
+	assert.Equal(t, testTime(), *pet.HatchedAt())
+	assert.Equal(t, StageBaby, pet.Stage())
+
+	assert.False(t, pet.Hatch(testTime().Add(time.Hour)))
+	assert.Equal(t, testTime(), *pet.HatchedAt())
+}
+
+func TestHatchIsOneWayForLegacyPets(t *testing.T) {
+	t.Parallel()
+
+	pet := legacyUnhatchedPet()
 	require.False(t, pet.IsHatched())
 	assert.Nil(t, pet.HatchedAt())
 
@@ -104,11 +119,18 @@ func TestHatchIsOneWay(t *testing.T) {
 	assert.Equal(t, testTime(), *pet.HatchedAt())
 }
 
+func legacyUnhatchedPet() *Pet {
+	return Restore(RestoreParams{
+		ID: uuid.New(), UserID: uuid.New(), Stage: StageBaby, Level: 1,
+		Satiety: 50, Happiness: 50, Energy: 100,
+		LastDecayTime: testTime(), UpdatedAt: testTime(),
+	})
+}
+
 func TestHatchedAtReturnsCopy(t *testing.T) {
 	t.Parallel()
 
 	pet := New(petWithParams(50, 50, 100).UserID(), testTime())
-	require.True(t, pet.Hatch(testTime()))
 
 	got := pet.HatchedAt()
 	require.NotNil(t, got)

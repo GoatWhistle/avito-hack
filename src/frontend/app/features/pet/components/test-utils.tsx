@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { render, type RenderResult } from '@testing-library/react'
 import { initI18n } from '#/i18n'
-import type { Pet } from '#/features/pet/types'
+import type { CheckInInfo, Pet } from '#/features/pet/types'
 
 export const makePet = (overrides: Partial<Pet> = {}): Pet => ({
   id: 'pet-1',
@@ -25,6 +25,37 @@ export const makePet = (overrides: Partial<Pet> = {}): Pet => ({
   last_checkin_date: null,
   ...overrides,
 })
+
+export const makeCheckInInfo = (
+  overrides: Partial<CheckInInfo> = {},
+): CheckInInfo => ({
+  xp_granted: 10,
+  level: 3,
+  previous_level: 3,
+  next_level_xp: 35,
+  unlocked_rewards: [],
+  streak: {
+    days: 5,
+    continued: true,
+    freeze_used: false,
+    reset: false,
+    milestone_bonus: 0,
+    milestone_reached: 0,
+    freezes_left: 1,
+  },
+  ...overrides,
+})
+
+export const makeCheckedInPet = (
+  overrides: Partial<Pet> = {},
+  checkin: Partial<CheckInInfo> = {},
+): Pet =>
+  makePet({
+    last_checkin_date: new Date().toISOString(),
+    checkin_applied: true,
+    checkin: makeCheckInInfo(checkin),
+    ...overrides,
+  })
 
 export const renderWithProviders = (ui: ReactElement): RenderResult => {
   const queryClient = new QueryClient({

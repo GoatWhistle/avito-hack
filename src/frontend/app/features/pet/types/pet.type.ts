@@ -1,10 +1,33 @@
 import { z } from 'zod'
 
-export const petStageSchema = z.enum(['egg', 'baby', 'teen', 'adult', 'legend'])
+export const petStageSchema = z.enum(['baby', 'teen', 'adult', 'legend'])
 export const petStateSchema = z.enum(['happy', 'neutral', 'sad', 'sleeping'])
 
 export type PetStageValue = z.infer<typeof petStageSchema>
 export type PetStateValue = z.infer<typeof petStateSchema>
+
+export const streakResultSchema = z.object({
+  days: z.number(),
+  continued: z.boolean(),
+  freeze_used: z.boolean(),
+  reset: z.boolean(),
+  milestone_bonus: z.number(),
+  milestone_reached: z.number(),
+  freezes_left: z.number(),
+})
+
+export type StreakResult = z.infer<typeof streakResultSchema>
+
+export const checkInInfoSchema = z.object({
+  xp_granted: z.number(),
+  level: z.number(),
+  previous_level: z.number(),
+  next_level_xp: z.number(),
+  unlocked_rewards: z.array(z.string()).nullish(),
+  streak: streakResultSchema,
+})
+
+export type CheckInInfo = z.infer<typeof checkInInfoSchema>
 
 export const petSchema = z.object({
   id: z.string(),
@@ -25,6 +48,9 @@ export const petSchema = z.object({
   last_checkin_date: z.string().nullish(),
   last_decay_time: z.string().optional(),
   updated_at: z.string().optional(),
+  feed_available_at: z.string().nullish(),
+  checkin_applied: z.boolean().optional(),
+  checkin: checkInInfoSchema.nullish(),
 })
 
 export type Pet = z.infer<typeof petSchema>
@@ -41,18 +67,6 @@ export const progressSchema = z.object({
 })
 
 export type Progress = z.infer<typeof progressSchema>
-
-export const streakResultSchema = z.object({
-  days: z.number(),
-  continued: z.boolean(),
-  freeze_used: z.boolean(),
-  reset: z.boolean(),
-  milestone_bonus: z.number(),
-  milestone_reached: z.number(),
-  freezes_left: z.number(),
-})
-
-export type StreakResult = z.infer<typeof streakResultSchema>
 
 export const checkInResultSchema = z.object({
   pet: petSchema,

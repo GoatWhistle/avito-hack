@@ -62,7 +62,6 @@ export type NextStepKey =
   | 'feedHungry'
   | 'cheerUp'
   | 'rest'
-  | 'hatch'
   | 'keepGoing'
   | 'maxLevel'
 
@@ -72,7 +71,6 @@ export interface NextStepInput {
 }
 
 export const nextStep = ({ pet, canCheckIn }: NextStepInput): NextStepKey => {
-  if (!pet.is_hatched) return 'hatch'
   if (canCheckIn) return 'checkIn'
   if (pet.satiety < STAT_CRITICAL_BELOW) return 'feedHungry'
   if (pet.energy < STAT_CRITICAL_BELOW) return 'rest'

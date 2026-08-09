@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { deriveMood, isSmiling, stageGeometry, stageScale } from './mood'
+import { deriveMood } from './mood'
+import {
+  isLegendStage,
+  lottieSourceFor,
+  RACCOON_ADULT_SRC,
+  RACCOON_TEEN_SRC,
+} from './lottie-sources'
 import type { PetStage } from './types'
 
 const FULL = { satiety: 90, happiness: 90, energy: 90 }
@@ -47,39 +53,29 @@ describe('deriveMood', () => {
   })
 })
 
-describe('isSmiling', () => {
-  it('smiles when both stats are comfortable', () => {
-    expect(isSmiling(60, 60)).toBe(true)
-  })
+describe('lottie source mapping', () => {
+  const stages: PetStage[] = ['baby', 'teen', 'adult', 'legend']
 
-  it('does not smile when happiness is low', () => {
-    expect(isSmiling(90, 20)).toBe(false)
-  })
-
-  it('does not smile when satiety is low', () => {
-    expect(isSmiling(10, 90)).toBe(false)
-  })
-})
-
-describe('stage geometry', () => {
-  const stages: PetStage[] = ['egg', 'baby', 'teen', 'adult', 'legend']
-
-  it('exposes geometry for every stage', () => {
+  it('maps every stage to a designer animation', () => {
     for (const stage of stages) {
-      expect(stageGeometry(stage).headRadius).toBeGreaterThan(0)
-      expect(stageScale[stage]).toBeGreaterThan(0)
+      expect(lottieSourceFor(stage)).toMatch(/^\/lottie\/raccoon-.+\.json$/)
     }
   })
 
-  it('shrinks the head as the pet grows up', () => {
-    expect(stageGeometry('baby').headRadius).toBeGreaterThan(
-      stageGeometry('adult').headRadius,
-    )
+  it('uses the young raccoon for the early stages', () => {
+    for (const stage of ['baby', 'teen'] as PetStage[]) {
+      expect(lottieSourceFor(stage)).toBe(RACCOON_TEEN_SRC)
+    }
   })
 
-  it('grows the body as the pet grows up', () => {
-    expect(stageGeometry('adult').bodyRy).toBeGreaterThan(
-      stageGeometry('baby').bodyRy,
-    )
+  it('uses the grown raccoon for the late stages', () => {
+    for (const stage of ['adult', 'legend'] as PetStage[]) {
+      expect(lottieSourceFor(stage)).toBe(RACCOON_ADULT_SRC)
+    }
+  })
+
+  it('marks only the legend stage as regal', () => {
+    expect(isLegendStage('legend')).toBe(true)
+    expect(isLegendStage('adult')).toBe(false)
   })
 })

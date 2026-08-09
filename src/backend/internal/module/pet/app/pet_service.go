@@ -66,7 +66,14 @@ func (s *Service) readPet(ctx context.Context, userID uuid.UUID) (*domain.Pet, e
 		return cached, nil
 	}
 
-	return s.pets.ByUserID(ctx, userID)
+	pet, err := s.pets.ByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.refreshCache(ctx, pet)
+
+	return pet, nil
 }
 
 func (s *Service) mergeHotState(ctx context.Context, pet *domain.Pet) {
@@ -97,40 +104,6 @@ func hotFromPet(pet *domain.Pet) HotState {
 func (s *Service) Create(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
 	return s.mutate(ctx, userID, func(_ context.Context, pet *domain.Pet) error {
 		pet.ApplyDecay(s.clock.Now())
-
-		return nil
-	})
-}
-
-func (s *Service) Stroke(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
-	if s.hot == nil {
-		return s.strokeInDatabase(ctx, userID)
-	}
-
-	pet, err := s.readPet(ctx, userID)
-	if err != nil {
-		return s.strokeInDatabase(ctx, userID)
-	}
-	pet.ApplyDecay(s.clock.Now())
-
-	hot, _, err := s.hot.Stroke(ctx, hotFromPet(pet), s.clock.Now())
-	if err != nil {
-		slog.WarnContext(ctx, "stroke via hot state failed, falling back to database",
-			slog.String("user_id", userID.String()), slog.Any("error", err))
-
-		return s.strokeInDatabase(ctx, userID)
-	}
-	if err := pet.ApplyHotState(hot.Happiness, hot.Satiety, hot.Version, hot.UpdatedAt); err != nil {
-		return s.strokeInDatabase(ctx, userID)
-	}
-
-	return pet, nil
-}
-
-func (s *Service) strokeInDatabase(ctx context.Context, userID uuid.UUID) (*domain.Pet, error) {
-	return s.hatching(ctx, userID, func(_ context.Context, pet *domain.Pet) error {
-		pet.ApplyDecay(s.clock.Now())
-		pet.Stroke(s.clock.Now())
 
 		return nil
 	})

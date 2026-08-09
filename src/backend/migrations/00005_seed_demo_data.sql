@@ -1,12 +1,4 @@
 -- +goose Up
--- Демо-данные для жюри: заполненный лидерборд, питомцы всех стадий,
--- опубликованные объявления, выданные бейджи и награды.
---
--- Все строки используют фиксированные UUID: Down удаляет ровно то, что вставила
--- эта миграция, а повторный прогон идемпотентен (ON CONFLICT DO NOTHING).
---
--- Общий пароль всех демо-аккаунтов: demo1234
--- Хеш ниже — bcrypt cost 12, как в internal/shared/password.
 
 INSERT INTO users (id, email, password_hash, full_name, role, created_at, updated_at) VALUES
     ('d0000000-0000-4000-a000-000000000001', 'anna@demo.avito',   '$2a$12$V0xacvkYnghAUcKpcfItRexeAau8BEZHTU5G.7WYLO.lQMuvrvtga', 'Анна Ковалёва',    'user', now() - interval '60 days', now()),
@@ -22,12 +14,6 @@ INSERT INTO users (id, email, password_hash, full_name, role, created_at, update
     ('d0000000-0000-4000-a000-00000000000b', 'maria@demo.avito',  '$2a$12$V0xacvkYnghAUcKpcfItRexeAau8BEZHTU5G.7WYLO.lQMuvrvtga', 'Мария Тарасова',   'user', now() - interval '5 days',  now()),
     ('d0000000-0000-4000-a000-00000000000c', 'nikita@demo.avito', '$2a$12$V0xacvkYnghAUcKpcfItRexeAau8BEZHTU5G.7WYLO.lQMuvrvtga', 'Никита Белов',     'user', now() - interval '1 day',   now())
 ON CONFLICT (id) DO NOTHING;
-
--- Питомцы всех стадий. Пороги уровней из pet/domain/progression.go:
--- 1:0 2:5 3:12 4:22 5:35 6:52 7:72 8:95 9:122 10:155 11:195 12:240 13:290 14:350 15:420
--- next_level_xp хранит порог следующего уровня, на максимуме — 0.
--- satiety / happiness / energy зафиксированы на last_decay_time, домен
--- пересчитывает их лениво при чтении, поэтому значения ниже дрейфуют реалистично.
 
 INSERT INTO pets (
     id, user_id, name, stage, level, xp, next_level_xp,
@@ -117,10 +103,6 @@ INSERT INTO user_badges (id, user_id, badge_id, earned_at) VALUES
     ('b0000000-0000-4000-a000-00000000000c', 'd0000000-0000-4000-a000-000000000009', 'explorer',       now() - interval '4 days')
 ON CONFLICT (user_id, badge_id) DO NOTHING;
 
--- Награды по уровням. Коды выглядят как выданные подписывателем
--- (base32-nonce + "-" + усечённый HMAC), но это демо-значения: активация через
--- POST /rewards/{id}/activate не пройдёт проверку подписи — в этом и смысл,
--- код, не выданный этим сервером, ничего не стоит.
 INSERT INTO user_rewards (id, user_id, reward_id, status, code, granted_at, activated_at, expires_at) VALUES
     ('c0000000-0000-4000-a000-000000000001', 'd0000000-0000-4000-a000-000000000001', 'free_delivery_500',    'activated', 'MZXW6YTBOI2A-DEMOSIGNATURE01', now() - interval '20 days', now() - interval '19 days', now() + interval '40 days'),
     ('c0000000-0000-4000-a000-000000000002', 'd0000000-0000-4000-a000-000000000001', 'autoteka_discount_30', 'granted',   'NBSWY3DPEB3A-DEMOSIGNATURE02', now() - interval '24 days', NULL,                       now() + interval '36 days'),
@@ -134,11 +116,6 @@ INSERT INTO user_rewards (id, user_id, reward_id, status, code, granted_at, acti
     ('c0000000-0000-4000-a000-00000000000a', 'd0000000-0000-4000-a000-000000000009', 'raccoon_accessory',    'granted',   NULL,                          now() - interval '5 days',  NULL,                       NULL)
 ON CONFLICT (user_id, reward_id) DO NOTHING;
 
--- Append-only журнал XP. Суммы соответствуют pet/domain/economy.go:
--- ежедневный вход 1, избранное 1, новый диалог 2, быстрый ответ 3,
--- качественное объявление 2 (4 с видео).
--- Для чек-инов subject_id остаётся NULL, чтобы частичный уникальный индекс
--- не блокировал повторы.
 INSERT INTO xp_events (id, user_id, action, subject_id, amount, created_at) VALUES
     ('f0000000-0000-4000-a000-000000000001', 'd0000000-0000-4000-a000-000000000001', 'daily_login',     NULL,                                   2, now() - interval '3 days'),
     ('f0000000-0000-4000-a000-000000000002', 'd0000000-0000-4000-a000-000000000001', 'daily_login',     NULL,                                   2, now() - interval '2 days'),

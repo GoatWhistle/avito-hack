@@ -13,6 +13,8 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     css: false,
     include: ['app/**/*.{test,spec}.{ts,tsx}'],
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

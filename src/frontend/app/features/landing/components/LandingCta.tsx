@@ -32,7 +32,7 @@ export function LandingCta() {
         <Button
           size="lg"
           variant="outline"
-          render={<Link to="/leaderboard" />}
+          render={<Link to="/pet/leaderboard" />}
           className="no-underline"
         >
           {t('cta.leaderboard')}

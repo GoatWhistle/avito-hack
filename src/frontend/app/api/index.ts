@@ -11,6 +11,8 @@ export {
   getToken,
   resetTokenCache,
   setToken,
+  subscribeToSessionEnd,
   subscribeToToken,
 } from './token-store'
+export type { SessionEndReason } from './token-store'
 export type * from './generated'

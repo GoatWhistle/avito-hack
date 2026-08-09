@@ -1,0 +1,28 @@
+{
+  "tour": {
+    "counter": "Step {{current}} of {{total}}",
+    "progressLabel": "Guide progress",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Get started",
+    "steps": {
+      "items": {
+        "title": "Listings",
+        "description": "Publish and update listings — they are the core of the platform and of all your progress."
+      },
+      "pet": {
+        "title": "Your pet",
+        "description": "Your raccoon grows from real activity: new listings, replies and coming back to the site."
+      },
+      "rewards": {
+        "title": "Achievements and rewards",
+        "description": "Consistency and milestones unlock achievements, and levels unlock rewards. Claim them on the pet tabs."
+      },
+      "profile": {
+        "title": "Profile and account menu",
+        "description": "Click your avatar: your listings, favourites and profile settings live there."
+      }
+    }
+  }
+}

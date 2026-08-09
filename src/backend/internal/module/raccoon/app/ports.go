@@ -13,6 +13,8 @@ type BadgeView struct {
 	Description string
 	IconURL     string
 	EarnedAt    *time.Time
+	Current     int
+	Target      int
 }
 
 type RaccoonProfileView struct {

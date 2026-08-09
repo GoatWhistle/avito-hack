@@ -74,8 +74,10 @@ const makeSession = (userId: string | null): SessionValue => ({
     : null,
   isAuthenticated: Boolean(userId),
   isLoading: false,
+  sessionExpired: false,
   signOut: () => {},
   setUser: () => {},
+  acknowledgeExpiry: () => {},
 })
 
 interface RenderOptions {

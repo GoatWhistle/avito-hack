@@ -115,7 +115,6 @@ jobs:
           go run ./cmd/migrate down
           go run ./cmd/migrate up
 
-      # tests/integration is its own Go module, so it must be run from inside that directory.
       - name: Build the integration tests
         working-directory: tests/integration
         run: go vet -tags=integration ./...

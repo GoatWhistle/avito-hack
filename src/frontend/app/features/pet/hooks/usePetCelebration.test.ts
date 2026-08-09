@@ -64,13 +64,22 @@ describe('usePetCelebration', () => {
     expect(result.current.banner).toEqual({ kind: 'levelUp', level: 6 })
   })
 
-  it('raises a hatched banner', () => {
+  it('raises a check-in banner and its xp toast', () => {
     const { result } = renderHook(() => usePetCelebration())
 
-    send(result, { type: 'pet.hatched', payload: makePet() })
+    act(() => result.current.showCheckIn({ xp: 10, days: 5 }))
 
-    expect(result.current.emotion).toBe('hatching')
-    expect(result.current.banner).toEqual({ kind: 'hatched' })
+    expect(result.current.banner).toEqual({ kind: 'checkIn', xp: 10, days: 5 })
+    expect(result.current.xpToasts).toEqual([{ id: 1, amount: 10 }])
+  })
+
+  it('skips the xp toast when the check-in granted nothing', () => {
+    const { result } = renderHook(() => usePetCelebration())
+
+    act(() => result.current.showCheckIn({ xp: 0, days: 2 }))
+
+    expect(result.current.banner).toEqual({ kind: 'checkIn', xp: 0, days: 2 })
+    expect(result.current.xpToasts).toHaveLength(0)
   })
 
   it('raises a reward banner', () => {

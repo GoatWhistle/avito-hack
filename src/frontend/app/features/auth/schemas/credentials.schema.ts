@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+export const PASSWORD_MIN_LENGTH = 8
+export const PASSWORD_MAX_LENGTH = 72
+
 export const emailSchema = z
   .string()
   .trim()
@@ -9,6 +12,12 @@ export const emailSchema = z
   })
 
 export const passwordSchema = z
+  .string()
+  .min(1, { message: 'validation:required' })
+  .min(PASSWORD_MIN_LENGTH, { message: 'validation:passwordTooShort' })
+  .max(PASSWORD_MAX_LENGTH, { message: 'validation:passwordTooLong' })
+
+export const signInPasswordSchema = z
   .string()
   .min(1, { message: 'validation:required' })
 

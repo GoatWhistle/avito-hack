@@ -1,0 +1,79 @@
+.pet-placeholder {
+  --pet-lottie-size: 280px;
+
+  display: grid;
+  position: relative;
+  width: var(--pet-lottie-size);
+  max-width: 100%;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  place-content: center;
+  place-items: center;
+  gap: var(--spacing, 0.25rem);
+  padding: var(--spacing, 0.25rem);
+  border-radius: var(--radius-lg, 0.75rem);
+  background: var(--color-muted);
+  text-align: center;
+}
+
+.pet-placeholder--sm {
+  --pet-lottie-size: 120px;
+}
+
+.pet-placeholder--md {
+  --pet-lottie-size: 190px;
+}
+
+.pet-placeholder--lg {
+  --pet-lottie-size: 280px;
+}
+
+.pet-placeholder--xl {
+  --pet-lottie-size: 380px;
+}
+
+.pet-placeholder__orb {
+  display: block;
+  width: 46%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%;
+  background: linear-gradient(
+    170deg,
+    var(--color-brand-100) 0%,
+    var(--color-brand-200) 60%,
+    var(--color-brand-300) 100%
+  );
+  animation: pet-placeholder-pulse 1.6s ease-in-out infinite;
+}
+
+.pet-placeholder__caption {
+  max-width: 80%;
+  color: var(--color-muted-foreground);
+  font-size: var(--text-xs, 0.75rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.pet-placeholder--failed .pet-placeholder__orb {
+  background: var(--color-border);
+  animation: none;
+}
+
+@keyframes pet-placeholder-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-placeholder__orb {
+    animation: none;
+  }
+}

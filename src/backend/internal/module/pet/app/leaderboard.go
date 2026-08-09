@@ -32,10 +32,11 @@ type LeaderboardReadModel interface {
 }
 
 type LeaderboardQuery struct {
-	UserID uuid.UUID
-	Cursor pagination.LeaderboardCursor
-	Limit  int
-	Around bool
+	UserID     uuid.UUID
+	Cursor     pagination.LeaderboardCursor
+	Limit      int
+	Around     bool
+	WithMyRank bool
 }
 
 type LeaderboardResult struct {
@@ -55,9 +56,17 @@ func NewLeaderboardHandler(read LeaderboardReadModel) *LeaderboardHandler {
 func (h *LeaderboardHandler) Handle(ctx context.Context, q LeaderboardQuery) (LeaderboardResult, error) {
 	limit := pagination.NormalizeLimit(q.Limit)
 
-	myRank, hasRank, err := h.read.RankOf(ctx, q.UserID)
-	if err != nil {
-		return LeaderboardResult{}, fmt.Errorf("rank of user: %w", err)
+	var (
+		myRank  int
+		hasRank bool
+		err     error
+	)
+
+	if q.Around || q.WithMyRank {
+		myRank, hasRank, err = h.read.RankOf(ctx, q.UserID)
+		if err != nil {
+			return LeaderboardResult{}, fmt.Errorf("rank of user: %w", err)
+		}
 	}
 
 	filter := LeaderboardFilter{Cursor: q.Cursor, Limit: limit + 1}

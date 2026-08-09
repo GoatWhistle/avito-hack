@@ -19,21 +19,31 @@ import (
 var petTestTime = time.Date(2026, time.March, 3, 9, 0, 0, 0, time.UTC)
 
 type stubPetService struct {
-	pet        *domain.Pet
-	result     app.ActionResult
-	progress   app.ProgressView
-	stateErr   error
-	strokeErr  error
-	checkInErr error
-	progErr    error
+	pet             *domain.Pet
+	result          app.ActionResult
+	progress        app.ProgressView
+	feedAvailableAt *time.Time
+	checkInApplied  bool
+	stateErr        error
+	strokeErr       error
+	feedErr         error
+	checkInErr      error
+	progErr         error
+	feedCalls       int
+	stateCalls      int
 }
 
-func (s *stubPetService) State(context.Context, uuid.UUID) (*domain.Pet, error) {
+func (s *stubPetService) StateView(context.Context, uuid.UUID) (app.StateView, error) {
+	s.stateCalls++
 	if s.stateErr != nil {
-		return nil, s.stateErr
+		return app.StateView{}, s.stateErr
 	}
 
-	return s.pet, nil
+	return app.StateView{
+		Pet: s.pet, FeedAvailableAt: s.feedAvailableAt,
+		CheckInApplied: s.checkInApplied,
+		Progress:       s.result.Progress, Streak: s.result.Streak,
+	}, nil
 }
 
 func (s *stubPetService) Stroke(context.Context, uuid.UUID) (*domain.Pet, error) {
@@ -42,6 +52,15 @@ func (s *stubPetService) Stroke(context.Context, uuid.UUID) (*domain.Pet, error)
 	}
 
 	return s.pet, nil
+}
+
+func (s *stubPetService) FeedView(context.Context, uuid.UUID) (app.StateView, error) {
+	s.feedCalls++
+	if s.feedErr != nil {
+		return app.StateView{}, s.feedErr
+	}
+
+	return app.StateView{Pet: s.pet, FeedAvailableAt: s.feedAvailableAt}, nil
 }
 
 func (s *stubPetService) CheckIn(context.Context, uuid.UUID) (app.ActionResult, error) {

@@ -87,6 +87,7 @@ func newRouter(t *testing.T, repo *memoryUsers, actor *auth.Actor) http.Handler 
 	handlers := api.NewHandlers(api.Deps{
 		Register:      app.NewRegisterUserHandler(repo, passthroughTx{}, fixedClock{}, nil, stubTokens{}),
 		Login:         app.NewLoginUserHandler(repo, stubTokens{}),
+		Refresh:       app.NewRefreshSessionHandler(repo, stubTokens{}),
 		GetProfile:    app.NewGetProfileHandler(repo),
 		UpdateProfile: app.NewUpdateProfileHandler(repo, passthroughTx{}, fixedClock{}),
 		Validator:     validate.New(),

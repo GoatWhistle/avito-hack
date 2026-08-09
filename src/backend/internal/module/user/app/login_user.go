@@ -8,6 +8,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/module/user/domain"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
+	"github.com/avito-hack/backend/internal/shared/password"
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
@@ -40,6 +41,8 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (Lo
 	user, err := h.users.ByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, domainerr.ErrNotFound) {
+			password.CompareDecoy(cmd.Password)
+
 			return LoginUserResult{}, domain.ErrInvalidCredential
 		}
 

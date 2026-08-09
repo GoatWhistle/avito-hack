@@ -176,6 +176,15 @@ func newPublishedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
 	return item
 }
 
+func newArchivedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
+	t.Helper()
+
+	item := newPublishedItem(t, ownerID)
+	require.NoError(t, item.Archive(fixedTime))
+
+	return item
+}
+
 func newHandler(repo *stubRepository, bus events.Publisher) *app.ChangeStatusHandler {
 	return app.NewChangeStatusHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus)
 }

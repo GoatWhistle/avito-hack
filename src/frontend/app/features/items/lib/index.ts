@@ -17,6 +17,11 @@ export {
   kopeksToRubles,
   rublesToKopeks,
 } from './format'
+export {
+  petHintStorageKey,
+  readPetHintDismissed,
+  writePetHintDismissed,
+} from './pet-hint-state'
 export { selectPhotos } from './photo-validation'
 export type {
   PhotoRejection,

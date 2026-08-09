@@ -1,27 +1,22 @@
-import { useTranslation } from 'react-i18next'
 import { usePetScreen, type UsePetScreenOptions } from '#/features/pet/hooks'
 import { CelebrationBanner } from './CelebrationBanner'
 import { DailySummaryCard } from './DailySummaryCard'
-import { LevelProgress } from './LevelProgress'
 import { NextStepHint } from './NextStepHint'
 import { PetActions } from './PetActions'
-import { PetHero } from './PetHero'
-import {
-  PetScreenEmpty,
-  PetScreenError,
-  PetScreenSkeleton,
-} from './PetScreenStates'
-import { StatMeter } from './StatMeter'
-import { StreakCard } from './StreakCard'
+import { PetHud } from './PetHud'
+import { PetRewardsPanel } from './PetRewardsPanel'
+import { PetScreenError, PetScreenSkeleton } from './PetScreenStates'
+import { PetStage } from './PetStage'
+import { PetStatsPanel } from './PetStatsPanel'
 
 export type PetScreenProps = UsePetScreenOptions
 
 export function PetScreen(options: PetScreenProps) {
-  const { t } = useTranslation('pet')
   const screen = usePetScreen(options)
+  const view = screen.view
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6 sm:max-w-lg sm:py-10">
+    <main className="mx-auto flex w-full max-w-content flex-col gap-4 px-1 py-2 sm:gap-5">
       {screen.celebration.banner !== null && (
         <CelebrationBanner
           banner={screen.celebration.banner}
@@ -39,64 +34,52 @@ export function PetScreen(options: PetScreenProps) {
         />
       )}
 
-      {screen.view !== null && !screen.view.pet.is_hatched && (
-        <PetScreenEmpty
-          onCheckIn={screen.checkIn.run}
-          isCheckingIn={screen.checkIn.isPending}
-        />
-      )}
-
-      {screen.view !== null && screen.view.pet.is_hatched && (
+      {view !== null && (
         <>
-          <PetHero
-            pet={screen.view.pet}
-            emotion={screen.celebration.emotion}
-            xpToasts={screen.celebration.xpToasts}
-            onStroke={screen.stroke.run}
-            onEmotionEnd={screen.celebration.clearEmotion}
+          <PetHud
+            pet={view.pet}
+            progress={view.progress}
+            streakAtRisk={view.streakAtRisk}
           />
 
-          <LevelProgress progress={screen.view.progress} />
-
-          <StreakCard
-            days={screen.view.pet.streak_days}
-            freezes={screen.view.pet.freezes}
-            atRisk={screen.view.streakAtRisk}
-          />
-
-          <PetActions
-            canCheckIn={screen.canCheckIn}
-            isStroking={screen.stroke.isPending}
-            isCheckingIn={screen.checkIn.isPending}
-            strokeError={screen.stroke.error}
-            checkInError={screen.checkIn.error}
-            onStroke={screen.stroke.run}
-            onCheckIn={screen.checkIn.run}
-          />
-
-          <section
-            aria-label={t('stats.groupLabel')}
-            className="flex flex-col gap-4 rounded-xl bg-card px-4 py-4 ring-1 ring-foreground/10"
-          >
-            {screen.view.stats.map((stat) => (
-              <StatMeter
-                key={stat.key}
-                statKey={stat.key}
-                value={stat.value}
-                tone={stat.tone}
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_minmax(0,19rem)] lg:gap-5">
+            <div className="order-2 flex flex-col gap-4 lg:order-1">
+              <PetStatsPanel
+                stats={view.stats}
+                streakDays={view.pet.streak_days}
+                freezes={view.pet.freezes}
+                streakAtRisk={view.streakAtRisk}
+                feed={screen.feed}
               />
-            ))}
-          </section>
 
-          <NextStepHint step={screen.view.step} />
+              <NextStepHint step={view.step} />
+            </div>
 
-          {screen.summary !== null && (
-            <DailySummaryCard
-              summary={screen.summary}
-              petName={screen.view.pet.name}
-              onDismiss={screen.dismissSummary}
-            />
-          )}
+            <div className="order-1 lg:order-2">
+              <PetStage
+                pet={view.pet}
+                speech={view.speech}
+                emotion={screen.celebration.emotion}
+                xpToasts={screen.celebration.xpToasts}
+                onStroke={screen.stroke.run}
+                onEmotionEnd={screen.celebration.clearEmotion}
+              >
+                <PetActions strokeError={screen.stroke.error} />
+              </PetStage>
+            </div>
+
+            <div className="order-3 flex flex-col gap-4">
+              <PetRewardsPanel />
+
+              {screen.summary !== null && (
+                <DailySummaryCard
+                  summary={screen.summary}
+                  petName={view.pet.name}
+                  onDismiss={screen.dismissSummary}
+                />
+              )}
+            </div>
+          </div>
         </>
       )}
     </main>

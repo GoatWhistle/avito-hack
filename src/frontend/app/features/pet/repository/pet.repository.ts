@@ -26,6 +26,12 @@ export class PetRepository {
     return petSchema.parse(response.data)
   }
 
+  async feed(): Promise<Pet> {
+    const response = await this.httpClient.post<unknown>('/pet/actions/feed')
+
+    return petSchema.parse(response.data)
+  }
+
   async checkIn(): Promise<CheckInResult> {
     const response = await this.httpClient.post<unknown>('/checkin')
 

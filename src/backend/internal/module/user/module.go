@@ -34,6 +34,7 @@ func New(opts Options) *Module {
 	handlers := api.NewHandlers(api.Deps{
 		Register:      app.NewRegisterUserHandler(repo, opts.Tx, opts.Clock, opts.Bus, opts.Tokens),
 		Login:         app.NewLoginUserHandler(repo, opts.Tokens),
+		Refresh:       app.NewRefreshSessionHandler(repo, opts.Tokens),
 		GetProfile:    app.NewGetProfileHandler(repo),
 		UpdateProfile: app.NewUpdateProfileHandler(repo, opts.Tx, opts.Clock),
 		Validator:     opts.Validator,

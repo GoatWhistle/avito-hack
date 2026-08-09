@@ -43,6 +43,45 @@ func (h *Handlers) GetByID(w http.ResponseWriter, r *http.Request) {
 	httpx.OK(w, toItemResponse(item))
 }
 
+// @Id viewItem
+// @Summary Засчитать просмотр объявления
+// @Description Отмечает, что пользователь открыл карточку объявления. Опыт начисляется
+// @Description только за уникальные объявления и не более установленного дневного лимита,
+// @Description поэтому повторные открытия и перезагрузки страницы ничего не дают.
+// @Description Просмотр собственного объявления опыт не приносит.
+// @Tags Items
+// @Produce json
+// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Success 204 "Просмотр учтён"
+// @Failure 400 {object} apierr.ErrorEnvelope
+// @Failure 401 {object} apierr.ErrorEnvelope
+// @Failure 404 {object} apierr.ErrorEnvelope
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/items/{id}/view [post]
+func (h *Handlers) View(w http.ResponseWriter, r *http.Request) {
+	id, err := httpx.UUIDParam(r, "id")
+	if err != nil {
+		apierr.Write(w, r, err)
+		return
+	}
+
+	actor, err := auth.ActorFrom(r.Context())
+	if err != nil {
+		apierr.Write(w, r, err)
+		return
+	}
+
+	if err := h.deps.ViewItem.Handle(r.Context(), app.ViewItemCommand{
+		ItemID: id, ViewerID: actor.ID,
+	}); err != nil {
+		apierr.Write(w, r, err)
+		return
+	}
+
+	httpx.NoContent(w)
+}
+
 // @Id listItems
 // @Summary Публичный список объявлений
 // @Description Анонимный доступ разрешён (`OptionalAuth`): токен читается, если передан,
@@ -83,9 +122,12 @@ func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	viewer, _ := auth.ActorFrom(r.Context()) //nolint:errcheck // anonymous access is allowed, the actor is optional
+
 	result, err := h.deps.ListItems.Handle(r.Context(), app.ListItemsQuery{
 		Status:  status,
 		OwnerID: ownerID,
+		Viewer:  viewer,
 		Search:  r.URL.Query().Get("search"),
 		Cursor:  page.Cursor,
 		Limit:   page.Limit,
@@ -135,6 +177,7 @@ func (h *Handlers) ListMine(w http.ResponseWriter, r *http.Request) {
 	result, err := h.deps.ListItems.Handle(r.Context(), app.ListItemsQuery{
 		Status:  status,
 		OwnerID: actor.ID,
+		Viewer:  actor,
 		Cursor:  page.Cursor,
 		Limit:   page.Limit,
 	})

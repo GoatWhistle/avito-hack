@@ -21,4 +21,6 @@ export type {
   RewardProgress,
   RewardGroupKey,
   RewardGroup,
+  RewardTrackEntry,
+  RewardTrackState,
 } from './progress.type'

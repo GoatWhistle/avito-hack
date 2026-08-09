@@ -13,6 +13,7 @@ const (
 	TypeItemSold       Type = "item.sold"
 	TypeItemUpdated    Type = "item.updated"
 	TypeFavoriteAdded  Type = "favorite.added"
+	TypeItemViewed     Type = "item.viewed"
 	TypeUserRegistered Type = "user.registered"
 )
 
@@ -23,6 +24,13 @@ type Event struct {
 	OccurredAt time.Time
 	Payload    Payload
 }
+
+const (
+	AttrPhotoAdded       = "photo_added"
+	AttrDescriptionAdded = "description_added"
+	AttrPriceSet         = "price_set"
+	AttrFlagTrue         = "true"
+)
 
 type Payload struct {
 	Title       string

@@ -89,7 +89,8 @@ func TestListItemsEndpoint(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 
 	decoded := decodeList(t, rec.Result())
-	assert.Len(t, decoded.Items, 2)
+	require.Len(t, decoded.Items, 1)
+	assert.Equal(t, "Bike", decoded.Items[0].Title)
 	assert.Empty(t, decoded.NextCursor)
 }
 
@@ -110,6 +111,8 @@ func TestListItemsEndpointFilters(t *testing.T) {
 	byOwner := decodeList(t, f.do(t, http.MethodGet, "/items/?owner_id="+ownerID.String(), "").Result())
 	require.Len(t, byOwner.Items, 1)
 	assert.Equal(t, "Bike", byOwner.Items[0].Title)
+
+	assert.Empty(t, decodeList(t, f.do(t, http.MethodGet, "/items/?status=draft", "").Result()).Items)
 }
 
 func TestListItemsEndpointRejectsBadQuery(t *testing.T) {

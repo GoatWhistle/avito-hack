@@ -3,7 +3,8 @@ import {
   type RewardsRepository,
 } from '#/features/rewards/repository'
 import { groupRewards } from '#/features/rewards/lib/progress'
-import type { RewardGroup } from '#/features/rewards/types'
+import { buildRewardTrack } from '#/features/rewards/lib/track'
+import type { RewardGroup, RewardTrackEntry } from '#/features/rewards/types'
 
 export class LoadRewardCatalogUseCase {
   constructor(private readonly repository: RewardsRepository) {}
@@ -12,6 +13,19 @@ export class LoadRewardCatalogUseCase {
     const rewards = await this.repository.catalog(signal)
 
     return groupRewards(rewards)
+  }
+}
+
+export class LoadRewardTrackUseCase {
+  constructor(private readonly repository: RewardsRepository) {}
+
+  async execute(signal?: AbortSignal): Promise<RewardTrackEntry[]> {
+    const [catalog, mine] = await Promise.all([
+      this.repository.catalog(signal),
+      this.repository.mine(signal).catch(() => []),
+    ])
+
+    return buildRewardTrack(catalog, mine)
   }
 }
 
@@ -40,6 +54,9 @@ export class ActivateRewardUseCase {
 }
 
 export const loadRewardCatalogUseCase = new LoadRewardCatalogUseCase(
+  rewardsRepository,
+)
+export const loadRewardTrackUseCase = new LoadRewardTrackUseCase(
   rewardsRepository,
 )
 export const loadMyRewardsUseCase = new LoadMyRewardsUseCase(rewardsRepository)

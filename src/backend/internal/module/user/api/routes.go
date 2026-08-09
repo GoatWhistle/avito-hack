@@ -8,6 +8,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", h.Register)
 		r.Post("/login", h.Login)
+
+		r.Group(func(r chi.Router) {
+			r.Use(h.deps.Authenticate)
+			r.Post("/refresh", h.Refresh)
+		})
 	})
 
 	r.Route("/users", func(r chi.Router) {

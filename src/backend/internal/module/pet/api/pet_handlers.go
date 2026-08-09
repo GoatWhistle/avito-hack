@@ -14,7 +14,8 @@ import (
 )
 
 type petStateService interface {
-	State(ctx context.Context, userID uuid.UUID) (*domain.Pet, error)
+	StateView(ctx context.Context, userID uuid.UUID) (app.StateView, error)
+	FeedView(ctx context.Context, userID uuid.UUID) (app.StateView, error)
 	Stroke(ctx context.Context, userID uuid.UUID) (*domain.Pet, error)
 	CheckIn(ctx context.Context, userID uuid.UUID) (app.ActionResult, error)
 	Progress(ctx context.Context, userID uuid.UUID) (app.ProgressView, error)
@@ -24,9 +25,14 @@ type rewardGranter interface {
 	GrantEligible(ctx context.Context, userID uuid.UUID) ([]domain.Reward, error)
 }
 
+type petUpdateNotifier interface {
+	PetUpdated(userID uuid.UUID, pet *domain.Pet)
+}
+
 type PetDeps struct {
 	Service      petStateService
 	Rewards      rewardGranter
+	Notifier     petUpdateNotifier
 	Authenticate func(http.Handler) http.Handler
 }
 
@@ -48,6 +54,21 @@ func NewPetHandlers(deps PetDeps) *PetHandlers {
 // @Description прошедшему с `last_decay_time`. Поэтому два последовательных чтения
 // @Description без действий пользователя могут вернуть разные значения характеристик
 // @Description и производное поле `state`.
+// @Description
+// @Description Второй побочный эффект — автоматический чек-ин. Если за текущие сутки
+// @Description по московскому времени чек-ина ещё не было, он засчитывается прямо здесь:
+// @Description начисляется опыт, продлевается серия, выдаются награды. Тогда
+// @Description `checkin_applied` равно `true`, а объект `checkin` содержит начисленный
+// @Description опыт, уровень и параметры серии — этого достаточно, чтобы показать тост.
+// @Description Повторные чтения в тот же день ничего не меняют и возвращают
+// @Description `checkin_applied: false` без объекта `checkin`. Операция идемпотентна
+// @Description в пределах суток: параллельные запросы сериализуются блокировкой строки
+// @Description питомца, поэтому опыт начисляется ровно один раз.
+// @Description Явный `POST /api/v1/checkin` продолжает работать и остаётся
+// @Description единственным способом получить полный ответ `CheckInResult`.
+// @Description
+// @Description `feed_available_at` — момент, когда снова можно кормить (RFC3339).
+// @Description `null` означает, что кормление доступно прямо сейчас.
 // @Tags Pet
 // @Produce json
 // @Success 200 {object} petPayload "Состояние питомца"
@@ -62,14 +83,18 @@ func (h *PetHandlers) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pet, err := h.deps.Service.State(r.Context(), actor.ID)
+	view, err := h.deps.Service.StateView(r.Context(), actor.ID)
 	if err != nil {
 		apierr.Write(w, r, err)
 
 		return
 	}
 
-	httpx.OK(w, toPetPayload(pet))
+	if view.CheckInApplied {
+		h.grantEligible(r, actor.ID)
+	}
+
+	httpx.OK(w, toStatePayload(view))
 }
 
 // @Id strokePet
@@ -80,10 +105,8 @@ func (h *PetHandlers) Get(w http.ResponseWriter, r *http.Request) {
 // @Description в потолок 100, а частота ограничена внутренним лимитом действий —
 // @Description превышение даёт 409 (`action limit reached`).
 // @Description
-// @Description Побочный эффект: если питомец на стадии `egg` и условия вылупления
-// @Description выполнены, вызов может привести к вылуплению — тогда подписчикам
-// @Description WebSocket уходит событие `pet.hatched`. Всем активным соединениям
-// @Description пользователя также рассылается `pet.updated`.
+// @Description Побочный эффект: всем активным WebSocket-соединениям пользователя
+// @Description рассылается `pet.updated`.
 // @Tags Pet
 // @Produce json
 // @Success 200 {object} petPayload "Обновлённое состояние питомца"
@@ -118,6 +141,11 @@ func (h *PetHandlers) Stroke(w http.ResponseWriter, r *http.Request) {
 // @Description даёт 409 (`action has already been performed today`). Именно этот
 // @Description конфликт — нормальный, ожидаемый ответ для клиента, который
 // @Description не знает, был ли уже чек-ин.
+// @Description
+// @Description Эндпоинт сохранён для обратной совместимости. Клиенту он больше
+// @Description не нужен: `GET /api/v1/pet` засчитывает чек-ин сам и сообщает об этом
+// @Description полями `checkin_applied` и `checkin`. Оба пути делят одно состояние,
+// @Description поэтому после автоматического чек-ина этот вызов вернёт 409.
 // @Description
 // @Description Логика стрика:
 // @Description

@@ -6,5 +6,19 @@ export {
   progressRatio,
   toRewardProgress,
 } from './progress'
-export { conditionLabel, formatDate, isExpired, remainingLabel } from './format'
+export {
+  badgeProgress,
+  badgeRemainingLabel,
+  conditionLabel,
+  formatDate,
+  isExpired,
+  remainingLabel,
+} from './format'
+export type { BadgeProgressView } from './format'
+export {
+  buildRewardTrack,
+  isActivatable,
+  trackStateOf,
+  trackSummary,
+} from './track'
 export { activationErrorKey, loadErrorKey, toApiError } from './errors'

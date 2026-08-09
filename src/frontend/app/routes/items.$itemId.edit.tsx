@@ -1,4 +1,5 @@
 import { useParams } from 'react-router'
+import { RequireAuth } from '#/features/auth/components'
 import { ItemEditScreen } from '#/features/items'
 
 export default function ItemEditRoute() {
@@ -6,5 +7,9 @@ export default function ItemEditRoute() {
 
   if (!itemId) return null
 
-  return <ItemEditScreen itemId={itemId} />
+  return (
+    <RequireAuth>
+      <ItemEditScreen itemId={itemId} />
+    </RequireAuth>
+  )
 }

@@ -10,10 +10,16 @@ export interface XpToast {
 }
 
 export interface CelebrationBanner {
-  kind: 'levelUp' | 'hatched' | 'reward' | 'streak'
+  kind: 'levelUp' | 'reward' | 'streak' | 'checkIn'
   level?: number
   title?: string
   days?: number
+  xp?: number
+}
+
+export interface CheckInSummary {
+  xp: number
+  days: number
 }
 
 export interface PetCelebration {
@@ -24,6 +30,7 @@ export interface PetCelebration {
   clearEmotion: () => void
   dismissBanner: () => void
   celebrate: (emotion: PetEmotion) => void
+  showCheckIn: (summary: CheckInSummary) => void
 }
 
 export const usePetCelebration = (): PetCelebration => {
@@ -64,11 +71,6 @@ export const usePetCelebration = (): PetCelebration => {
           setBanner({ kind: 'levelUp', level: event.payload.level })
 
           return
-        case 'pet.hatched':
-          setEmotion('hatching')
-          setBanner({ kind: 'hatched' })
-
-          return
         case 'reward.granted':
           setBanner({ kind: 'reward', title: event.payload.title })
 
@@ -90,6 +92,15 @@ export const usePetCelebration = (): PetCelebration => {
   const dismissBanner = useCallback(() => setBanner(null), [])
   const celebrate = useCallback((next: PetEmotion) => setEmotion(next), [])
 
+  const showCheckIn = useCallback(
+    ({ xp, days }: CheckInSummary) => {
+      setBanner({ kind: 'checkIn', xp, days })
+
+      if (xp > 0) pushXp(xp)
+    },
+    [pushXp],
+  )
+
   return {
     emotion,
     xpToasts,
@@ -98,5 +109,6 @@ export const usePetCelebration = (): PetCelebration => {
     clearEmotion,
     dismissBanner,
     celebrate,
+    showCheckIn,
   }
 }

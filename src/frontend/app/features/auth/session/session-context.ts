@@ -5,8 +5,10 @@ export interface SessionValue {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  sessionExpired: boolean
   signOut: () => void
   setUser: (user: User) => void
+  acknowledgeExpiry: () => void
 }
 
 export const SessionContext = createContext<SessionValue | null>(null)

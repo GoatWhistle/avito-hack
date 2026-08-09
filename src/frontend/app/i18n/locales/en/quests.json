@@ -1,0 +1,31 @@
+{
+  "title": "Daily quests",
+  "counter": "{{completed}} of {{total}}",
+  "loading": "Loading quests…",
+  "error": "Could not load quests",
+  "retry": "Retry",
+  "empty": "No quests for today",
+  "progress": "{{current}} / {{target}}",
+  "meterLabel": "{{title}}: {{current}} of {{target}} done",
+  "reward": "+{{xp}} XP",
+  "rewardClaimed": "+{{xp}} XP claimed",
+  "claim": "Claim {{xp}} XP",
+  "items": {
+    "fallback_one": "Complete {{count}} action",
+    "fallback_other": "Complete {{count}} actions",
+    "favorite_three_one": "Add {{count}} listing to favorites",
+    "favorite_three_other": "Add {{count}} listings to favorites",
+    "view_five_one": "View {{count}} listing",
+    "view_five_other": "View {{count}} listings",
+    "publish_one_one": "Publish {{count}} listing",
+    "publish_one_other": "Publish {{count}} listings",
+    "update_two_one": "Update {{count}} of your listings",
+    "update_two_other": "Update {{count}} of your listings",
+    "improve_one_one": "Improve {{count}} listing: photo, description or price",
+    "improve_one_other": "Improve {{count}} listings: photo, description or price",
+    "quality_one_one": "Fill in {{count}} listing completely",
+    "quality_one_other": "Fill in {{count}} listings completely",
+    "sell_one_one": "Sell {{count}} listing",
+    "sell_one_other": "Sell {{count}} listings"
+  }
+}

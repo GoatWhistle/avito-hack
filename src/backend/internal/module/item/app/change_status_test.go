@@ -25,7 +25,11 @@ func TestChangeStatusHandler_OwnerPublishesDraft(t *testing.T) {
 		wantErr error
 	}{
 		{name: "owner publishes", actor: auth.Actor{ID: ownerID, Role: auth.RoleUser}},
-		{name: "moderator publishes", actor: auth.Actor{ID: uuid.New(), Role: auth.RoleModerator}},
+		{
+			name:    "moderator cannot publish someone else item",
+			actor:   auth.Actor{ID: uuid.New(), Role: auth.RoleModerator},
+			wantErr: domainerr.ErrForbidden,
+		},
 		{
 			name:    "stranger cannot publish",
 			actor:   auth.Actor{ID: uuid.New(), Role: auth.RoleUser},

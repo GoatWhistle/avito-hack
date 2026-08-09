@@ -1,5 +1,5 @@
 export const fontFamilies = {
-  sans: "'Geist Variable', ui-sans-serif, system-ui, sans-serif",
+  sans: "'Avito Sans', ui-sans-serif, system-ui, sans-serif",
   heading: 'var(--font-sans)',
   mono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
 } as const
@@ -17,8 +17,8 @@ export const fontSizes = {
 
 export const fontWeights = {
   regular: '400',
-  medium: '500',
-  semibold: '600',
+  medium: '400',
+  semibold: '700',
   bold: '700',
 } as const
 

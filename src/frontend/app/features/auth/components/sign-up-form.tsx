@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Button, CardContent, CardFooter, FieldGroup } from '#/components/ui'
-import { useSignUpForm } from '#/features/auth/forms'
-import { toServerMessage } from '#/features/auth/lib'
+import { useFocusOnServerField, useSignUpForm } from '#/features/auth/forms'
+import { toServerFieldName, toServerMessage } from '#/features/auth/lib'
 import { useSession } from '#/features/auth/session'
+import { requestPlatformTour } from '#/features/onboarding'
 import { AuthField } from './AuthField'
 import { AuthFormError } from './AuthFormError'
 
@@ -16,14 +17,26 @@ export function SignUpForm({ redirectTo = '/onboarding' }: SignUpFormProps) {
   const navigate = useNavigate()
   const { setUser } = useSession()
 
-  const { form, isPending, error } = useSignUpForm({
-    onSuccess: (session) => {
-      setUser(session.user)
-      void navigate(redirectTo, { replace: true })
+  const { form, isPending, error, register, focusFirstInvalid } = useSignUpForm(
+    {
+      onSuccess: (session) => {
+        setUser(session.user)
+        requestPlatformTour()
+        void navigate(redirectTo, { replace: true })
+      },
     },
-  })
+  )
 
-  const serverError = toServerMessage(error, (key) => t(key as never))
+  const translate = (key: string, options?: Record<string, unknown>): string =>
+    String(t(key as never, options as never))
+
+  const serverError = toServerMessage(error, translate)
+  const serverField = toServerFieldName(error)
+
+  useFocusOnServerField(serverField, focusFirstInvalid)
+
+  const messageFor = (name: string) =>
+    serverField === name && serverError ? serverError : undefined
 
   return (
     <form
@@ -44,10 +57,12 @@ export function SignUpForm({ redirectTo = '/onboarding' }: SignUpFormProps) {
                 autoComplete="name"
                 labelKey="auth:fields.fullName"
                 placeholderKey="auth:placeholders.fullName"
+                inputRef={register('fullName')}
                 value={field.state.value}
                 disabled={isPending}
                 touched={field.state.meta.isTouched}
                 issues={field.state.meta.errors}
+                serverMessage={messageFor('fullName')}
                 onChange={field.handleChange}
                 onBlur={field.handleBlur}
               />
@@ -62,10 +77,12 @@ export function SignUpForm({ redirectTo = '/onboarding' }: SignUpFormProps) {
                 autoComplete="email"
                 labelKey="auth:fields.email"
                 placeholderKey="auth:placeholders.email"
+                inputRef={register('email')}
                 value={field.state.value}
                 disabled={isPending}
                 touched={field.state.meta.isTouched}
                 issues={field.state.meta.errors}
+                serverMessage={messageFor('email')}
                 onChange={field.handleChange}
                 onBlur={field.handleBlur}
               />
@@ -80,17 +97,20 @@ export function SignUpForm({ redirectTo = '/onboarding' }: SignUpFormProps) {
                 autoComplete="new-password"
                 labelKey="auth:fields.password"
                 placeholderKey="auth:placeholders.password"
+                hintKey="auth:hints.passwordRule"
+                inputRef={register('password')}
                 value={field.state.value}
                 disabled={isPending}
                 touched={field.state.meta.isTouched}
                 issues={field.state.meta.errors}
+                serverMessage={messageFor('password')}
                 onChange={field.handleChange}
                 onBlur={field.handleBlur}
               />
             )}
           </form.Field>
 
-          <AuthFormError message={serverError} />
+          <AuthFormError message={serverField ? null : serverError} />
         </FieldGroup>
       </CardContent>
 

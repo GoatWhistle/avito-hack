@@ -24,7 +24,6 @@ export const streakUpdatedPayloadSchema = z.object({
 export const petEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('pet.state'), payload: petSchema }),
   z.object({ type: z.literal('pet.updated'), payload: petSchema }),
-  z.object({ type: z.literal('pet.hatched'), payload: petSchema }),
   z.object({ type: z.literal('xp.gained'), payload: xpGainedPayloadSchema }),
   z.object({ type: z.literal('level.up'), payload: levelUpPayloadSchema }),
   z.object({

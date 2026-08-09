@@ -14,6 +14,7 @@ export { MyItemRow } from './MyItemRow'
 export { MyItemsScreen } from './MyItemsScreen'
 export { PhotoDropzone } from './PhotoDropzone'
 export { PhotoGallery } from './PhotoGallery'
+export { PetHintBanner } from './PetHintBanner'
 export { PhotoManager } from './PhotoManager'
 export {
   PhotoPreviews,

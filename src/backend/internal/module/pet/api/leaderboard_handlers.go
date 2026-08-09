@@ -43,7 +43,9 @@ func NewLeaderboardHandlers(deps LeaderboardDeps) *LeaderboardHandlers {
 // @Summary Рейтинг пользователей
 // @Description Рейтинг по уровню, затем по опыту, затем по идентификатору (для
 // @Description устойчивости порядка). Поле `my_rank` — позиция владельца токена;
-// @Description `null`, если она неизвестна.
+// @Description `null`, если она неизвестна или не запрашивалась. Подсчёт ранга —
+// @Description самая дорогая часть запроса, поэтому он выполняется только при
+// @Description `with_my_rank=true` или `around=me`.
 // @Description
 // @Description Пагинация использует ОТДЕЛЬНЫЙ формат курсора (`level|xp|user_id`),
 // @Description несовместимый с временным курсором остальных списков. Передача
@@ -57,6 +59,7 @@ func NewLeaderboardHandlers(deps LeaderboardDeps) *LeaderboardHandlers {
 // @Param limit query int false "Размер страницы. По умолчанию 20, максимум 100." default(20) maximum(100)
 // @Param cursor query string false "Лидербордный курсор из `next_cursor` предыдущей страницы."
 // @Param around query string false "Значение `me` — показать окно вокруг позиции текущего пользователя." Enums(me)
+// @Param with_my_rank query bool false "Значение `true` — посчитать и вернуть `my_rank`." default(false)
 // @Success 200 {object} leaderboardResponse "Страница рейтинга"
 // @Failure 400 {object} apierr.ErrorEnvelope
 // @Failure 401 {object} apierr.ErrorEnvelope
@@ -99,9 +102,10 @@ func leaderboardQueryFromRequest(r *http.Request) (app.LeaderboardQuery, error) 
 	}
 
 	return app.LeaderboardQuery{
-		Cursor: cursor,
-		Limit:  pagination.NormalizeLimit(limit),
-		Around: r.URL.Query().Get("around") == "me",
+		Cursor:     cursor,
+		Limit:      pagination.NormalizeLimit(limit),
+		Around:     r.URL.Query().Get("around") == "me",
+		WithMyRank: r.URL.Query().Get("with_my_rank") == "true",
 	}, nil
 }
 

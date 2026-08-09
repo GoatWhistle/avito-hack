@@ -29,9 +29,11 @@ func (n *spyHatchNotifier) PetHatched(userID uuid.UUID, _ *domain.Pet) {
 
 type configurableHotStore struct {
 	strokeErr  error
+	feedErr    error
 	initErr    error
 	badVersion bool
 	strokes    int
+	feeds      int
 }
 
 func (s *configurableHotStore) GetOrInitialize(_ context.Context, initial app.HotState) (app.HotState, error) {
@@ -157,7 +159,7 @@ func TestStateToleratesHotStateFailure(t *testing.T) {
 	assert.Equal(t, userID, pet.UserID())
 }
 
-func TestCreateHatchesPetAndNotifiesOnce(t *testing.T) {
+func TestNewPetsNeverTriggerHatchNotification(t *testing.T) {
 	t.Parallel()
 
 	notifier := &spyHatchNotifier{}
@@ -165,13 +167,13 @@ func TestCreateHatchesPetAndNotifiesOnce(t *testing.T) {
 	service = service.WithHatchNotifier(notifier)
 	userID := uuid.New()
 
-	_, err := service.Stroke(t.Context(), userID)
+	pet, err := service.Stroke(t.Context(), userID)
 	require.NoError(t, err)
-	require.Equal(t, []uuid.UUID{userID}, notifier.hatched)
+	require.True(t, pet.IsHatched())
 
 	_, err = service.Stroke(t.Context(), userID)
 	require.NoError(t, err)
-	assert.Len(t, notifier.hatched, 1)
+	assert.Empty(t, notifier.hatched)
 }
 
 func TestCreateInitializesPetForUnknownUser(t *testing.T) {
@@ -185,7 +187,8 @@ func TestCreateInitializesPetForUnknownUser(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, userID, pet.UserID())
 	assert.Equal(t, 1, pet.Level())
-	assert.Equal(t, domain.StageEgg, pet.Stage())
+	assert.Equal(t, domain.StageBaby, pet.Stage())
+	assert.True(t, pet.IsHatched())
 }
 
 func TestCheckInAwardsXPAndStreak(t *testing.T) {

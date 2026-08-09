@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { useSession } from '#/features/auth/session'
-import { LevelIndicator } from '#/features/progress'
+import { BrandMark } from './BrandMark'
 import { DesktopNav } from './DesktopNav'
 import { LocaleToggle } from './LocaleToggle'
 import { MobileMenu } from './MobileMenu'
@@ -23,15 +23,7 @@ export function Header() {
           className="flex min-w-0 items-center gap-2 no-underline"
           aria-label={t('common:app.name')}
         >
-          <span
-            aria-hidden="true"
-            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-sm text-primary-foreground"
-          >
-            🦝
-          </span>
-          <span className="hidden truncate font-heading text-sm font-semibold sm:inline">
-            {t('common:app.name')}
-          </span>
+          <BrandMark className="h-7 w-auto shrink-0" />
         </Link>
 
         <div className="ms-1 hidden lg:block">
@@ -39,9 +31,6 @@ export function Header() {
         </div>
 
         <div className="ms-auto flex items-center gap-1 sm:gap-2">
-          {isAuthenticated && (
-            <LevelIndicator compact className="hidden sm:flex" />
-          )}
           <LocaleToggle />
           <ThemeToggle />
           {isAuthenticated ? (
@@ -58,11 +47,6 @@ export function Header() {
         </div>
       </div>
 
-      {isAuthenticated && (
-        <div className="border-t px-3 py-1.5 sm:hidden">
-          <LevelIndicator compact />
-        </div>
-      )}
     </header>
   )
 }

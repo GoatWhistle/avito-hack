@@ -15,9 +15,11 @@ const (
 
 	MaxParameterValue   = 100
 	StrokeHappinessGain = 5
+	FeedSatietyGain     = 15
 
 	maxParameterValue   = MaxParameterValue
 	strokeHappinessGain = StrokeHappinessGain
+	feedSatietyGain     = FeedSatietyGain
 )
 
 type Pet struct {
@@ -42,16 +44,19 @@ type Pet struct {
 }
 
 func New(userID uuid.UUID, now time.Time) *Pet {
+	hatched := now
+
 	return &Pet{
 		id:            uuid.New(),
 		userID:        userID,
-		stage:         StageEgg,
+		stage:         stageForLevel(initialLevel),
 		level:         initialLevel,
 		nextLevelXP:   nextThreshold(initialLevel),
 		satiety:       initialSatiety,
 		happiness:     initialHappiness,
 		energy:        initialEnergy,
 		freezes:       initialFreezes,
+		hatchedAt:     &hatched,
 		lastDecayTime: now,
 		updatedAt:     now,
 	}
@@ -91,6 +96,12 @@ func Restore(p RestoreParams) *Pet {
 
 func (p *Pet) Stroke(now time.Time) {
 	p.happiness = min(p.happiness+strokeHappinessGain, maxParameterValue)
+	p.interactionVersion++
+	p.updatedAt = now
+}
+
+func (p *Pet) FeedMeal(now time.Time) {
+	p.satiety = min(p.satiety+feedSatietyGain, maxParameterValue)
 	p.interactionVersion++
 	p.updatedAt = now
 }

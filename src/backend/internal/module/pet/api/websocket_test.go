@@ -30,6 +30,7 @@ type stubService struct{}
 
 func (stubService) State(context.Context, uuid.UUID) (*domain.Pet, error)  { return nil, nil }
 func (stubService) Stroke(context.Context, uuid.UUID) (*domain.Pet, error) { return nil, nil }
+func (stubService) Feed(context.Context, uuid.UUID) (*domain.Pet, error)   { return nil, nil }
 
 func TestWebSocketPing(t *testing.T) {
 	t.Parallel()

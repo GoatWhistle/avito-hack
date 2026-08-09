@@ -10,7 +10,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG VITE_API_URL=http://localhost:8080
+ARG VITE_API_URL=
 ARG VITE_DEFAULT_LOCALE=ru
 ENV VITE_API_URL=${VITE_API_URL} VITE_DEFAULT_LOCALE=${VITE_DEFAULT_LOCALE}
 
@@ -26,6 +26,7 @@ FROM nginx:1.27-alpine AS runtime
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/app.conf
+COPY security-headers.inc /etc/nginx/security-headers.inc
 RUN esc=$(printf '\033') && sed -i "s/\\\\x1b/${esc}/g" /etc/nginx/conf.d/app.conf
 RUN sed -i 's|^error_log .*|error_log /dev/stderr warn;|' /etc/nginx/nginx.conf \
  && sed -i '/^user /d' /etc/nginx/nginx.conf

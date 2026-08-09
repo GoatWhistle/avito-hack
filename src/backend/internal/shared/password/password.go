@@ -3,6 +3,7 @@ package password
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -68,4 +69,24 @@ func (h Hash) Compare(plain string) error {
 
 func (h Hash) String() string {
 	return h.value
+}
+
+var decoyHash = sync.OnceValue(func() []byte {
+	raw, err := bcrypt.GenerateFromPassword([]byte("decoy-password-for-constant-time-login"), cost)
+	if err != nil {
+		return nil
+	}
+
+	return raw
+})
+
+func CompareDecoy(plain string) {
+	hash := decoyHash()
+	if hash == nil {
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword(hash, truncate(plain)); err != nil {
+		return
+	}
 }

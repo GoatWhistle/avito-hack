@@ -19,6 +19,21 @@ type UserRewardListResponse struct {
 	NextCursor string         `json:"next_cursor,omitempty"`
 }
 
+type QuestListResponse struct {
+	Items      []questItem `json:"items"`
+	NextCursor string      `json:"next_cursor,omitempty"`
+}
+
+type questItem struct {
+	ID        string `json:"id"`
+	Action    string `json:"action"`
+	Target    int    `json:"target"`
+	Reward    int    `json:"reward_xp"`
+	Current   int    `json:"progress_current"`
+	Completed bool   `json:"completed"`
+	Claimed   bool   `json:"claimed"`
+}
+
 type rewardCatalogItem struct {
 	ID             string `json:"id"`
 	Title          string `json:"title"`
@@ -86,6 +101,18 @@ type petPayload struct {
 	LastCheckInDate *time.Time   `json:"last_checkin_date,omitempty"`
 	LastDecayTime   time.Time    `json:"last_decay_time"`
 	UpdatedAt       time.Time    `json:"updated_at"`
+	FeedAvailableAt *time.Time   `json:"feed_available_at"`
+	CheckInApplied  bool         `json:"checkin_applied"`
+	CheckIn         *checkInInfo `json:"checkin,omitempty"`
+}
+
+type checkInInfo struct {
+	XPGranted       int           `json:"xp_granted"`
+	Level           int           `json:"level"`
+	PreviousLevel   int           `json:"previous_level"`
+	NextLevelXP     int           `json:"next_level_xp"`
+	UnlockedRewards []string      `json:"unlocked_rewards"`
+	Streak          streakPayload `json:"streak"`
 }
 
 func toPetPayload(p *domain.Pet) petPayload {
@@ -97,6 +124,25 @@ func toPetPayload(p *domain.Pet) petPayload {
 		IsHatched: p.IsHatched(), HatchedAt: p.HatchedAt(), LastCheckInDate: p.LastCheckInDate(),
 		LastDecayTime: p.LastDecayTime(), UpdatedAt: p.UpdatedAt(),
 	}
+}
+
+func toStatePayload(view app.StateView) petPayload {
+	payload := toPetPayload(view.Pet)
+	payload.FeedAvailableAt = view.FeedAvailableAt
+	payload.CheckInApplied = view.CheckInApplied
+
+	if view.CheckInApplied {
+		payload.CheckIn = &checkInInfo{
+			XPGranted:       view.Progress.XPGranted,
+			Level:           view.Progress.Level,
+			PreviousLevel:   view.Progress.PreviousLevel,
+			NextLevelXP:     view.Progress.NextLevelXP,
+			UnlockedRewards: unlockedOrEmpty(view.Progress.UnlockedRewards),
+			Streak:          toStreakPayload(view.Streak),
+		}
+	}
+
+	return payload
 }
 
 type progressPayload struct {
@@ -138,24 +184,31 @@ type checkInPayload struct {
 }
 
 func toCheckInPayload(result app.ActionResult) checkInPayload {
-	unlocked := result.Progress.UnlockedRewards
-	if unlocked == nil {
-		unlocked = []string{}
-	}
-
 	return checkInPayload{
 		Pet:             toPetPayload(result.Pet),
 		XPGranted:       result.Progress.XPGranted,
 		Level:           result.Progress.Level,
 		PreviousLevel:   result.Progress.PreviousLevel,
 		NextLevelXP:     result.Progress.NextLevelXP,
-		UnlockedRewards: unlocked,
-		Streak: streakPayload{
-			Days: result.Streak.Days, Continued: result.Streak.Continued,
-			FreezeUsed: result.Streak.FreezeUsed, Reset: result.Streak.Reset,
-			MilestoneBonus:   result.Streak.MilestoneBonus,
-			MilestoneReached: result.Streak.MilestoneReached,
-			FreezesLeft:      result.Streak.FreezesLeft,
-		},
+		UnlockedRewards: unlockedOrEmpty(result.Progress.UnlockedRewards),
+		Streak:          toStreakPayload(result.Streak),
 	}
+}
+
+func toStreakPayload(outcome domain.StreakOutcome) streakPayload {
+	return streakPayload{
+		Days: outcome.Days, Continued: outcome.Continued,
+		FreezeUsed: outcome.FreezeUsed, Reset: outcome.Reset,
+		MilestoneBonus:   outcome.MilestoneBonus,
+		MilestoneReached: outcome.MilestoneReached,
+		FreezesLeft:      outcome.FreezesLeft,
+	}
+}
+
+func unlockedOrEmpty(rewards []string) []string {
+	if rewards == nil {
+		return []string{}
+	}
+
+	return rewards
 }

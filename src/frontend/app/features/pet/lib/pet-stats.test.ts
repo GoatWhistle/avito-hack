@@ -100,12 +100,6 @@ describe('canCheckInToday', () => {
 })
 
 describe('nextStep', () => {
-  it('prioritises hatching', () => {
-    expect(
-      nextStep({ pet: { ...basePet, is_hatched: false }, canCheckIn: false }),
-    ).toBe('hatch')
-  })
-
   it('prioritises check-in when available', () => {
     expect(nextStep({ pet: basePet, canCheckIn: true })).toBe('checkIn')
   })

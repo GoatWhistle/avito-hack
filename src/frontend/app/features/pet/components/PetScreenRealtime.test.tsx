@@ -11,6 +11,7 @@ vi.mock('#/features/pet/repository', () => ({
   petRepository: {
     state: () => state(),
     stroke: () => Promise.resolve(makePet()),
+    feed: () => Promise.resolve(makePet()),
     checkIn: () => Promise.reject(new Error('unused')),
     summaryToday: () => summaryToday(),
   },
@@ -94,19 +95,23 @@ describe('PetScreen realtime', () => {
     expect(await screen.findByTestId('celebration-banner')).toHaveTextContent(
       'Новый уровень: 7',
     )
-    expect(screen.getByText('Уровень 7')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Ноти · уровень 7' }),
+    ).toBeInTheDocument()
   })
 
-  it('announces pet.hatched', async () => {
-    state.mockResolvedValue(makePet({ is_hatched: false, stage: 'egg' }))
+  it('applies pet.state from the socket', async () => {
     renderWithProviders(<PetScreen {...socketOptions} />)
-    await screen.findByRole('heading', { name: /яйцо вот-вот треснет/i })
+    await screen.findByRole('heading', { name: 'Ноти', level: 1 })
 
-    await emit('pet.hatched', makePet({ is_hatched: true, stage: 'baby' }))
+    await emit('pet.state', makePet({ stage: 'teen', energy: 44 }))
 
-    expect(await screen.findByTestId('celebration-banner')).toHaveTextContent(
-      'Питомец вылупился!',
-    )
+    await waitFor(() => {
+      expect(screen.getAllByRole('meter')[2]).toHaveAttribute(
+        'aria-valuenow',
+        '44',
+      )
+    })
     expect(screen.getAllByRole('meter')).toHaveLength(3)
   })
 

@@ -12,6 +12,7 @@ type Deps struct {
 	UpdateItem    *app.UpdateItemHandler
 	ChangeStatus  *app.ChangeStatusHandler
 	GetItem       *app.GetItemHandler
+	ViewItem      *app.ViewItemHandler
 	ListItems     *app.ListItemsHandler
 	AddPhoto      *app.AddPhotoHandler
 	ListPhotos    *app.ListPhotosHandler

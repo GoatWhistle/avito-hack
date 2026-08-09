@@ -28,6 +28,7 @@ type Subscriber struct {
 	notifier PetNotifier
 	clock    Clock
 	rewards  *RewardService
+	badges   *BadgeService
 }
 
 func NewSubscriber(service *Service, notifier PetNotifier, clock Clock) *Subscriber {
@@ -40,11 +41,19 @@ func (s *Subscriber) WithRewards(rewards *RewardService) *Subscriber {
 	return s
 }
 
+func (s *Subscriber) WithBadges(badges *BadgeService) *Subscriber {
+	s.badges = badges
+
+	return s
+}
+
 func (s *Subscriber) routes() map[events.Type]events.Handler {
 	return map[events.Type]events.Handler{
 		events.TypeItemPublished:  s.onItemPublished,
 		events.TypeItemSold:       s.onItemSold,
+		events.TypeItemUpdated:    s.onItemUpdated,
 		events.TypeFavoriteAdded:  s.onFavoriteAdded,
+		events.TypeItemViewed:     s.onItemViewed,
 		events.TypeUserRegistered: s.onUserRegistered,
 	}
 }
@@ -80,6 +89,44 @@ func (s *Subscriber) onItemSold(ctx context.Context, e events.Event) error {
 		action: domain.ActionItemSold,
 		award:  (*domain.Pet).RewardItemSold,
 	})
+}
+
+func (s *Subscriber) onItemUpdated(ctx context.Context, e events.Event) error {
+	improvement := improvementFrom(e.Payload)
+	if !improvement.Any() {
+		return s.award(ctx, e, reaction{
+			action: domain.ActionItemUpdated,
+			award:  (*domain.Pet).RewardItemUpdated,
+		})
+	}
+
+	return s.award(ctx, e, reaction{
+		action: domain.ActionItemImproved,
+		award: func(p *domain.Pet, a domain.LimitedAction) (domain.Progress, error) {
+			return p.RewardItemImproved(a, improvement)
+		},
+	})
+}
+
+func (s *Subscriber) onItemViewed(ctx context.Context, e events.Event) error {
+	return s.award(ctx, e, reaction{
+		action: domain.ActionItemViewed,
+		award:  (*domain.Pet).RewardItemViewed,
+	})
+}
+
+func improvementFrom(payload events.Payload) domain.ListingImprovement {
+	flag := func(key string) bool {
+		value, ok := payload.Attribute(key)
+
+		return ok && value == events.AttrFlagTrue
+	}
+
+	return domain.ListingImprovement{
+		PhotoAdded:       flag(events.AttrPhotoAdded),
+		DescriptionAdded: flag(events.AttrDescriptionAdded),
+		PriceSet:         flag(events.AttrPriceSet),
+	}
 }
 
 func (s *Subscriber) onFavoriteAdded(ctx context.Context, e events.Event) error {
@@ -128,9 +175,23 @@ func (s *Subscriber) award(ctx context.Context, e events.Event, r reaction) erro
 	}
 
 	s.grantRewards(ctx, e.UserID, progress)
+	s.grantBadges(ctx, e.UserID)
 	s.notify(e.UserID, pet, progress, string(e.Type))
 
 	return nil
+}
+
+func (s *Subscriber) grantBadges(ctx context.Context, userID uuid.UUID) {
+	if s.badges == nil {
+		return
+	}
+
+	if err := s.badges.AwardEarned(ctx, userID); err != nil {
+		slog.ErrorContext(ctx, "award badges failed",
+			slog.String("user_id", userID.String()),
+			slog.Any("error", err),
+		)
+	}
 }
 
 func (s *Subscriber) notify(userID uuid.UUID, pet *domain.Pet, progress domain.Progress, reason string) {

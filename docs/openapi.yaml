@@ -141,6 +141,10 @@ components:
                     type: string
                 name:
                     type: string
+                progress_current:
+                    type: integer
+                progress_target:
+                    type: integer
             type: object
         ChangeStatusRequest:
             properties:
@@ -414,8 +418,14 @@ components:
             type: object
         Pet:
             properties:
+                checkin:
+                    $ref: '#/components/schemas/api.checkInInfo'
+                checkin_applied:
+                    type: boolean
                 energy:
                     type: integer
+                feed_available_at:
+                    type: string
                 freezes:
                     type: integer
                 happiness:
@@ -453,14 +463,12 @@ components:
             type: object
         PetStage:
             enum:
-                - egg
                 - baby
                 - teen
                 - adult
                 - legend
             type: string
             x-enum-varnames:
-                - StageEgg
                 - StageBaby
                 - StageTeen
                 - StageAdult
@@ -944,6 +952,51 @@ components:
                 - reason
                 - total
             type: object
+        api.QuestListResponse:
+            properties:
+                items:
+                    items:
+                        $ref: '#/components/schemas/api.questItem'
+                    type: array
+                    uniqueItems: false
+                next_cursor:
+                    type: string
+            type: object
+        api.checkInInfo:
+            properties:
+                level:
+                    type: integer
+                next_level_xp:
+                    type: integer
+                previous_level:
+                    type: integer
+                streak:
+                    $ref: '#/components/schemas/Streak'
+                unlocked_rewards:
+                    items:
+                        type: string
+                    type: array
+                    uniqueItems: false
+                xp_granted:
+                    type: integer
+            type: object
+        api.questItem:
+            properties:
+                action:
+                    type: string
+                claimed:
+                    type: boolean
+                completed:
+                    type: boolean
+                id:
+                    type: string
+                progress_current:
+                    type: integer
+                reward_xp:
+                    type: integer
+                target:
+                    type: integer
+            type: object
     securitySchemes:
         bearerAuth:
             bearerFormat: JWT
@@ -1061,10 +1114,51 @@ paths:
             summary: Вход
             tags:
                 - Auth
+    /api/v1/auth/refresh:
+        post:
+            description: |-
+                Перевыпускает JWT для владельца действующего токена: клиент обменивает
+                ещё живой токен на новый с продлённым `exp` и новым `jti`. Это скользящее
+                окно — отдельного refresh-токена в системе нет, поэтому истёкший токен
+                продлить нельзя и остаётся только повторный вход.
+
+                Ответ совпадает по форме с `POST /api/v1/auth/login`. Старый токен
+                продолжает действовать до собственного `exp`: ревокации нет.
+            operationId: refreshSession
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Session'
+                    description: Выдан новый токен
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Токен отсутствует, истёк или повреждён
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Пользователь удалён
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Продление сессии
+            tags:
+                - Auth
     /api/v1/auth/register:
         post:
             description: |-
-                Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `egg`.
+                Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `baby`.
 
                 Не идемпотентна: повторная регистрация того же e-mail даёт 409.
                 Ответ совпадает по форме с `POST /api/v1/auth/login` — сразу приходит
@@ -1155,6 +1249,11 @@ paths:
                 даёт 409 (`action has already been performed today`). Именно этот
                 конфликт — нормальный, ожидаемый ответ для клиента, который
                 не знает, был ли уже чек-ин.
+
+                Эндпоинт сохранён для обратной совместимости. Клиенту он больше
+                не нужен: `GET /api/v1/pet` засчитывает чек-ин сам и сообщает об этом
+                полями `checkin_applied` и `checkin`. Оба пути делят одно состояние,
+                поэтому после автоматического чек-ина этот вызов вернёт 409.
 
                 Логика стрика:
 
@@ -1869,6 +1968,54 @@ paths:
             summary: Смена статуса объявления
             tags:
                 - Items
+    /api/v1/items/{id}/view:
+        post:
+            description: |-
+                Отмечает, что пользователь открыл карточку объявления. Опыт начисляется
+                только за уникальные объявления и не более установленного дневного лимита,
+                поэтому повторные открытия и перезагрузки страницы ничего не дают.
+                Просмотр собственного объявления опыт не приносит.
+            operationId: viewItem
+            parameters:
+                - description: Идентификатор объявления
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    format: uuid
+                    type: string
+            responses:
+                "204":
+                    description: Просмотр учтён
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Засчитать просмотр объявления
+            tags:
+                - Items
     /api/v1/items/mine:
         get:
             description: |-
@@ -1934,7 +2081,9 @@ paths:
             description: |-
                 Рейтинг по уровню, затем по опыту, затем по идентификатору (для
                 устойчивости порядка). Поле `my_rank` — позиция владельца токена;
-                `null`, если она неизвестна.
+                `null`, если она неизвестна или не запрашивалась. Подсчёт ранга —
+                самая дорогая часть запроса, поэтому он выполняется только при
+                `with_my_rank=true` или `around=me`.
 
                 Пагинация использует ОТДЕЛЬНЫЙ формат курсора (`level|xp|user_id`),
                 несовместимый с временным курсором остальных списков. Передача
@@ -1964,6 +2113,12 @@ paths:
                     enum:
                         - me
                     type: string
+                - description: Значение `true` — посчитать и вернуть `my_rank`.
+                  in: query
+                  name: with_my_rank
+                  schema:
+                    default: false
+                    type: boolean
             responses:
                 "200":
                     content:
@@ -2005,6 +2160,21 @@ paths:
                 прошедшему с `last_decay_time`. Поэтому два последовательных чтения
                 без действий пользователя могут вернуть разные значения характеристик
                 и производное поле `state`.
+
+                Второй побочный эффект — автоматический чек-ин. Если за текущие сутки
+                по московскому времени чек-ина ещё не было, он засчитывается прямо здесь:
+                начисляется опыт, продлевается серия, выдаются награды. Тогда
+                `checkin_applied` равно `true`, а объект `checkin` содержит начисленный
+                опыт, уровень и параметры серии — этого достаточно, чтобы показать тост.
+                Повторные чтения в тот же день ничего не меняют и возвращают
+                `checkin_applied: false` без объекта `checkin`. Операция идемпотентна
+                в пределах суток: параллельные запросы сериализуются блокировкой строки
+                питомца, поэтому опыт начисляется ровно один раз.
+                Явный `POST /api/v1/checkin` продолжает работать и остаётся
+                единственным способом получить полный ответ `CheckInResult`.
+
+                `feed_available_at` — момент, когда снова можно кормить (RFC3339).
+                `null` означает, что кормление доступно прямо сейчас.
             operationId: getPet
             responses:
                 "200":
@@ -2036,6 +2206,58 @@ paths:
             summary: Состояние питомца
             tags:
                 - Pet
+    /api/v1/pet/actions/feed:
+        post:
+            description: |-
+                Повышает `satiety`. Тело запроса не требуется.
+
+                Не идемпотентна, но эффект ограничен: сытость упирается в потолок 100,
+                а частота ограничена кулдауном в 5 часов. Повторный вызов внутри кулдауна
+                возвращает 200 с неизменённой сытостью, а не ошибку — клиенту не нужно
+                отличать «покормили» от «уже сыт».
+
+                `feed_available_at` в ответе — момент, когда кормление снова станет
+                доступным (RFC3339). Значение `null` означает «доступно сейчас»;
+                после успешного кормления там будет время на 5 часов вперёд,
+                по нему клиент строит обратный отсчёт.
+
+                Опыт за кормление не начисляется: это забота о питомце, а не целевое
+                действие на площадке. Влияние косвенное — сытость ниже 30 включает
+                штрафной множитель опыта, и кормление его снимает.
+
+                Побочный эффект: всем активным WebSocket-соединениям пользователя
+                рассылается `pet.updated`.
+            operationId: feedPet
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Pet'
+                    description: Обновлённое состояние питомца
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Покормить питомца
+            tags:
+                - Pet
     /api/v1/pet/actions/stroke:
         post:
             description: |-
@@ -2045,10 +2267,8 @@ paths:
                 в потолок 100, а частота ограничена внутренним лимитом действий —
                 превышение даёт 409 (`action limit reached`).
 
-                Побочный эффект: если питомец на стадии `egg` и условия вылупления
-                выполнены, вызов может привести к вылуплению — тогда подписчикам
-                WebSocket уходит событие `pet.hatched`. Всем активным соединениям
-                пользователя также рассылается `pet.updated`.
+                Побочный эффект: всем активным WebSocket-соединениям пользователя
+                рассылается `pet.updated`.
             operationId: strokePet
             responses:
                 "200":
@@ -2127,6 +2347,74 @@ paths:
             summary: Прогресс уровня и стрика
             tags:
                 - Pet
+    /api/v1/quests:
+        get:
+            description: |-
+                Набор заданий на текущий день. Состав заданий детерминирован: он
+                зависит от пользователя и календарной даты (МСК), поэтому в течение
+                суток список не меняется между запросами.
+
+                Прогресс не хранится отдельным счётчиком, а вычисляется из журнала
+                начислений опыта за текущие сутки, поэтому он не может разойтись
+                с реальными действиями. `completed` — задание выполнено,
+                `claimed` — награда за него уже начислена.
+            operationId: listDailyQuests
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.QuestListResponse'
+                    description: Задания на сегодня
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Ежедневные задания
+            tags:
+                - Quests
+    /api/v1/quests/claim:
+        post:
+            description: |-
+                Начисляет опыт за все выполненные, но ещё не оплаченные задания дня.
+                Идемпотентна: награда за каждое задание выдаётся не более одного раза
+                в сутки, повторный вызов ничего не начисляет и возвращает то же
+                состояние списка.
+            operationId: claimDailyQuests
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.QuestListResponse'
+                    description: Состояние заданий после начисления
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Забрать награды за выполненные задания
+            tags:
+                - Quests
     /api/v1/raccoon/profile:
         get:
             description: |-

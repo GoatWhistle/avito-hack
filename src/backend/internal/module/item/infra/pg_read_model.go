@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/avito-hack/backend/internal/module/item/app"
+	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/postgres"
 )
 
@@ -53,6 +54,8 @@ func buildListQuery(f app.ListFilter) (query string, args []any) {
 		return "$" + strconv.Itoa(len(args))
 	}
 
+	conditions = append(conditions, visibilityCondition(f.ViewerID, next))
+
 	if f.Status != "" {
 		conditions = append(conditions, "status = "+next(f.Status.String()))
 	}
@@ -77,4 +80,19 @@ func buildListQuery(f app.ListFilter) (query string, args []any) {
 		LIMIT ` + next(f.Limit)
 
 	return query, args
+}
+
+func visibilityCondition(viewerID uuid.UUID, next func(any) string) string {
+	placeholders := make([]string, 0, len(domain.PublicStatuses))
+	for _, status := range domain.PublicStatuses {
+		placeholders = append(placeholders, next(status.String()))
+	}
+
+	public := "status IN (" + strings.Join(placeholders, ", ") + ")"
+
+	if viewerID == uuid.Nil {
+		return public
+	}
+
+	return "(" + public + " OR owner_id = " + next(viewerID) + ")"
 }

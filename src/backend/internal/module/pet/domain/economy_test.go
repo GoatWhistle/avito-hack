@@ -83,10 +83,10 @@ func TestLimitedActions(t *testing.T) {
 			name: "favorite limit", action: actionWithCount(5), call: (*Pet).RewardFavorite,
 			err: ErrLimitReached,
 		},
-		{name: "search", action: validLimitedAction(), call: (*Pet).RewardSearchSubscription, xp: 4},
+		{name: "view", action: validLimitedAction(), call: (*Pet).RewardItemViewed, xp: 1},
 		{
-			name: "search limit", action: actionWithCount(3), call: (*Pet).RewardSearchSubscription,
-			err: ErrLimitReached,
+			name: "view limit", action: actionWithCount(MaxItemViewsPerDay),
+			call: (*Pet).RewardItemViewed, err: ErrLimitReached,
 		},
 	}
 
@@ -106,11 +106,11 @@ func TestContentAndTrustRewards(t *testing.T) {
 
 	pet := New(uuid.New(), testTime())
 	progress, err := pet.RewardQualityListing(QualityListing{
-		HasPhoto: true, HasPrice: true, HasVideo: true,
+		HasPhoto: true, HasPrice: true,
 		Description: strings.Repeat("я", 201), Now: testTime(),
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 5, progress.XPGranted)
+	assert.Equal(t, 3, progress.XPGranted)
 }
 
 func TestRewardQualityListingRules(t *testing.T) {
@@ -128,13 +128,6 @@ func TestRewardQualityListingRules(t *testing.T) {
 			name:    "photo, price and description are enough",
 			listing: QualityListing{HasPhoto: true, HasPrice: true, Description: longDescription},
 			wantXP:  3,
-		},
-		{
-			name: "video raises the bonus",
-			listing: QualityListing{
-				HasPhoto: true, HasPrice: true, HasVideo: true, Description: longDescription,
-			},
-			wantXP: 5,
 		},
 		{
 			name:    "no photo is rejected",

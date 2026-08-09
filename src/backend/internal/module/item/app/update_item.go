@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
@@ -58,6 +59,17 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 			return domainerr.ErrForbidden
 		}
 
+		photosBefore, photosErr := photoCount(ctx, h.photos, item.ID())
+		if photosErr != nil {
+			return photosErr
+		}
+
+		before := improvementSnapshot{
+			descriptionLen: utf8.RuneCountInString(item.Description()),
+			priceKopeks:    item.Price().Kopeks(),
+			photoCount:     photosBefore,
+		}
+
 		if updateErr := item.Update(params); updateErr != nil {
 			return updateErr
 		}
@@ -71,8 +83,11 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 			return countErr
 		}
 
+		payload := itemPayload(item, count)
+		payload.Attributes = withImprovementFlags(payload.Attributes, before, item, count)
+
 		out.Add(events.New(events.TypeItemUpdated, item.OwnerID(), item.ID(), h.clock.Now()).
-			WithPayload(itemPayload(item, count)))
+			WithPayload(payload))
 
 		updated = item
 
@@ -106,4 +121,34 @@ func toUpdateParams(cmd UpdateItemCommand, now time.Time) (domain.UpdateItemPara
 	}
 
 	return params, nil
+}
+
+type improvementSnapshot struct {
+	descriptionLen int
+	priceKopeks    int64
+	photoCount     int
+}
+
+func withImprovementFlags(
+	attributes map[string]string,
+	before improvementSnapshot,
+	item *domain.Item,
+	photoCount int,
+) map[string]string {
+	flags := make(map[string]string, len(attributes)+3)
+	for key, value := range attributes {
+		flags[key] = value
+	}
+
+	if photoCount > before.photoCount {
+		flags[events.AttrPhotoAdded] = events.AttrFlagTrue
+	}
+	if utf8.RuneCountInString(item.Description()) > before.descriptionLen {
+		flags[events.AttrDescriptionAdded] = events.AttrFlagTrue
+	}
+	if before.priceKopeks == 0 && item.Price().Kopeks() > 0 {
+		flags[events.AttrPriceSet] = events.AttrFlagTrue
+	}
+
+	return flags
 }

@@ -1,0 +1,20 @@
+@keyframes platform-tour-step-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.platform-tour-step {
+  animation: platform-tour-step-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-tour-step {
+    animation: none;
+  }
+}

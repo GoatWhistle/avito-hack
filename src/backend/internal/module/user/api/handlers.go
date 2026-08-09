@@ -12,6 +12,7 @@ import (
 type Deps struct {
 	Register      *app.RegisterUserHandler
 	Login         *app.LoginUserHandler
+	Refresh       *app.RefreshSessionHandler
 	GetProfile    *app.GetProfileHandler
 	UpdateProfile *app.UpdateProfileHandler
 	Validator     httpx.Validator
@@ -30,7 +31,7 @@ func NewHandlers(deps Deps) *Handlers {
 
 // @Id register
 // @Summary Регистрация пользователя
-// @Description Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `egg`.
+// @Description Создаёт пользователя с ролью `user` и заводит для него питомца на стадии `baby`.
 // @Description
 // @Description Не идемпотентна: повторная регистрация того же e-mail даёт 409.
 // @Description Ответ совпадает по форме с `POST /api/v1/auth/login` — сразу приходит
@@ -100,6 +101,42 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    req.Email,
 		Password: req.Password,
 	})
+	if err != nil {
+		apierr.Write(w, r, err)
+		return
+	}
+
+	httpx.OK(w, sessionResponse{
+		Token: result.Token,
+		User:  toUserResponse(result.User),
+	})
+}
+
+// @Id refreshSession
+// @Summary Продление сессии
+// @Description Перевыпускает JWT для владельца действующего токена: клиент обменивает
+// @Description ещё живой токен на новый с продлённым `exp` и новым `jti`. Это скользящее
+// @Description окно — отдельного refresh-токена в системе нет, поэтому истёкший токен
+// @Description продлить нельзя и остаётся только повторный вход.
+// @Description
+// @Description Ответ совпадает по форме с `POST /api/v1/auth/login`. Старый токен
+// @Description продолжает действовать до собственного `exp`: ревокации нет.
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} sessionResponse "Выдан новый токен"
+// @Failure 401 {object} apierr.ErrorEnvelope "Токен отсутствует, истёк или повреждён"
+// @Failure 404 {object} apierr.ErrorEnvelope "Пользователь удалён"
+// @Failure 500 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Router /api/v1/auth/refresh [post]
+func (h *Handlers) Refresh(w http.ResponseWriter, r *http.Request) {
+	actor, err := auth.ActorFrom(r.Context())
+	if err != nil {
+		apierr.Write(w, r, err)
+		return
+	}
+
+	result, err := h.deps.Refresh.Handle(r.Context(), app.RefreshSessionCommand{UserID: actor.ID})
 	if err != nil {
 		apierr.Write(w, r, err)
 		return

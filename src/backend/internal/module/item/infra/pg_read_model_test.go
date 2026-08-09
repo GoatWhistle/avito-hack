@@ -54,7 +54,7 @@ func TestReadModelListPassesFilterArgs(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, tx.QueryCalls, 1)
 	assert.Contains(t, tx.QueryCalls[0].SQL, "FROM items")
-	assert.Equal(t, []any{"published", ownerID, 15}, tx.QueryCalls[0].Args)
+	assert.Equal(t, []any{"published", "sold", "published", ownerID, 15}, tx.QueryCalls[0].Args)
 }
 
 func TestReadModelListWrapsQueryError(t *testing.T) {

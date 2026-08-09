@@ -40,19 +40,76 @@ func (e EarnedBadge) Name() string        { return e.badge.name }
 func (e EarnedBadge) Description() string { return e.badge.description }
 func (e EarnedBadge) IconURL() string     { return e.badge.iconURL }
 
-const badgeRaccoonFriend = "raccoon_friend"
+type BadgeRule struct {
+	ID     string
+	Action Action
+	Target int
+}
 
-const raccoonFriendLevel = 10
+type BadgeStats struct {
+	Level      int
+	StreakDays int
+	Actions    map[Action]int
+	QuestsDone int
+}
 
-func BadgesEarnedBy(pet *Pet) []string {
-	if pet == nil {
-		return nil
+type BadgeProgress struct {
+	ID      string
+	Current int
+	Target  int
+	Earned  bool
+}
+
+const (
+	badgeRaccoonFriend = "raccoon_friend"
+	badgeChargedStreak = "charged_streak"
+	badgeQuestRunner   = "quest_runner"
+)
+
+var badgeRules = []BadgeRule{
+	{ID: "explorer", Action: ActionFavorite, Target: 5},
+	{ID: "curious_eye", Action: ActionItemViewed, Target: 10},
+	{ID: "first_listing", Action: ActionItemPublished, Target: 1},
+	{ID: "nothing_hidden", Action: ActionItemImproved, Target: 3},
+	{ID: "green_planet", Action: ActionItemSold, Target: 5},
+}
+
+const (
+	raccoonFriendLevel = 10
+	chargedStreakDays  = 14
+	questRunnerPerDay  = QuestsPerDay
+)
+
+func EvaluateBadges(stats BadgeStats) []BadgeProgress {
+	progress := make([]BadgeProgress, 0, len(badgeRules)+3)
+	for _, rule := range badgeRules {
+		progress = append(progress, newBadgeProgress(rule.ID, stats.Actions[rule.Action], rule.Target))
 	}
 
-	earned := make([]string, 0, 1)
-	if pet.Level() >= raccoonFriendLevel {
-		earned = append(earned, badgeRaccoonFriend)
+	progress = append(progress,
+		newBadgeProgress(badgeRaccoonFriend, stats.Level, raccoonFriendLevel),
+		newBadgeProgress(badgeChargedStreak, stats.StreakDays, chargedStreakDays),
+		newBadgeProgress(badgeQuestRunner, stats.QuestsDone, questRunnerPerDay),
+	)
+
+	return progress
+}
+
+func BadgesEarnedBy(stats BadgeStats) []string {
+	earned := make([]string, 0)
+	for _, item := range EvaluateBadges(stats) {
+		if item.Earned {
+			earned = append(earned, item.ID)
+		}
 	}
 
 	return earned
+}
+
+func newBadgeProgress(id string, current, target int) BadgeProgress {
+	if current > target {
+		current = target
+	}
+
+	return BadgeProgress{ID: id, Current: current, Target: target, Earned: current >= target}
 }

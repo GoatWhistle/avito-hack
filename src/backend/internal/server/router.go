@@ -22,6 +22,8 @@ import (
 const (
 	readyPingTimeout = 2 * time.Second
 	uploadPathParts  = 2
+	authPathPrefix   = "/api/v1/auth/"
+	compressionLevel = 5
 )
 
 type ModuleRegistrar interface {
@@ -56,8 +58,14 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Route("/api/v1", func(v1 chi.Router) {
 		v1.Handle("/ws", deps.WebSocket)
 		v1.Group(func(api chi.Router) {
+			api.Use(chimw.Compress(compressionLevel))
+
 			if deps.Config.RequestTimeout > 0 {
 				api.Use(chimw.Timeout(deps.Config.RequestTimeout))
+			}
+
+			for _, limit := range rateLimiters(deps.Config) {
+				api.Use(limit)
 			}
 
 			for _, module := range deps.Modules {
@@ -67,6 +75,42 @@ func NewRouter(deps RouterDeps) http.Handler {
 	})
 
 	return r
+}
+
+func rateLimiters(cfg config.Config) []func(http.Handler) http.Handler {
+	if !cfg.RateLimitEnabled {
+		return nil
+	}
+
+	general := middleware.RateLimit(middleware.RateLimitConfig{
+		Rate:       cfg.RateLimitRPS,
+		Burst:      cfg.RateLimitBurst,
+		TrustProxy: cfg.RateLimitTrustProxy,
+	})
+
+	auth := middleware.RateLimit(middleware.RateLimitConfig{
+		Rate:       cfg.AuthRateLimitRPS,
+		Burst:      cfg.AuthRateLimitBurst,
+		TrustProxy: cfg.RateLimitTrustProxy,
+	})
+
+	return []func(http.Handler) http.Handler{general, onlyAuthRoutes(auth)}
+}
+
+func onlyAuthRoutes(limit func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		limited := limit(next)
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, authPathPrefix) {
+				limited.ServeHTTP(w, r)
+
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func mountUploads(r chi.Router, publicURL, dir string, guard uploadGuard) {
@@ -98,7 +142,7 @@ func mountUploads(r chi.Router, publicURL, dir string, guard uploadGuard) {
 			return
 		}
 
-		w.Header().Set("Cache-Control", "private, max-age=86400")
+		w.Header().Set("Cache-Control", "private, max-age=86400, must-revalidate")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		fileServer.ServeHTTP(w, req)
 	})

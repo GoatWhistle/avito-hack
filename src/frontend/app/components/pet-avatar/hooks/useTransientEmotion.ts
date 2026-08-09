@@ -2,18 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { PetEmotion } from '../types'
 
 export const EMOTION_RESET_MS = 2_500
-export const HATCHING_RESET_MS = 3_600
-
-export function emotionDuration(
-  emotion: PetEmotion | null,
-  base: number,
-): number {
-  if (emotion === 'hatching') {
-    return Math.max(base, HATCHING_RESET_MS)
-  }
-
-  return base
-}
 
 export function useTransientEmotion(
   emotion: PetEmotion | null | undefined,
@@ -32,13 +20,10 @@ export function useTransientEmotion(
       return
     }
 
-    const timer = setTimeout(
-      () => {
-        setActive(null)
-        endRef.current?.()
-      },
-      emotionDuration(next, resetMs),
-    )
+    const timer = setTimeout(() => {
+      setActive(null)
+      endRef.current?.()
+    }, resetMs)
 
     return () => {
       clearTimeout(timer)

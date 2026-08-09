@@ -83,17 +83,22 @@ func TestRewardItemSold(t *testing.T) {
 	require.ErrorIs(t, err, ErrInvalidAction)
 }
 
-func TestRewardItemSoldIgnoresDailyLimit(t *testing.T) {
+func TestRewardItemSoldRespectsDailyLimit(t *testing.T) {
 	t.Parallel()
 
 	pet := neutralPet()
 
-	for range 5 {
+	for count := range MaxSoldPerDay {
 		_, err := pet.RewardItemSold(LimitedAction{
-			SubjectID: uuid.New(), Unique: true, RewardedCount: 99, Now: testTime(),
+			SubjectID: uuid.New(), Unique: true, RewardedCount: count, Now: testTime(),
 		})
 		require.NoError(t, err)
 	}
 
 	assert.Positive(t, pet.XP())
+
+	_, err := pet.RewardItemSold(LimitedAction{
+		SubjectID: uuid.New(), Unique: true, RewardedCount: MaxSoldPerDay, Now: testTime(),
+	})
+	require.ErrorIs(t, err, ErrLimitReached)
 }

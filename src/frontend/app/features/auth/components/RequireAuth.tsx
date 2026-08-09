@@ -1,11 +1,12 @@
 import type { PropsWithChildren } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate } from 'react-router'
+import { Navigate, useLocation } from 'react-router'
 import { useSession } from '#/features/auth/session'
 
 export function RequireAuth({ children }: PropsWithChildren) {
   const { t } = useTranslation('common')
   const { isAuthenticated, isLoading } = useSession()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -18,7 +19,11 @@ export function RequireAuth({ children }: PropsWithChildren) {
     )
   }
 
-  if (!isAuthenticated) return <Navigate to="/sign-in" replace />
+  if (!isAuthenticated) {
+    const from = `${location.pathname}${location.search}`
+
+    return <Navigate to="/sign-in" state={{ from }} replace />
+  }
 
   return <>{children}</>
 }

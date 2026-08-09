@@ -57,6 +57,7 @@ func newTestRouter(t *testing.T) http.Handler {
 			petapi.NewLeaderboardHandlers(petapi.LeaderboardDeps{Authenticate: passthrough}),
 			petapi.NewPetHandlers(petapi.PetDeps{Authenticate: passthrough}),
 			petapi.NewRewardHandlers(petapi.RewardDeps{Authenticate: passthrough}),
+			petapi.NewQuestHandlers(petapi.QuestDeps{Authenticate: passthrough}),
 			petapi.NewSummaryHandlers(petapi.SummaryDeps{Authenticate: passthrough}),
 		},
 		WebSocket: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),

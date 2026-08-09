@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OnboardingCard } from './OnboardingCard'
-import { onboardingStorageKey, readOnboardingState } from './onboarding-state'
+import { onboardingStorageKey } from './onboarding-state'
 import { makeUser, renderWithShell } from '#/features/layout/test-utils'
 
 const profile = vi.fn()
@@ -12,12 +12,6 @@ vi.mock('#/features/progress/progress.repository', () => ({
     profile: () => profile(),
   },
 }))
-
-vi.mock('./useHatchEvent', () => ({
-  useHatchEvent: () => hatchEvent,
-}))
-
-let hatchEvent = false
 
 const makeProgress = (overrides: Record<string, unknown> = {}) => ({
   id: 'raccoon-1',
@@ -35,7 +29,6 @@ const session = { user: makeUser(), isAuthenticated: true }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  hatchEvent = false
   window.localStorage.clear()
   profile.mockResolvedValue(makeProgress())
 })
@@ -71,20 +64,14 @@ describe('OnboardingCard', () => {
     })
   })
 
-  it('celebrates the hatching moment when the event arrives', async () => {
-    hatchEvent = true
-
+  it('never opens a hatching celebration dialog', async () => {
     renderWithShell(<OnboardingCard />, { session })
 
-    const dialog = await screen.findByRole('dialog')
-    expect(dialog).toHaveAttribute('aria-modal', 'true')
-    expect(dialog).toHaveAccessibleName()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Познакомиться' }))
-
     await waitFor(() => {
-      expect(readOnboardingState().celebrated).toBe(true)
+      expect(screen.getByTestId('onboarding-card')).toBeInTheDocument()
     })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('can be dismissed and stays dismissed', async () => {
@@ -107,7 +94,7 @@ describe('OnboardingCard', () => {
   it('keeps rendering in persistent mode even when dismissed', async () => {
     window.localStorage.setItem(
       onboardingStorageKey,
-      JSON.stringify({ dismissed: true, hatched: false, celebrated: true }),
+      JSON.stringify({ dismissed: true, tourSeen: true, tourRequested: false }),
     )
 
     renderWithShell(<OnboardingCard persistent />, { session })

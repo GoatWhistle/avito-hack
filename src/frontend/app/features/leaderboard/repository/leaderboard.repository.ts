@@ -13,7 +13,9 @@ export class LeaderboardRepository {
     query: LeaderboardQuery = {},
     signal?: AbortSignal,
   ): Promise<LeaderboardPage> {
-    const params: Record<string, string | number> = {}
+    const params: Record<string, string | number | boolean> = {
+      with_my_rank: true,
+    }
 
     if (query.cursor) params.cursor = query.cursor
     if (query.limit) params.limit = query.limit

@@ -17,9 +17,9 @@ export const easings = {
 export const zLayers = {
   base: '0',
   raised: '10',
-  dropdown: '1000',
-  sticky: '1100',
-  header: '1200',
+  sticky: '1000',
+  header: '1100',
+  dropdown: '1200',
   overlay: '1300',
   modal: '1400',
   toast: '1500',

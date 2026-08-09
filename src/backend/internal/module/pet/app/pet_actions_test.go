@@ -45,18 +45,18 @@ func TestFavoriteIsIdempotentPerSubject(t *testing.T) {
 	assert.Len(t, journal.events, 1)
 }
 
-func TestSearchSubscriptionUsesWeeklyLimit(t *testing.T) {
+func TestItemViewsUseDailyLimit(t *testing.T) {
 	t.Parallel()
 
 	service, _, _ := newTestService(t)
 	userID := uuid.New()
 
-	for range 3 {
-		_, err := service.AddSearchSubscription(t.Context(), userID, uuid.New())
+	for range domain.MaxItemViewsPerDay {
+		_, err := service.ViewItem(t.Context(), userID, uuid.New())
 		require.NoError(t, err)
 	}
 
-	_, err := service.AddSearchSubscription(t.Context(), userID, uuid.New())
+	_, err := service.ViewItem(t.Context(), userID, uuid.New())
 	require.ErrorIs(t, err, domain.ErrLimitReached)
 }
 

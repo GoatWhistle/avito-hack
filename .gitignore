@@ -34,3 +34,5 @@ Dockerfile.*
 *.bak
 *.orig
 *.log
+
+.claude/

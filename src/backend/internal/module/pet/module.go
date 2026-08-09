@@ -45,9 +45,13 @@ type Module struct {
 	Leaderboard *api.LeaderboardHandlers
 	Pet         *api.PetHandlers
 	RewardAPI   *api.RewardHandlers
+	QuestAPI    *api.QuestHandlers
+	Quests      *app.QuestService
+	Badges      *app.BadgeService
 	SummaryAPI  *api.SummaryHandlers
 	Async       *app.AsyncHandler
 	Flusher     *app.FlushHotStateHandler
+	Notifier    *api.Notifier
 
 	FlushInterval time.Duration
 }
@@ -82,18 +86,25 @@ func New(opts Options) (*Module, error) {
 		Notifier: notifier,
 	})
 
-	subscriber := app.NewSubscriber(service, notifier, opts.Clock).WithRewards(rewards)
+	quests, badges := newProgressServices(opts, repository, journal, notifier)
+
+	subscriber := app.NewSubscriber(service, notifier, opts.Clock).
+		WithRewards(rewards).
+		WithBadges(badges)
 	subscriber.Register(opts.Bus)
 
 	leaderboard := infra.NewPgLeaderboard(opts.Pool)
 	summaries := newSummaryService(opts, repository, leaderboard)
 
 	module := &Module{
+		Quests:    quests,
+		Badges:    badges,
 		WebSocket: api.NewWebSocketHandler(service, opts.Tokens, hub, originPatterns(opts.AllowedOrigins)),
 		Service:   service,
 		Rewards:   rewards,
 		Signer:    signer,
 		Hub:       hub,
+		Notifier:  notifier,
 		Async: app.NewAsyncHandler(
 			subscriber, infra.NewPgEventDeduplicator(opts.Pool), opts.Tx, opts.Logger,
 		),
@@ -105,6 +116,31 @@ func New(opts Options) (*Module, error) {
 	module.attachHandlers(opts, service, rewards, leaderboard, summaries)
 
 	return module, nil
+}
+
+func newProgressServices(
+	opts Options,
+	repository *infra.PgRepository,
+	journal *infra.PgXPEventRepository,
+	notifier *api.Notifier,
+) (*app.QuestService, *app.BadgeService) {
+	quests := app.NewQuestService(app.QuestServiceDeps{
+		Activity: infra.NewPgDayActivity(opts.Pool),
+		Journal:  journal,
+		Pets:     repository,
+		Tx:       opts.Tx,
+		Clock:    opts.Clock,
+		Notifier: notifier,
+	})
+	badges := app.NewBadgeService(app.BadgeServiceDeps{
+		Badges:  infra.NewPgBadgeRepository(opts.Pool),
+		Pets:    repository,
+		Counter: journal,
+		Quests:  quests,
+		Clock:   opts.Clock,
+	})
+
+	return quests, badges
 }
 
 func newSummaryService(
@@ -140,10 +176,15 @@ func (m *Module) attachHandlers(
 	m.Pet = api.NewPetHandlers(api.PetDeps{
 		Service:      service,
 		Rewards:      rewards,
+		Notifier:     m.Notifier,
 		Authenticate: opts.Authenticate,
 	})
 	m.RewardAPI = api.NewRewardHandlers(api.RewardDeps{
 		Rewards:      rewards,
+		Authenticate: opts.Authenticate,
+	})
+	m.QuestAPI = api.NewQuestHandlers(api.QuestDeps{
+		Quests:       m.Quests,
 		Authenticate: opts.Authenticate,
 	})
 }

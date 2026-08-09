@@ -40,6 +40,16 @@ export class AuthRepository {
     }
   }
 
+  async refresh(): Promise<Session> {
+    const response =
+      await this.httpClient.post<SessionResponse>('/auth/refresh')
+
+    return {
+      token: response.data.token,
+      user: toUser(response.data.user),
+    }
+  }
+
   async me(): Promise<User> {
     const response = await this.httpClient.get<UserResponse>('/users/me')
 

@@ -3,7 +3,6 @@ import type { PetAvatarLabels, PetEmotion, PetMood, PetStage } from './types'
 export const defaultLabels: PetAvatarLabels = {
   name: 'Ноти',
   stage: {
-    egg: 'яйцо',
     baby: 'малыш',
     teen: 'подросток',
     adult: 'взрослый',
@@ -20,9 +19,9 @@ export const defaultLabels: PetAvatarLabels = {
     eating: 'ест',
     celebrate: 'празднует',
     levelup: 'получил новый уровень',
-    hatching: 'вылупляется',
   },
   strokeHint: 'нажмите, чтобы погладить',
+  loading: 'Загружаем питомца',
 }
 
 export function mergeLabels(
@@ -38,6 +37,7 @@ export function mergeLabels(
     mood: { ...defaultLabels.mood, ...overrides.mood },
     emotion: { ...defaultLabels.emotion, ...overrides.emotion },
     strokeHint: overrides.strokeHint ?? defaultLabels.strokeHint,
+    loading: overrides.loading ?? defaultLabels.loading,
   }
 }
 

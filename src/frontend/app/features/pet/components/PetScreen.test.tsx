@@ -3,10 +3,15 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '#/api/api-error'
 import { PetScreen } from './PetScreen'
-import { makePet, renderWithProviders } from './test-utils'
+import {
+  makeCheckedInPet,
+  makePet,
+  renderWithProviders,
+} from './test-utils'
 
 const state = vi.fn()
 const stroke = vi.fn()
+const feed = vi.fn()
 const checkIn = vi.fn()
 const summaryToday = vi.fn()
 
@@ -14,34 +19,27 @@ vi.mock('#/features/pet/repository', () => ({
   petRepository: {
     state: () => state(),
     stroke: () => stroke(),
+    feed: () => feed(),
     checkIn: () => checkIn(),
     summaryToday: () => summaryToday(),
   },
 }))
 
+vi.mock('@lottiefiles/dotlottie-react', () => ({
+  DotLottieReact: () => <canvas data-testid="dotlottie-canvas" />,
+  setWasmUrl: vi.fn(),
+}))
+
 const noSocket = { events: { enabled: false as const } }
+
+const strokeTarget = () => screen.getByRole('button', { name: /погладить/i })
 
 beforeEach(() => {
   vi.clearAllMocks()
   state.mockResolvedValue(makePet())
   stroke.mockResolvedValue(makePet({ happiness: 85 }))
-  checkIn.mockResolvedValue({
-    pet: makePet({ level: 4, xp: 25 }),
-    xp_granted: 10,
-    level: 4,
-    previous_level: 3,
-    next_level_xp: 35,
-    unlocked_rewards: [],
-    streak: {
-      days: 5,
-      continued: true,
-      freeze_used: false,
-      reset: false,
-      milestone_bonus: 0,
-      milestone_reached: 0,
-      freezes_left: 1,
-    },
-  })
+  feed.mockResolvedValue(makePet({ satiety: 85 }))
+  checkIn.mockRejectedValue(new Error('check-in is applied by the backend'))
   summaryToday.mockResolvedValue(null)
 })
 
@@ -69,16 +67,6 @@ describe('PetScreen rendering', () => {
       '68',
     )
     expect(screen.getByText('4 дня подряд')).toBeInTheDocument()
-  })
-
-  it('renders the egg state when the pet has not hatched', async () => {
-    state.mockResolvedValue(makePet({ is_hatched: false, stage: 'egg' }))
-    renderWithProviders(<PetScreen {...noSocket} />)
-
-    expect(
-      await screen.findByRole('heading', { name: /яйцо вот-вот треснет/i }),
-    ).toBeInTheDocument()
-    expect(screen.queryAllByRole('meter')).toHaveLength(0)
   })
 
   it('marks the max level with a dedicated state', async () => {
@@ -109,14 +97,14 @@ describe('PetScreen errors', () => {
     ).toBeInTheDocument()
   })
 
-  it('reports a failed check-in without breaking the screen', async () => {
-    checkIn.mockRejectedValue(
+  it('reports a failed stroke without breaking the screen', async () => {
+    stroke.mockRejectedValue(
       new ApiError({ kind: 'conflict', message: 'already' }),
     )
     renderWithProviders(<PetScreen {...noSocket} />)
 
     await screen.findByRole('heading', { name: 'Ноти', level: 1 })
-    await userEvent.click(screen.getByRole('button', { name: /отметиться/i }))
+    await userEvent.click(strokeTarget())
 
     expect(await screen.findByText('Конфликт состояния')).toBeInTheDocument()
     expect(screen.getAllByRole('meter')).toHaveLength(3)
@@ -135,7 +123,7 @@ describe('PetScreen actions', () => {
     renderWithProviders(<PetScreen {...noSocket} />)
     await screen.findByRole('heading', { name: 'Ноти', level: 1 })
 
-    await userEvent.click(screen.getByRole('button', { name: /погладить/i }))
+    await userEvent.click(strokeTarget())
 
     await waitFor(() => {
       expect(screen.getAllByRole('meter')[1]).toHaveAttribute(
@@ -155,7 +143,7 @@ describe('PetScreen actions', () => {
     renderWithProviders(<PetScreen {...noSocket} />)
     await screen.findByRole('heading', { name: 'Ноти', level: 1 })
 
-    await userEvent.click(screen.getByRole('button', { name: /погладить/i }))
+    await userEvent.click(strokeTarget())
 
     await waitFor(() => {
       expect(screen.getAllByRole('meter')[1]).toHaveAttribute(
@@ -165,27 +153,54 @@ describe('PetScreen actions', () => {
     })
   })
 
-  it('checks in and celebrates the level up', async () => {
+  it('strokes the lottie raccoon on the teen stage', async () => {
+    state.mockResolvedValue(makePet({ stage: 'teen' }))
     renderWithProviders(<PetScreen {...noSocket} />)
     await screen.findByRole('heading', { name: 'Ноти', level: 1 })
 
-    await userEvent.click(screen.getByRole('button', { name: /отметиться/i }))
+    expect(screen.getByTestId('pet-lottie')).toBeInTheDocument()
+    await userEvent.click(strokeTarget())
 
-    expect(await screen.findByTestId('celebration-banner')).toHaveTextContent(
-      'Новый уровень: 4',
-    )
-    expect(checkIn).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      expect(stroke).toHaveBeenCalledTimes(1)
+    })
   })
 
-  it('disables check-in when it already happened today', async () => {
-    state.mockResolvedValue(
-      makePet({ last_checkin_date: new Date().toISOString() }),
-    )
+  it('strokes the pet with the keyboard', async () => {
+    renderWithProviders(<PetScreen {...noSocket} />)
+    await screen.findByRole('heading', { name: 'Ноти', level: 1 })
+
+    strokeTarget().focus()
+    await userEvent.keyboard('{Enter}')
+
+    await waitFor(() => {
+      expect(stroke).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('offers no manual check-in button', async () => {
+    renderWithProviders(<PetScreen {...noSocket} />)
+    await screen.findByRole('heading', { name: 'Ноти', level: 1 })
+
+    expect(
+      screen.queryByRole('button', { name: /отметиться/i }),
+    ).not.toBeInTheDocument()
+    expect(checkIn).not.toHaveBeenCalled()
+  })
+
+  it('banners the streak when the backend applied a check-in', async () => {
+    state.mockResolvedValue(makeCheckedInPet())
     renderWithProviders(<PetScreen {...noSocket} />)
 
-    const button = await screen.findByRole('button', {
-      name: /уже отметились/i,
-    })
-    expect(button).toBeDisabled()
+    expect(await screen.findByTestId('celebration-banner')).toHaveTextContent(
+      'Серия 5 дней · +10 XP за сегодня',
+    )
+  })
+
+  it('keeps the banner away when no check-in was applied', async () => {
+    renderWithProviders(<PetScreen {...noSocket} />)
+    await screen.findByRole('heading', { name: 'Ноти', level: 1 })
+
+    expect(screen.queryByTestId('celebration-banner')).not.toBeInTheDocument()
   })
 })

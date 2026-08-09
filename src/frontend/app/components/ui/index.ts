@@ -15,6 +15,14 @@ export {
 } from './field'
 export { Separator } from './separator'
 export {
+  Tabs,
+  TabsContent,
+  TabsIndicator,
+  TabsList,
+  TabsTrigger,
+  tabsListVariants,
+} from './tabs'
+export {
   Card,
   CardAction,
   CardContent,
@@ -23,3 +31,17 @@ export {
   CardHeader,
   CardTitle,
 } from './card'
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+} from './sidebar'
+export type { SidebarProps, SidebarSide } from './sidebar'
+export { Progress } from './progress'
+export type { ProgressProps } from './progress'
+export { OverlayPortal } from './overlay-portal'
+export type { OverlayPortalProps } from './overlay-portal'

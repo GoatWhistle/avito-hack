@@ -5,10 +5,12 @@ import {
   canCheckInToday,
   levelProgress,
   nextStep,
+  petSpeech,
   statViews,
 } from '#/features/pet/lib'
+import { useAutoCheckIn } from './useAutoCheckIn'
 import { usePetCelebration } from './usePetCelebration'
-import { useCheckInMutation, useStrokeMutation } from './usePetActions'
+import { useFeedMutation, useStrokeMutation } from './usePetActions'
 import { usePetEvents } from './usePetEvents'
 import { usePetQuery, useSummaryTodayQuery } from './usePetQuery'
 import type { UsePetEventsOptions } from './usePetEvents'
@@ -26,24 +28,12 @@ export const usePetScreen = ({ events, now }: UsePetScreenOptions = {}) => {
   const [summaryDismissed, setSummaryDismissed] = useState(false)
 
   usePetEvents({ ...events, onEvent: celebration.handleEvent })
+  useAutoCheckIn(pet, celebration)
 
   const summaryQuery = useSummaryTodayQuery(pet !== undefined)
 
   const stroke = useStrokeMutation()
-  const checkIn = useCheckInMutation((result) => {
-    if (result.xp_granted > 0) {
-      celebration.handleEvent({
-        type: 'xp.gained',
-        payload: { amount: result.xp_granted },
-      })
-    }
-    if (result.level > result.previous_level) {
-      celebration.handleEvent({
-        type: 'level.up',
-        payload: { level: result.level },
-      })
-    }
-  })
+  const feed = useFeedMutation()
 
   const translateError = useCallback(
     (error: unknown): string | null => {
@@ -72,6 +62,7 @@ export const usePetScreen = ({ events, now }: UsePetScreenOptions = {}) => {
       stats: statViews(pet),
       progress: levelProgress(pet),
       step: nextStep({ pet, canCheckIn }),
+      speech: petSpeech({ pet, canCheckIn }),
       streakAtRisk: canCheckIn && pet.streak_days > 0,
     }
   }, [canCheckIn, pet])
@@ -80,9 +71,9 @@ export const usePetScreen = ({ events, now }: UsePetScreenOptions = {}) => {
     stroke.mutate()
   }, [stroke])
 
-  const handleCheckIn = useCallback(() => {
-    checkIn.mutate()
-  }, [checkIn])
+  const handleFeed = useCallback(() => {
+    feed.mutate()
+  }, [feed])
 
   const summary =
     summaryDismissed || summaryQuery.data === undefined
@@ -106,10 +97,11 @@ export const usePetScreen = ({ events, now }: UsePetScreenOptions = {}) => {
       isPending: stroke.isPending,
       error: translateError(stroke.error),
     },
-    checkIn: {
-      run: handleCheckIn,
-      isPending: checkIn.isPending,
-      error: translateError(checkIn.error),
+    feed: {
+      run: handleFeed,
+      isPending: feed.isPending,
+      error: translateError(feed.error),
+      availableAt: pet?.feed_available_at ?? null,
     },
   }
 }

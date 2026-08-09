@@ -28,8 +28,10 @@ export const makeSession = (
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  sessionExpired: false,
   signOut: () => {},
   setUser: () => {},
+  acknowledgeExpiry: () => {},
   ...overrides,
 })
 

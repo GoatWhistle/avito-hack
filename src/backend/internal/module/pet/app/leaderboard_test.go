@@ -18,6 +18,7 @@ type stubLeaderboardRead struct {
 	lastFilter app.LeaderboardFilter
 	rank       int
 	hasRank    bool
+	rankCalls  int
 	pageErr    error
 	rankErr    error
 }
@@ -32,6 +33,7 @@ func (s *stubLeaderboardRead) Page(_ context.Context, f app.LeaderboardFilter) (
 }
 
 func (s *stubLeaderboardRead) RankOf(_ context.Context, _ uuid.UUID) (rank int, found bool, err error) {
+	s.rankCalls++
 	if s.rankErr != nil {
 		return 0, false, s.rankErr
 	}
@@ -128,25 +130,29 @@ func TestLeaderboardHandlerNextCursorPointsAtLastReturnedRow(t *testing.T) {
 func TestLeaderboardHandlerMyRank(t *testing.T) {
 	t.Parallel()
 
-	t.Run("present when user has a pet", func(t *testing.T) {
+	t.Run("present when requested and user has a pet", func(t *testing.T) {
 		t.Parallel()
 
 		read := &stubLeaderboardRead{entries: makeEntries(2), rank: 42, hasRank: true}
 		handler := app.NewLeaderboardHandler(read)
 
-		result, err := handler.Handle(context.Background(), app.LeaderboardQuery{UserID: uuid.New()})
+		result, err := handler.Handle(context.Background(), app.LeaderboardQuery{
+			UserID: uuid.New(), WithMyRank: true,
+		})
 		require.NoError(t, err)
 		require.NotNil(t, result.MyRank)
 		assert.Equal(t, 42, *result.MyRank)
 	})
 
-	t.Run("nil when user has no pet", func(t *testing.T) {
+	t.Run("nil when requested but user has no pet", func(t *testing.T) {
 		t.Parallel()
 
 		read := &stubLeaderboardRead{entries: makeEntries(2)}
 		handler := app.NewLeaderboardHandler(read)
 
-		result, err := handler.Handle(context.Background(), app.LeaderboardQuery{UserID: uuid.New()})
+		result, err := handler.Handle(context.Background(), app.LeaderboardQuery{
+			UserID: uuid.New(), WithMyRank: true,
+		})
 		require.NoError(t, err)
 		assert.Nil(t, result.MyRank)
 	})
@@ -220,7 +226,9 @@ func TestLeaderboardHandlerErrors(t *testing.T) {
 
 		handler := app.NewLeaderboardHandler(&stubLeaderboardRead{rankErr: sentinel})
 
-		_, err := handler.Handle(context.Background(), app.LeaderboardQuery{UserID: uuid.New()})
+		_, err := handler.Handle(context.Background(), app.LeaderboardQuery{
+			UserID: uuid.New(), WithMyRank: true,
+		})
 		require.ErrorIs(t, err, sentinel)
 	})
 }

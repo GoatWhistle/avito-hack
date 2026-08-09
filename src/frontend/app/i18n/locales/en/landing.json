@@ -8,6 +8,39 @@
     "toPet": "Go to my pet",
     "note": "Sign up in a minute — your pet hatches after the first action"
   },
+  "showcase": {
+    "title": "A mini Avito inside the product",
+    "subtitle": "Live listings with prices and statuses — these are what feed the pet. Every listing and sale here turns into experience for Noti.",
+    "all": "All listings",
+    "empty": "No listings yet — post the first one and the pet reacts right away"
+  },
+  "petCta": {
+    "title": "Meet Noti",
+    "textGuest": "Sign up in a minute — the egg hatches right after your first action on the marketplace, and you watch it happen in real time.",
+    "textAuth": "Your raccoon is waiting: stats, level, progress to the next reward and the daily summary.",
+    "start": "Get a pet",
+    "toPet": "Go to my pet"
+  },
+  "impact": {
+    "title": "What this does for marketplace metrics",
+    "subtitle": "The game loop pulls exactly the actions Avito needs, not mindless time spent in a game",
+    "listings": {
+      "metric": "Listings",
+      "text": "The pet cannot be fed from inside the game — it only grows from real listings"
+    },
+    "content": {
+      "metric": "Content quality",
+      "text": "Photos, a price and a description over 200 characters earn more experience — listings get filled in better"
+    },
+    "deals": {
+      "metric": "Completed deals",
+      "text": "A sale is the largest experience gain: the loop drives deals to completion"
+    },
+    "retention": {
+      "metric": "Retention",
+      "text": "Check-in streaks with freezes and decaying stats give a reason to open the app every day"
+    }
+  },
   "loop": {
     "title": "How it works",
     "subtitle": "A real action on the marketplace — an instant reaction from your pet",

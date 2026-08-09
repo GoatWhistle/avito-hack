@@ -7,7 +7,6 @@ export const buildAvatarLabels = (
 ): Partial<PetAvatarLabels> => ({
   name,
   stage: {
-    egg: t('stage.egg'),
     baby: t('stage.baby'),
     teen: t('stage.teen'),
     adult: t('stage.adult'),
@@ -24,7 +23,7 @@ export const buildAvatarLabels = (
     eating: t('emotion.eating'),
     celebrate: t('emotion.celebrate'),
     levelup: t('emotion.levelup'),
-    hatching: t('emotion.hatching'),
   },
   strokeHint: t('actions.strokeHint'),
+  loading: t('states.loading'),
 })

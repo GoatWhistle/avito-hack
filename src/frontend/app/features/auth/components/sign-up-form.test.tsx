@@ -3,13 +3,18 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as routerModule from 'react-router'
 import { ApiError } from '#/api/api-error'
+import { setToken } from '#/api/token-store'
 import { SignUpForm } from './sign-up-form'
 import { makeUser, renderWithShell } from '#/features/layout/test-utils'
+import {
+  execute,
+  fill,
+  navigate,
+  submit,
+  validPassword,
+} from './sign-up-form.harness'
 
 type RouterModule = typeof routerModule
-
-const execute = vi.fn()
-const navigate = vi.fn()
 
 vi.mock('#/features/auth/use-cases', () => ({
   signUpUseCase: { execute: (value: unknown) => execute(value) },
@@ -22,30 +27,9 @@ vi.mock('react-router', async () => {
   return { ...actual, useNavigate: () => navigate }
 })
 
-const fill = async (values: {
-  fullName?: string
-  email?: string
-  password?: string
-}) => {
-  if (values.fullName !== undefined) {
-    await userEvent.type(
-      screen.getByLabelText('Имя и фамилия'),
-      values.fullName,
-    )
-  }
-  if (values.email !== undefined) {
-    await userEvent.type(
-      screen.getByLabelText('Электронная почта'),
-      values.email,
-    )
-  }
-  if (values.password !== undefined) {
-    await userEvent.type(screen.getByLabelText('Пароль'), values.password)
-  }
-}
-
 beforeEach(() => {
   vi.clearAllMocks()
+  setToken(null)
   execute.mockResolvedValue({ token: 'jwt', user: makeUser() })
 })
 
@@ -56,17 +40,15 @@ describe('SignUpForm', () => {
     await fill({
       fullName: 'Иван Иванов',
       email: 'ivan@example.com',
-      password: 'a',
+      password: validPassword,
     })
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Создать аккаунт' }),
-    )
+    await submit()
 
     await waitFor(() => {
       expect(execute).toHaveBeenCalledWith({
         fullName: 'Иван Иванов',
         email: 'ivan@example.com',
-        password: 'a',
+        password: validPassword,
       })
     })
 
@@ -75,38 +57,49 @@ describe('SignUpForm', () => {
     })
   })
 
-  it('accepts a one character password', async () => {
-    renderWithShell(<SignUpForm />)
-
-    await fill({ fullName: 'Иван', email: 'ivan@example.com', password: 'a' })
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Создать аккаунт' }),
-    )
-
-    await waitFor(() => {
-      expect(execute).toHaveBeenCalled()
-    })
-    expect(screen.queryByText(/не короче/)).not.toBeInTheDocument()
-  })
-
   it('reports a taken email from the backend error envelope', async () => {
     execute.mockRejectedValue(
       new ApiError({
         kind: 'conflict',
-        message: 'user already exists',
+        message: 'state conflict',
         status: 409,
       }),
     )
 
     renderWithShell(<SignUpForm />)
 
-    await fill({ fullName: 'Иван', email: 'taken@example.com', password: 'a' })
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Создать аккаунт' }),
-    )
+    await fill({
+      fullName: 'Иван',
+      email: 'taken@example.com',
+      password: validPassword,
+    })
+    await submit()
 
     expect(await screen.findByText('Эта почта уже занята')).toBeInTheDocument()
     expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('focuses the email field when the server reports a duplicate email', async () => {
+    execute.mockRejectedValue(
+      new ApiError({
+        kind: 'conflict',
+        message: 'state conflict',
+        status: 409,
+      }),
+    )
+
+    renderWithShell(<SignUpForm />)
+
+    await fill({
+      fullName: 'Иван',
+      email: 'taken@example.com',
+      password: validPassword,
+    })
+    await submit()
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Электронная почта')).toHaveFocus()
+    })
   })
 
   it('shows an inline email format error after blur', async () => {
@@ -121,5 +114,25 @@ describe('SignUpForm', () => {
     expect(
       await screen.findByText('Введите корректный адрес почты'),
     ).toBeInTheDocument()
+  })
+
+  it('moves focus to the first invalid field on submit', async () => {
+    renderWithShell(<SignUpForm />)
+
+    await submit()
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Имя и фамилия')).toHaveFocus()
+    })
+  })
+
+  it('labels every field and keeps them valid until touched', () => {
+    renderWithShell(<SignUpForm />)
+
+    for (const label of ['Имя и фамилия', 'Электронная почта', 'Пароль']) {
+      const input = screen.getByLabelText(label)
+      expect(input).toBeInTheDocument()
+      expect(input).not.toHaveAttribute('aria-invalid')
+    }
   })
 })

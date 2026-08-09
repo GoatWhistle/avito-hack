@@ -64,34 +64,3 @@ export function PetScreenError({
     </div>
   )
 }
-
-export interface PetScreenEmptyProps {
-  onCheckIn: () => void
-  isCheckingIn: boolean
-}
-
-export function PetScreenEmpty({
-  onCheckIn,
-  isCheckingIn,
-}: PetScreenEmptyProps) {
-  const { t } = useTranslation('pet')
-
-  return (
-    <div className="flex flex-col items-center gap-5 py-10 text-center">
-      <span aria-hidden="true" className="animate-pulse text-6xl">
-        🥚
-      </span>
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold text-foreground">
-          {t('hatching.title')}
-        </h2>
-        <p className="max-w-xs text-sm text-muted-foreground">
-          {t('hatching.hint')}
-        </p>
-      </div>
-      <Button size="lg" onClick={onCheckIn} disabled={isCheckingIn}>
-        {isCheckingIn ? t('actions.checkingIn') : t('actions.checkIn')}
-      </Button>
-    </div>
-  )
-}

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { useSession } from '#/features/auth/session'
 import { OnboardingCard } from './OnboardingCard'
+import { PlatformTourGate } from './PlatformTourGate'
 
 export function OnboardingScreen() {
   const { t } = useTranslation('common')
@@ -13,6 +14,7 @@ export function OnboardingScreen() {
       className="mx-auto flex w-full max-w-prose flex-col gap-4 py-2 sm:py-6"
       data-testid="onboarding-screen"
     >
+      <PlatformTourGate />
       <header className="text-center">
         <h1 className="font-heading text-xl font-semibold sm:text-2xl">
           {user

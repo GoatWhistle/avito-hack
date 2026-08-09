@@ -73,7 +73,7 @@ func TestBuildSummaryMessageBranches(t *testing.T) {
 			name: "leaderboard improvement is mentioned",
 			facts: domain.DayFacts{
 				Date: summaryDay(), PetName: "Тоша", TotalXP: 9,
-				Actions:     []domain.XPByAction{{Action: domain.ActionQuickReply, Count: 3, Amount: 9}},
+				Actions:     []domain.XPByAction{{Action: domain.ActionItemViewed, Count: 3, Amount: 9}},
 				Leaderboard: domain.LeaderboardFacts{Rank: 4, Previous: 9, Known: true},
 			},
 			contains: []string{"4 место"},
@@ -82,7 +82,7 @@ func TestBuildSummaryMessageBranches(t *testing.T) {
 			name: "known rank without history is still shown",
 			facts: domain.DayFacts{
 				Date: summaryDay(), PetName: "Тоша", TotalXP: 3,
-				Actions:     []domain.XPByAction{{Action: domain.ActionNewDialogue, Count: 1, Amount: 3}},
+				Actions:     []domain.XPByAction{{Action: domain.ActionItemPublished, Count: 1, Amount: 3}},
 				Leaderboard: domain.LeaderboardFacts{Rank: 12, Known: true},
 			},
 			contains: []string{"12 место"},

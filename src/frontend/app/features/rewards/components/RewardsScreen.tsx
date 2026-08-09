@@ -3,15 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '#/lib/utils'
 import { BadgeCollection } from './BadgeCollection'
 import { MyRewards } from './MyRewards'
-import { RewardCatalog } from './RewardCatalog'
+import { RewardTrack } from './RewardTrack'
 
-const tabs = ['catalog', 'mine', 'badges'] as const
+const tabs = ['track', 'mine', 'badges'] as const
 
 type Tab = (typeof tabs)[number]
 
 export function RewardsScreen() {
   const { t } = useTranslation('rewards')
-  const [active, setActive] = useState<Tab>('catalog')
+  const [active, setActive] = useState<Tab>('track')
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6">
@@ -40,7 +40,7 @@ export function RewardsScreen() {
                 : 'bg-muted text-muted-foreground hover:text-foreground',
             )}
           >
-            {t(`tabs.${tab}` as 'tabs.catalog')}
+            {t(`tabs.${tab}` as 'tabs.track')}
           </button>
         ))}
       </div>
@@ -50,7 +50,7 @@ export function RewardsScreen() {
         id={`rewards-panel-${active}`}
         aria-labelledby={`rewards-tab-${active}`}
       >
-        {active === 'catalog' && <RewardCatalog />}
+        {active === 'track' && <RewardTrack />}
         {active === 'mine' && <MyRewards />}
         {active === 'badges' && <BadgeCollection />}
       </div>

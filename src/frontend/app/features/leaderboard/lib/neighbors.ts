@@ -52,3 +52,12 @@ export const medalOf = (rank: number): 'gold' | 'silver' | 'bronze' | null => {
 
   return null
 }
+
+export const initialsOf = (name: string): string =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => [...part][0] ?? '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)

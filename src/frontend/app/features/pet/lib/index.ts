@@ -23,4 +23,24 @@ export type {
   StatTone,
   StatView,
 } from './pet-stats'
+export {
+  MAX_FREEZES,
+  MILESTONE_BONUS_XP,
+  STREAK_BONUS_DAYS,
+  STREAK_BONUS_FACTOR,
+  STREAK_MILESTONES,
+  STREAK_RESET_HOURS,
+  daysToBonus,
+  daysToNextMilestone,
+  isBonusActive,
+  nextMilestone,
+  streakRules,
+} from './streak-rules'
+export type {
+  StreakRuleKey,
+  StreakRuleTone,
+  StreakRuleView,
+} from './streak-rules'
 export { buildAvatarLabels } from './pet-avatar-labels'
+export { petSpeech } from './pet-speech'
+export type { PetSpeechInput, PetSpeechKey } from './pet-speech'

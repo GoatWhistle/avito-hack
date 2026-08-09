@@ -42,23 +42,21 @@ describe('Header', () => {
     ).toBeGreaterThan(0)
   })
 
-  it('renders the level and xp indicator for a signed in user', async () => {
+  it('keeps the level and xp indicator out of the header for a signed in user', async () => {
     renderWithShell(<Header />, {
       session: { user: makeUser(), isAuthenticated: true },
     })
 
     await waitFor(() => {
-      expect(screen.getAllByTestId('level-indicator').length).toBeGreaterThan(0)
+      expect(
+        screen.getAllByRole('link', { name: /Питомец/ }).length,
+      ).toBeGreaterThan(0)
     })
 
-    const [indicator] = screen.getAllByTestId('level-indicator')
-    expect(indicator).toHaveAccessibleName(/Уровень 4/)
-    expect(indicator.textContent).toContain('Ур. 4')
-
-    const [bar] = screen.getAllByRole('progressbar', {
-      name: 'Прогресс опыта',
-    })
-    expect(bar).toHaveAttribute('aria-valuenow')
+    expect(screen.queryByTestId('level-indicator')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('progressbar', { name: 'Прогресс опыта' }),
+    ).not.toBeInTheDocument()
   })
 
   it('offers a sign in action to anonymous visitors and hides the indicator', () => {

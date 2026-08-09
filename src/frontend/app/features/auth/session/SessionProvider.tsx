@@ -6,7 +6,12 @@ import {
   type PropsWithChildren,
 } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { clearToken, getToken, subscribeToToken } from '#/api'
+import {
+  clearToken,
+  getToken,
+  subscribeToSessionEnd,
+  subscribeToToken,
+} from '#/api'
 import { authRepository } from '#/features/auth/repository'
 import type { User } from '#/types'
 import { SessionContext, type SessionValue } from './session-context'
@@ -17,12 +22,25 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
   const [token, setTokenState] = useState<string | null>(null)
   const [hydrated, setHydrated] = useState(false)
+  const [expired, setExpired] = useState(false)
 
   useEffect(() => {
     setTokenState(getToken())
     setHydrated(true)
 
-    return subscribeToToken(setTokenState)
+    const unsubscribeToken = subscribeToToken((next) => {
+      setTokenState(next)
+      if (next !== null) setExpired(false)
+    })
+
+    const unsubscribeEnd = subscribeToSessionEnd((reason) => {
+      setExpired(reason === 'expired')
+    })
+
+    return () => {
+      unsubscribeToken()
+      unsubscribeEnd()
+    }
   }, [])
 
   const { data, isLoading } = useQuery({
@@ -34,9 +52,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
   })
 
   const signOut = useCallback(() => {
-    clearToken()
+    clearToken('signed-out')
     queryClient.clear()
   }, [queryClient])
+
+  const acknowledgeExpiry = useCallback(() => {
+    setExpired(false)
+  }, [])
 
   const setUser = useCallback(
     (user: User) => {
@@ -50,10 +72,21 @@ export function SessionProvider({ children }: PropsWithChildren) {
       user: data ?? null,
       isAuthenticated: Boolean(token && data),
       isLoading: !hydrated || (token !== null && isLoading),
+      sessionExpired: expired,
       signOut,
       setUser,
+      acknowledgeExpiry,
     }),
-    [data, token, hydrated, isLoading, signOut, setUser],
+    [
+      data,
+      token,
+      hydrated,
+      isLoading,
+      expired,
+      signOut,
+      setUser,
+      acknowledgeExpiry,
+    ],
   )
 
   return <SessionContext value={value}>{children}</SessionContext>

@@ -1,7 +1,8 @@
-import { palette, semanticDark, semanticLight } from './colors'
+import { semanticDark, semanticLight } from './colors'
+import { palette } from './palette'
 import { durations, easings, zLayers } from './motion'
 import { radii, radiusBase } from './radii'
-import { shadows } from './shadows'
+import { elevationDark, elevationLight, shadows } from './shadows'
 import { breakpoints, containerWidths, spacingBase } from './spacing'
 import {
   fontFamilies,
@@ -45,7 +46,7 @@ export const themeBlock = () => {
       ([token, value]) => [`--shadow-${token}`, value] as [string, string],
     ),
     ...Object.entries(zLayers).map(
-      ([token, value]) => [`--z-${token}`, value] as [string, string],
+      ([token, value]) => [`--z-index-${token}`, value] as [string, string],
     ),
     ...Object.entries(durations).map(
       ([token, value]) => [`--duration-${token}`, value] as [string, string],
@@ -64,6 +65,9 @@ export const themeBlock = () => {
 export const rootBlock = () => {
   const entries: [string, string][] = [
     ['--radius', radiusBase],
+    ...Object.entries(elevationLight).map(
+      ([token, value]) => [`--${token}`, value] as [string, string],
+    ),
     ...Object.entries(semanticLight).map(
       ([token, value]) => [`--${token}`, value] as [string, string],
     ),
@@ -73,9 +77,14 @@ export const rootBlock = () => {
 }
 
 export const darkBlock = () => {
-  const entries = Object.entries(semanticDark).map(
-    ([token, value]) => [`--${token}`, value] as [string, string],
-  )
+  const entries: [string, string][] = [
+    ...Object.entries(elevationDark).map(
+      ([token, value]) => [`--${token}`, value] as [string, string],
+    ),
+    ...Object.entries(semanticDark).map(
+      ([token, value]) => [`--${token}`, value] as [string, string],
+    ),
+  ]
 
   return `.dark {\n${declarations(entries)}\n}`
 }

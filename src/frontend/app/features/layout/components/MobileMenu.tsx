@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
 import { Menu, X } from 'lucide-react'
-import { Button } from '#/components/ui'
+import { Button, OverlayPortal } from '#/components/ui'
 import { cn } from '#/lib/utils'
 import { navItems } from '#/features/layout/nav-items'
 
@@ -38,7 +38,7 @@ export function MobileMenu() {
       </Button>
 
       {open && (
-        <>
+        <OverlayPortal>
           <div
             className="fixed inset-0 z-overlay bg-foreground/20"
             onClick={() => setOpen(false)}
@@ -70,7 +70,7 @@ export function MobileMenu() {
               ))}
             </ul>
           </nav>
-        </>
+        </OverlayPortal>
       )}
     </div>
   )

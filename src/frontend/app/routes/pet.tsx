@@ -1,5 +1,13 @@
-import { PetScreen } from '#/features/pet'
+import { Outlet } from 'react-router'
+import { RequireAuth } from '#/features/auth/components'
+import { PetDashboard } from '#/features/pet'
 
-export default function PetRoute() {
-  return <PetScreen />
+export default function PetLayoutRoute() {
+  return (
+    <RequireAuth>
+      <PetDashboard>
+        <Outlet />
+      </PetDashboard>
+    </RequireAuth>
+  )
 }

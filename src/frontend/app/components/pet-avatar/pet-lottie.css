@@ -1,0 +1,214 @@
+.pet-lottie {
+  --pet-lottie-size: 280px;
+  --pet-lottie-zoom: 1.75;
+  --pet-lottie-grow: 1;
+  --pet-lottie-ease: var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  --pet-lottie-duration: var(--duration-fast, 140ms);
+  --pet-gaze-x: 0px;
+  --pet-gaze-y: 0px;
+  --pet-gaze-tilt: 0deg;
+  --pet-crown-top: 4%;
+  --pet-crown-left: 50.2%;
+  --pet-crown-width: 22%;
+
+  display: block;
+  position: relative;
+  width: var(--pet-lottie-size);
+  max-width: 100%;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  overflow: visible;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--radius-lg, 0.75rem);
+  transition:
+    transform var(--pet-lottie-duration) var(--pet-lottie-ease),
+    filter var(--pet-lottie-duration) var(--pet-lottie-ease);
+}
+
+.pet-lottie--sm {
+  --pet-lottie-size: 120px;
+}
+
+.pet-lottie--md {
+  --pet-lottie-size: 190px;
+}
+
+.pet-lottie--lg {
+  --pet-lottie-size: 280px;
+}
+
+.pet-lottie--xl {
+  --pet-lottie-size: 460px;
+}
+
+.pet-lottie__stage {
+  display: block;
+  position: absolute;
+  inset: 0;
+  transform: translate3d(var(--pet-gaze-x), var(--pet-gaze-y), 0)
+    rotate(var(--pet-gaze-tilt)) scale(var(--pet-lottie-grow));
+  transform-origin: center bottom;
+  transition: transform var(--duration-slow, 320ms) var(--pet-lottie-ease);
+  will-change: transform;
+}
+
+.pet-lottie__canvas {
+  display: block;
+  width: calc(100% * var(--pet-lottie-zoom));
+  height: calc(100% * var(--pet-lottie-zoom));
+  margin-inline: calc((100% - 100% * var(--pet-lottie-zoom)) / 2);
+  margin-block: calc((100% - 100% * var(--pet-lottie-zoom)) / 2);
+}
+
+.pet-lottie[data-stage='baby'] {
+  --pet-lottie-grow: 0.62;
+}
+
+.pet-lottie[data-stage='teen'] {
+  --pet-lottie-grow: 0.84;
+}
+
+.pet-lottie[data-stage='adult'] {
+  --pet-lottie-zoom: 1.15;
+  --pet-lottie-grow: 1;
+}
+
+.pet-lottie[data-stage='legend'] {
+  --pet-lottie-zoom: 1.15;
+  --pet-lottie-grow: 1.02;
+}
+
+.pet-lottie__halo {
+  display: block;
+  position: absolute;
+  inset: 4%;
+  border-radius: var(--radius-full, 9999px);
+  background: radial-gradient(
+    circle at 50% 46%,
+    var(--color-warning-100) 0%,
+    transparent 68%
+  );
+  animation: pet-lottie-halo 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.pet-lottie__crown {
+  display: block;
+  position: absolute;
+  z-index: 1;
+  top: var(--pet-crown-top);
+  left: var(--pet-crown-left);
+  width: var(--pet-crown-width);
+  aspect-ratio: 5 / 3;
+  translate: -50% 0;
+  background: var(--color-warning-500);
+  clip-path: polygon(
+    0% 100%,
+    0% 12%,
+    25% 52%,
+    50% 0%,
+    75% 52%,
+    100% 12%,
+    100% 100%
+  );
+  filter: drop-shadow(0 1px 2px oklch(0 0 0 / 0.3));
+  pointer-events: none;
+}
+
+.pet-lottie__skeleton {
+  display: grid;
+  position: absolute;
+  inset: 0;
+  place-items: center;
+  border-radius: inherit;
+  background: var(--color-muted);
+}
+
+.pet-lottie:hover {
+  transform: scale(1.03);
+}
+
+.pet-lottie:active {
+  transform: scale(0.97);
+}
+
+.pet-lottie:focus-visible {
+  outline: 3px solid var(--ring, var(--color-brand-500));
+  outline-offset: 6px;
+}
+
+.pet-lottie--petted {
+  animation: pet-lottie-hug 1.15s var(--pet-lottie-ease);
+}
+
+.pet-lottie--reduced,
+.pet-lottie--reduced:hover,
+.pet-lottie--reduced:active {
+  transform: none;
+  animation: none;
+  transition: none;
+}
+
+.pet-lottie--reduced .pet-lottie__halo {
+  animation: none;
+}
+
+.pet-lottie--reduced .pet-lottie__stage {
+  transform: scale(var(--pet-lottie-grow));
+  transition: none;
+  will-change: auto;
+}
+
+@keyframes pet-lottie-hug {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.06) rotate(-1.5deg);
+  }
+
+  70% {
+    transform: scale(0.99) rotate(1deg);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pet-lottie-halo {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.97);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-lottie,
+  .pet-lottie:hover,
+  .pet-lottie:active {
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+
+  .pet-lottie__halo {
+    animation: none;
+  }
+
+  .pet-lottie__stage {
+    transform: scale(var(--pet-lottie-grow));
+    transition: none;
+    will-change: auto;
+  }
+}

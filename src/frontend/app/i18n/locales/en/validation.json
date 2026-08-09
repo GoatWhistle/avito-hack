@@ -11,5 +11,6 @@
   "invalidNumber": "Enter a number",
   "titleTooShort": "Title must be at least {{count}} characters",
   "fileTooLarge": "File is larger than {{size}}",
-  "unsupportedFormat": "Unsupported format"
+  "unsupportedFormat": "Unsupported format",
+  "passwordTooLong": "Password must be at most {{count}} characters"
 }

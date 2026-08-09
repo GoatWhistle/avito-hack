@@ -1,13 +1,3 @@
-# Шаблон HTTPS-конфигурации. НЕ подключается автоматически: nginx.conf инклюдит
-# только conf.d/*.conf, а этот файл лежит уровнем выше и имеет расширение .template.
-#
-# Включается скриптом deploy/enable-https.sh, который подставляет домен вместо
-# __DOMAIN__ и кладёт результат в conf.d/ssl.conf. Ручное редактирование не нужно.
-#
-# Причина такой схемы: nginx не стартует, если ssl_certificate указывает на
-# несуществующий файл. Пока сертификат не выпущен, конфиг обязан отсутствовать,
-# иначе весь стек ляжет — включая порт 80, по которому certbot проходит проверку.
-
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
@@ -24,13 +14,13 @@ server {
     ssl_session_timeout 1d;
     ssl_session_tickets off;
 
-    # max-age намеренно короткий (1 день) для хакатон-демо: если что-то пойдёт
-    # не так с сертификатом, браузеры отпустят домен через сутки, а не через год.
     add_header Strict-Transport-Security "max-age=86400" always;
 
     location = /nginx-health {
         access_log off;
-        add_header Content-Type text/plain always;
+        add_header Strict-Transport-Security "max-age=86400" always;
+        include /etc/nginx/conf.d/security-headers.inc;
+        default_type text/plain;
         return 200 "ok\n";
     }
 

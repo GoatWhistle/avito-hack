@@ -38,7 +38,7 @@ export class RewardsRepository {
   }
 
   async badges(signal?: AbortSignal): Promise<BadgeItem[]> {
-    const response = await this.httpClient.get('/badges/', { signal })
+    const response = await this.httpClient.get('/badges', { signal })
 
     return badgesResponseSchema.parse(response.data)
   }

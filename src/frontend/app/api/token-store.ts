@@ -1,10 +1,14 @@
 const STORAGE_KEY = 'avito-hack.token'
 
+export type SessionEndReason = 'expired' | 'signed-out'
+
 type Listener = (token: string | null) => void
+type ReasonListener = (reason: SessionEndReason) => void
 
 let cached: string | null = null
 let hydrated = false
 const listeners = new Set<Listener>()
+const reasonListeners = new Set<ReasonListener>()
 
 const readStorage = (): string | null => {
   if (typeof window === 'undefined') return null
@@ -43,12 +47,24 @@ export const setToken = (token: string | null) => {
   for (const listener of listeners) listener(token)
 }
 
-export const clearToken = () => setToken(null)
+export const clearToken = (reason: SessionEndReason = 'signed-out') => {
+  const had = getToken() !== null
+  setToken(null)
+  if (!had) return
+  for (const listener of reasonListeners) listener(reason)
+}
 
 export const subscribeToToken = (listener: Listener) => {
   listeners.add(listener)
   return () => {
     listeners.delete(listener)
+  }
+}
+
+export const subscribeToSessionEnd = (listener: ReasonListener) => {
+  reasonListeners.add(listener)
+  return () => {
+    reasonListeners.delete(listener)
   }
 }
 

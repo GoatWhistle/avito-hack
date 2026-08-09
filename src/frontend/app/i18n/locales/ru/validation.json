@@ -11,5 +11,6 @@
   "invalidNumber": "Введите число",
   "titleTooShort": "Название должно быть не короче {{count}} символов",
   "fileTooLarge": "Файл больше {{size}}",
-  "unsupportedFormat": "Неподдерживаемый формат"
+  "unsupportedFormat": "Неподдерживаемый формат",
+  "passwordTooLong": "Пароль должен быть не длиннее {{count}} символов"
 }

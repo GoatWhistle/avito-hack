@@ -19,6 +19,7 @@ import (
 const (
 	messageGetState = "pet.get"
 	messagePet      = "pet.pet"
+	messageFeed     = "pet.feed"
 	messageState    = "pet.state"
 	messagePing     = "ping"
 	messagePong     = "pong"
@@ -33,6 +34,7 @@ type tokenParser interface {
 type petService interface {
 	State(ctx context.Context, userID uuid.UUID) (*domain.Pet, error)
 	Stroke(ctx context.Context, userID uuid.UUID) (*domain.Pet, error)
+	Feed(ctx context.Context, userID uuid.UUID) (*domain.Pet, error)
 }
 
 type connectionHub interface {
@@ -153,6 +155,8 @@ func (h *WebSocketHandler) handle(
 		pet, err = h.service.State(ctx, actor.ID)
 	case messagePet:
 		pet, err = h.service.Stroke(ctx, actor.ID)
+	case messageFeed:
+		pet, err = h.service.Feed(ctx, actor.ID)
 	default:
 		client.Reply(message.RequestID, messageError,
 			errorPayload{Code: "unknown_message", Message: "unsupported message type"})

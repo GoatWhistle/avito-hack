@@ -1,4 +1,5 @@
-import { palette, semanticDark, semanticLight } from '../app/tokens/colors.ts'
+import { semanticDark, semanticLight } from '../app/tokens/colors.ts'
+import { palette } from '../app/tokens/palette.ts'
 
 const AA_BODY = 4.5
 const AA_LARGE = 3
@@ -95,6 +96,37 @@ const PAIRS = [
   ['ring', 'background', AA_UI, 'focus ring'],
   ['xp-fill', 'xp-track', AA_UI, 'xp bar'],
   ['input', 'background', AA_UI, 'input border'],
+  ['stat-energy-fill', 'stat-track', AA_UI, 'energy bar'],
+  ['stat-happiness-fill', 'stat-track', AA_UI, 'happiness bar'],
+  ['stat-satiety-fill', 'stat-track', AA_UI, 'satiety bar'],
+  ['stat-streak-fill', 'stat-track', AA_UI, 'streak bar'],
+  ['stat-xp-fill', 'stat-track', AA_UI, 'xp stat bar'],
+  [
+    'stat-energy-subtle-foreground',
+    'stat-energy-subtle',
+    AA_BODY,
+    'energy chip',
+  ],
+  [
+    'stat-happiness-subtle-foreground',
+    'stat-happiness-subtle',
+    AA_BODY,
+    'happiness chip',
+  ],
+  [
+    'stat-satiety-subtle-foreground',
+    'stat-satiety-subtle',
+    AA_BODY,
+    'satiety chip',
+  ],
+  [
+    'stat-streak-subtle-foreground',
+    'stat-streak-subtle',
+    AA_BODY,
+    'streak chip',
+  ],
+  ['stat-xp-subtle-foreground', 'stat-xp-subtle', AA_BODY, 'xp chip'],
+  ['stat-streak-on-fill', 'stat-streak-fill', AA_UI, 'streak day dot'],
 ]
 
 const failures = []

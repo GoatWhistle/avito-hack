@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import type { RewardProgress } from '#/features/rewards/types'
+import type { BadgeItem, RewardProgress } from '#/features/rewards/types'
 
 const conditionKeys = new Set(['level', 'streak', 'xp', 'achievement'])
 
@@ -29,6 +29,42 @@ export const remainingLabel = (
     return t('remaining.streak', { count: entry.remaining })
 
   return t('remaining.generic', { count: entry.remaining })
+}
+
+export interface BadgeProgressView {
+  current: number
+  target: number
+  remaining: number
+  percent: number
+  hasProgress: boolean
+}
+
+export const badgeProgress = (badge: BadgeItem): BadgeProgressView => {
+  const target = Math.max(0, badge.progress_target)
+  const current = Math.min(Math.max(0, badge.progress_current), target)
+  const remaining = Math.max(0, target - current)
+
+  return {
+    current,
+    target,
+    remaining,
+    percent: target > 0 ? Math.round((current / target) * 100) : 0,
+    hasProgress: target > 0,
+  }
+}
+
+export const badgeRemainingLabel = (
+  t: TFunction<'rewards'>,
+  badge: BadgeItem,
+): string | null => {
+  if (badge.earned_at) return null
+
+  const progress = badgeProgress(badge)
+  if (!progress.hasProgress || progress.remaining <= 0) return null
+
+  return t('badges.remainingToEarn' as 'badges.remainingToEarn_other', {
+    count: progress.remaining,
+  })
 }
 
 export const formatDate = (

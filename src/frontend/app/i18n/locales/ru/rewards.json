@@ -3,9 +3,30 @@
   "subtitle": "Заходите каждый день — награды открываются сами",
   "loading": "Загружаем награды",
   "tabs": {
-    "catalog": "Каталог",
+    "track": "Дорожка наград",
     "mine": "Мои награды",
     "badges": "Бейджи"
+  },
+  "track": {
+    "title": "Дорожка уровней",
+    "counter": "Забрано {{claimed}} из {{total}}",
+    "progressLabel": "Прогресс по дорожке наград: {{percent}}%",
+    "levelLabel": "Открывается на {{level}} уровне",
+    "lockedHint": "Дорастите питомца до {{level}} уровня, чтобы забрать",
+    "progressShort": "{{current}}/{{target}} {{unit}}",
+    "unit": {
+      "level": "ур.",
+      "streak": "дн.",
+      "achievement": "дост.",
+      "generic": "шаг."
+    }
+  },
+  "trackStatus": {
+    "locked": "Закрыто",
+    "available": "Можно забрать",
+    "granted": "Ваша награда",
+    "activated": "Активировано",
+    "expired": "Истекло"
   },
   "groups": {
     "close": "Совсем близко",
@@ -80,7 +101,23 @@
     "earnedAt": "Получен {{date}}",
     "locked": "Ещё не получен",
     "empty": "Бейджей пока нет",
-    "emptyHint": "Бейджи открываются за достижения и длинные серии"
+    "emptyHint": "Бейджи открываются за достижения и длинные серии",
+    "progressLabel": "Собрано достижений: {{percent}}%",
+    "allEarned": "Все достижения собраны — вы легенда",
+    "remaining_one": "Остался {{count}} до полной коллекции",
+    "remaining_few": "Осталось {{count}} до полной коллекции",
+    "remaining_many": "Осталось {{count}} до полной коллекции",
+    "remaining_other": "Осталось {{count}} до полной коллекции",
+    "groups": {
+      "earned": "Получено",
+      "locked": "В процессе"
+    },
+    "progress": "{{current}} из {{target}}",
+    "progressMeter": "{{name}}: {{current}} из {{target}}",
+    "remainingToEarn_one": "Осталось {{count}} — и бейдж ваш",
+    "remainingToEarn_few": "Осталось {{count}} — и бейдж ваш",
+    "remainingToEarn_many": "Осталось {{count}} — и бейдж ваш",
+    "remainingToEarn_other": "Осталось {{count}} — и бейдж ваш"
   },
   "errors": {
     "alreadyActivated": "Этот промокод уже активирован",

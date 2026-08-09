@@ -108,7 +108,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_ADDR: ${REDIS_ADDR}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_TTL: ${JWT_TTL:-15m}
+      JWT_TTL: ${JWT_TTL:-1h}
       REWARD_HMAC_SECRET: ${REWARD_HMAC_SECRET}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-pretty}
@@ -152,7 +152,7 @@ services:
       context: ./src/frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+        VITE_API_URL: ${VITE_API_URL-}
         VITE_DEFAULT_LOCALE: ${VITE_DEFAULT_LOCALE:-ru}
     restart: unless-stopped
     ports:

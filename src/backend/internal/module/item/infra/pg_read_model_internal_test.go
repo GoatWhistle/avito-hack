@@ -21,12 +21,52 @@ func TestBuildListQueryWithoutFilters(t *testing.T) {
 
 	assert.Contains(t, query, "FROM items")
 	assert.Contains(t, query, "WHERE deleted_at IS NULL")
+	assert.Contains(t, query, "status IN ($1, $2)")
 	assert.Contains(t, query, "ORDER BY created_at DESC, id DESC")
-	assert.Contains(t, query, "LIMIT $1")
+	assert.Contains(t, query, "LIMIT $3")
 	assert.NotContains(t, query, "status =")
 	assert.NotContains(t, query, "owner_id =")
 	assert.NotContains(t, query, "ILIKE")
-	assert.Equal(t, []any{20}, args)
+	assert.Equal(t, []any{"published", "sold", 20}, args)
+}
+
+func TestBuildListQueryAlwaysRestrictsAnonymousToPublicStatuses(t *testing.T) {
+	t.Parallel()
+
+	for _, status := range []domain.Status{domain.StatusDraft, domain.StatusModeration, domain.StatusArchived} {
+		query, args := buildListQuery(app.ListFilter{Status: status, Limit: 20})
+
+		assert.Contains(t, query, "status IN ($1, $2)")
+		assert.Contains(t, query, "status = $3")
+		assert.NotContains(t, query, "owner_id =")
+		assert.Equal(t, []any{"published", "sold", status.String(), 20}, args)
+	}
+}
+
+func TestBuildListQueryViewerSeesOwnItemsInAnyStatus(t *testing.T) {
+	t.Parallel()
+
+	viewerID := uuid.New()
+
+	query, args := buildListQuery(app.ListFilter{ViewerID: viewerID, Limit: 20})
+
+	assert.Contains(t, query, "(status IN ($1, $2) OR owner_id = $3)")
+	assert.Equal(t, []any{"published", "sold", viewerID, 20}, args)
+}
+
+func TestBuildListQueryOwnerFilterCannotBypassVisibility(t *testing.T) {
+	t.Parallel()
+
+	victimID, viewerID := uuid.New(), uuid.New()
+
+	query, args := buildListQuery(app.ListFilter{
+		Status: domain.StatusDraft, OwnerID: victimID, ViewerID: viewerID, Limit: 20,
+	})
+
+	assert.Contains(t, query, "(status IN ($1, $2) OR owner_id = $3)")
+	assert.Contains(t, query, "status = $4")
+	assert.Contains(t, query, "owner_id = $5")
+	assert.Equal(t, []any{"published", "sold", viewerID, "draft", victimID, 20}, args)
 }
 
 func TestBuildListQueryWithEveryFilter(t *testing.T) {
@@ -42,12 +82,14 @@ func TestBuildListQueryWithEveryFilter(t *testing.T) {
 		Limit:   5,
 	})
 
-	assert.Contains(t, query, "status = $1")
-	assert.Contains(t, query, "owner_id = $2")
-	assert.Contains(t, query, "title ILIKE $3")
-	assert.Contains(t, query, "(created_at, id) < ($4, $5)")
-	assert.Contains(t, query, "LIMIT $6")
-	assert.Equal(t, []any{"published", ownerID, "%bike%", cursorTime, cursorID, 5}, args)
+	assert.Contains(t, query, "status = $3")
+	assert.Contains(t, query, "owner_id = $4")
+	assert.Contains(t, query, "title ILIKE $5")
+	assert.Contains(t, query, "(created_at, id) < ($6, $7)")
+	assert.Contains(t, query, "LIMIT $8")
+	assert.Equal(t, []any{
+		"published", "sold", "published", ownerID, "%bike%", cursorTime, cursorID, 5,
+	}, args)
 }
 
 func TestBuildListQueryStatusOnly(t *testing.T) {
@@ -55,9 +97,9 @@ func TestBuildListQueryStatusOnly(t *testing.T) {
 
 	query, args := buildListQuery(app.ListFilter{Status: domain.StatusSold, Limit: 3})
 
-	assert.Contains(t, query, "status = $1")
-	assert.Contains(t, query, "LIMIT $2")
-	assert.Equal(t, []any{"sold", 3}, args)
+	assert.Contains(t, query, "status = $3")
+	assert.Contains(t, query, "LIMIT $4")
+	assert.Equal(t, []any{"published", "sold", "sold", 3}, args)
 }
 
 func TestBuildListQueryOwnerOnly(t *testing.T) {
@@ -67,8 +109,8 @@ func TestBuildListQueryOwnerOnly(t *testing.T) {
 
 	query, args := buildListQuery(app.ListFilter{OwnerID: ownerID, Limit: 7})
 
-	assert.Contains(t, query, "owner_id = $1")
-	assert.Equal(t, []any{ownerID, 7}, args)
+	assert.Contains(t, query, "owner_id = $3")
+	assert.Equal(t, []any{"published", "sold", ownerID, 7}, args)
 }
 
 func TestBuildListQuerySearchOnly(t *testing.T) {
@@ -76,8 +118,8 @@ func TestBuildListQuerySearchOnly(t *testing.T) {
 
 	query, args := buildListQuery(app.ListFilter{Search: "chair", Limit: 2})
 
-	assert.Contains(t, query, "title ILIKE $1")
-	assert.Equal(t, []any{"%chair%", 2}, args)
+	assert.Contains(t, query, "title ILIKE $3")
+	assert.Equal(t, []any{"published", "sold", "%chair%", 2}, args)
 }
 
 func TestBuildListQueryIgnoresZeroCursor(t *testing.T) {
@@ -89,5 +131,5 @@ func TestBuildListQueryIgnoresZeroCursor(t *testing.T) {
 	})
 
 	assert.NotContains(t, query, "(created_at, id) <")
-	assert.Equal(t, []any{4}, args)
+	assert.Equal(t, []any{"published", "sold", 4}, args)
 }

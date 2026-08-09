@@ -2,11 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { PetActions } from './PetActions'
-import {
-  PetScreenEmpty,
-  PetScreenError,
-  PetScreenSkeleton,
-} from './PetScreenStates'
+import { PetScreenError, PetScreenSkeleton } from './PetScreenStates'
 import { renderWithProviders } from './test-utils'
 
 describe('PetScreenSkeleton', () => {
@@ -54,104 +50,34 @@ describe('PetScreenError', () => {
   })
 })
 
-describe('PetScreenEmpty', () => {
-  it('invites the first check in', async () => {
-    const onCheckIn = vi.fn()
-    renderWithProviders(
-      <PetScreenEmpty onCheckIn={onCheckIn} isCheckingIn={false} />,
-    )
-
-    expect(
-      screen.getByRole('heading', { name: 'Яйцо вот-вот треснет' }),
-    ).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Отметиться' }))
-    expect(onCheckIn).toHaveBeenCalledTimes(1)
-  })
-
-  it('blocks a second check in while one is running', async () => {
-    const onCheckIn = vi.fn()
-    renderWithProviders(<PetScreenEmpty onCheckIn={onCheckIn} isCheckingIn />)
-
-    const button = screen.getByRole('button', { name: 'Отмечаемся…' })
-    expect(button).toBeDisabled()
-
-    await userEvent.click(button)
-    expect(onCheckIn).not.toHaveBeenCalled()
-  })
-})
-
-const actionProps = {
-  canCheckIn: true,
-  isStroking: false,
-  isCheckingIn: false,
-  strokeError: null,
-  checkInError: null,
-  onStroke: () => {},
-  onCheckIn: () => {},
-}
-
 describe('PetActions', () => {
-  it('runs both actions', async () => {
-    const onStroke = vi.fn()
-    const onCheckIn = vi.fn()
-    renderWithProviders(
-      <PetActions {...actionProps} onStroke={onStroke} onCheckIn={onCheckIn} />,
-    )
+  it('offers no check-in button because check-in is automatic', () => {
+    renderWithProviders(<PetActions strokeError={null} />)
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Погладить питомца' }),
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Отметиться' }))
-
-    expect(onStroke).toHaveBeenCalledTimes(1)
-    expect(onCheckIn).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('marks the day as done when a check in is no longer possible', () => {
-    renderWithProviders(<PetActions {...actionProps} canCheckIn={false} />)
-
-    const button = screen.getByRole('button', {
-      name: 'Вы уже отметились сегодня',
-    })
-    expect(button).toBeDisabled()
-    expect(button).toHaveTextContent('Отмечено')
-  })
-
-  it('disables stroking while a stroke is in flight', () => {
-    renderWithProviders(<PetActions {...actionProps} isStroking />)
+  it('offers no separate stroke button', () => {
+    renderWithProviders(<PetActions strokeError={null} />)
 
     expect(
-      screen.getByRole('button', { name: 'Погладить питомца' }),
-    ).toBeDisabled()
+      screen.queryByRole('button', { name: 'Погладить питомца' }),
+    ).not.toBeInTheDocument()
   })
 
-  it('shows the checking in label while the request runs', () => {
-    renderWithProviders(<PetActions {...actionProps} isCheckingIn />)
+  it('keeps an empty live region when nothing failed', () => {
+    renderWithProviders(<PetActions strokeError={null} />)
 
-    expect(
-      screen.getByRole('button', { name: 'Отметиться' }),
-    ).toHaveTextContent('Отмечаемся…')
+    const status = screen.getByRole('status')
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveTextContent('')
   })
 
-  it('prefers the check in error over the stroke error', () => {
-    renderWithProviders(
-      <PetActions
-        {...actionProps}
-        strokeError="Не погладили"
-        checkInError="Уже отмечались"
-      />,
-    )
+  it('announces a stroke failure in a live region', () => {
+    renderWithProviders(<PetActions strokeError="Не погладили" />)
 
-    expect(screen.getByText('Уже отмечались')).toBeInTheDocument()
-    expect(screen.queryByText('Не погладили')).not.toBeInTheDocument()
-  })
-
-  it('falls back to the stroke error', () => {
-    renderWithProviders(
-      <PetActions {...actionProps} strokeError="Не погладили" />,
-    )
-
-    expect(screen.getByText('Не погладили')).toBeInTheDocument()
+    const status = screen.getByRole('status')
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveTextContent('Не погладили')
   })
 })

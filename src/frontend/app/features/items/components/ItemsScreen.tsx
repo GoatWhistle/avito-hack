@@ -8,6 +8,7 @@ import { flattenPages, useItemsQuery } from '#/features/items/hooks'
 import { useDebouncedValue } from '#/features/items/hooks/useDebouncedValue'
 import { ItemFilters } from './ItemFilters'
 import { ItemGrid } from './ItemGrid'
+import { PetHintBanner } from './PetHintBanner'
 import { EmptyState, ErrorState, ItemsSkeleton } from './ListStates'
 import type { ItemStatus } from '#/features/items/types'
 
@@ -40,6 +41,8 @@ export function ItemsScreen() {
           </Button>
         )}
       </header>
+
+      <PetHintBanner />
 
       <ItemFilters
         search={search}

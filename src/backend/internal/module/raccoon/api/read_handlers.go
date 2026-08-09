@@ -147,6 +147,8 @@ func toBadgeResponses(badges []app.BadgeView) []BadgeResponse {
 			Description: badge.Description,
 			Icon:        badge.IconURL,
 			EarnedAt:    earnedAt,
+			Current:     badge.Current,
+			Target:      badge.Target,
 		})
 	}
 

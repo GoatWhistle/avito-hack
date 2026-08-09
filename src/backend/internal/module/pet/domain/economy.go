@@ -10,19 +10,18 @@ import (
 
 const (
 	dailyLoginXP          = 1
-	searchSubscriptionXP  = 3
 	favoriteXP            = 1
 	qualityListingXP      = 2
+	itemViewedXP          = 1
 	qualityDescriptionLen = 200
-	qualityVideoBonusXP   = 4
 	moscowOffsetSeconds   = 3 * 60 * 60
 	streakBonusDays       = 7
 	streakBonusFactor     = 1.5
 )
 
 const (
-	MaxSearchesPerWeek = 3
 	MaxFavoritesPerDay = 5
+	MaxItemViewsPerDay = 10
 )
 
 var moscowZone = time.FixedZone("MSK", moscowOffsetSeconds)
@@ -37,7 +36,6 @@ type LimitedAction struct {
 type QualityListing struct {
 	HasPhoto    bool
 	HasPrice    bool
-	HasVideo    bool
 	Description string
 	Now         time.Time
 }
@@ -76,12 +74,12 @@ func (p *Pet) CheckIn(now time.Time) (CheckInResult, error) {
 	return CheckInResult{Progress: p.applyAward(amount, now), Streak: streak}, nil
 }
 
-func (p *Pet) RewardSearchSubscription(action LimitedAction) (Progress, error) {
-	return p.rewardLimited(action, MaxSearchesPerWeek, searchSubscriptionXP)
-}
-
 func (p *Pet) RewardFavorite(action LimitedAction) (Progress, error) {
 	return p.rewardLimited(action, MaxFavoritesPerDay, favoriteXP)
+}
+
+func (p *Pet) RewardItemViewed(action LimitedAction) (Progress, error) {
+	return p.rewardLimited(action, MaxItemViewsPerDay, itemViewedXP)
 }
 
 func (p *Pet) RewardQualityListing(listing QualityListing) (Progress, error) {
@@ -89,12 +87,7 @@ func (p *Pet) RewardQualityListing(listing QualityListing) (Progress, error) {
 		return Progress{}, ErrConditionNotMet
 	}
 
-	amount := qualityListingXP
-	if listing.HasVideo {
-		amount = qualityVideoBonusXP
-	}
-
-	return p.applyAward(amount, listing.Now), nil
+	return p.applyAward(qualityListingXP, listing.Now), nil
 }
 
 func hasQualityDescription(description string) bool {

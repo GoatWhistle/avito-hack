@@ -29,14 +29,22 @@ describe('DesktopNav', () => {
 
   it('marks the icon of the active route', () => {
     const { container } = renderWithShell(<DesktopNav />, {
-      initialEntries: ['/favorites'],
+      initialEntries: ['/items'],
     })
 
     const activeLink = container.querySelector('a[aria-current="page"]')
-    expect(activeLink).toHaveAttribute('href', '/favorites')
+    expect(activeLink).toHaveAttribute('href', '/items')
     expect(container.querySelectorAll('svg[aria-current="page"]')).toHaveLength(
       1,
     )
+  })
+
+  it('keeps only the two primary destinations in the header', () => {
+    renderWithShell(<DesktopNav />)
+
+    expect(
+      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
+    ).toEqual(['/pet', '/items'])
   })
 
   it('marks no icon when the route is outside the nav', () => {

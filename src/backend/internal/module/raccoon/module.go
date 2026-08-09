@@ -16,6 +16,7 @@ type Options struct {
 	Pool         *pgxpool.Pool
 	Pets         *petapp.Service
 	Rewards      *petapp.RewardService
+	Badges       *petapp.BadgeService
 	Validator    interface{ Struct(dst any) error }
 	Authenticate func(http.Handler) http.Handler
 	MaxBodyBytes int64
@@ -27,6 +28,9 @@ type Module struct {
 
 func New(opts Options) *Module {
 	badges := infra.NewBadgeAdapter(petinfra.NewPgBadgeRepository(opts.Pool))
+	if opts.Badges != nil {
+		badges = badges.WithProgress(opts.Badges)
+	}
 
 	return &Module{Handlers: api.NewHandlers(api.Deps{
 		GetProfile:   app.NewGetRaccoonProfileUseCase(infra.NewPetAdapter(opts.Pets), badges),

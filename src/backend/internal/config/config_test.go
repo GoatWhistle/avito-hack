@@ -33,7 +33,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	assert.Equal(t, ":8080", cfg.HTTPAddr)
 	assert.Equal(t, databaseURL, cfg.DatabaseURL)
 	assert.Equal(t, "localhost:6379", cfg.RedisAddr)
-	assert.Equal(t, 15*time.Minute, cfg.JWTTTL)
+	assert.Equal(t, time.Hour, cfg.JWTTTL)
 	assert.Equal(t, "info", cfg.LogLevel)
 	assert.Equal(t, "pretty", cfg.LogFormat)
 	assert.Equal(t, "auto", cfg.LogColor)
@@ -46,7 +46,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 func TestLoadReadsOverrides(t *testing.T) {
 	setRequired(t)
 	t.Setenv("HTTP_ADDR", ":9090")
-	t.Setenv("JWT_TTL", "1h")
+	t.Setenv("JWT_TTL", "30m")
 	t.Setenv("ALLOWED_ORIGINS", "https://a.example,https://b.example")
 	t.Setenv("MAX_BODY_BYTES", "2048")
 	t.Setenv("LOG_LEVEL", "debug")
@@ -55,7 +55,7 @@ func TestLoadReadsOverrides(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, ":9090", cfg.HTTPAddr)
-	assert.Equal(t, time.Hour, cfg.JWTTTL)
+	assert.Equal(t, 30*time.Minute, cfg.JWTTTL)
 	assert.Equal(t, []string{"https://a.example", "https://b.example"}, cfg.AllowedOrigins)
 	assert.Equal(t, int64(2048), cfg.MaxBodyBytes)
 }

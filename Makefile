@@ -68,7 +68,6 @@ test:
 	@echo " "
 	@echo "Tests completed!"
 
-# Integration tests skip themselves unless the stack is up and INTEGRATION=1 is set.
 test-integration:
 	cd "$(INTEGRATION_DIR)" && INTEGRATION=1 go test -tags=integration -count=1 -v ./...
 	@echo " "

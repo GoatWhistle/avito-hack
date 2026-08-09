@@ -43,6 +43,7 @@ func TestPetEndpointsRequireActor(t *testing.T) {
 	}{
 		{http.MethodGet, "/pet"},
 		{http.MethodPost, "/pet/actions/stroke"},
+		{http.MethodPost, "/pet/actions/feed"},
 		{http.MethodPost, "/checkin"},
 		{http.MethodGet, "/progress"},
 	}

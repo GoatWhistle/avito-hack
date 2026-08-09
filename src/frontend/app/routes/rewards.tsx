@@ -1,5 +1,5 @@
-import { RewardsScreen } from '#/features/rewards'
+import { Navigate } from 'react-router'
 
 export default function RewardsRoute() {
-  return <RewardsScreen />
+  return <Navigate to="/pet/rewards" replace />
 }

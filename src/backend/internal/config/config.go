@@ -15,7 +15,7 @@ type Config struct {
 	DatabaseURL string        `env:"DATABASE_URL,required"`
 	RedisAddr   string        `env:"REDIS_ADDR"      envDefault:"localhost:6379"`
 	JWTSecret   string        `env:"JWT_SECRET,required"`
-	JWTTTL      time.Duration `env:"JWT_TTL"         envDefault:"15m"`
+	JWTTTL      time.Duration `env:"JWT_TTL"         envDefault:"1h"`
 
 	RewardHMACSecret string `env:"REWARD_HMAC_SECRET,required"`
 
@@ -30,6 +30,13 @@ type Config struct {
 	IdleTimeout       time.Duration `env:"IDLE_TIMEOUT"        envDefault:"60s"`
 	ShutdownTimeout   time.Duration `env:"SHUTDOWN_TIMEOUT"    envDefault:"15s"`
 	RequestTimeout    time.Duration `env:"REQUEST_TIMEOUT"     envDefault:"30s"`
+
+	RateLimitEnabled    bool    `env:"RATE_LIMIT_ENABLED"     envDefault:"true"`
+	RateLimitRPS        float64 `env:"RATE_LIMIT_RPS"         envDefault:"20"`
+	RateLimitBurst      float64 `env:"RATE_LIMIT_BURST"       envDefault:"40"`
+	AuthRateLimitRPS    float64 `env:"AUTH_RATE_LIMIT_RPS"    envDefault:"5"`
+	AuthRateLimitBurst  float64 `env:"AUTH_RATE_LIMIT_BURST"  envDefault:"10"`
+	RateLimitTrustProxy bool    `env:"RATE_LIMIT_TRUST_PROXY" envDefault:"true"`
 
 	MaxBodyBytes  int64  `env:"MAX_BODY_BYTES"  envDefault:"1048576"`
 	MaxPhotoBytes int64  `env:"MAX_PHOTO_BYTES" envDefault:"5242880"`

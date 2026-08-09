@@ -8,6 +8,8 @@ export { StreakCard } from './StreakCard'
 export type { StreakCardProps } from './StreakCard'
 export { PetActions } from './PetActions'
 export type { PetActionsProps } from './PetActions'
+export { FeedButton } from './FeedButton'
+export type { FeedButtonProps } from './FeedButton'
 export { XpToasts } from './XpToasts'
 export type { XpToastsProps } from './XpToasts'
 export { CelebrationBanner } from './CelebrationBanner'
@@ -18,12 +20,52 @@ export { DailySummaryCard } from './DailySummaryCard'
 export type { DailySummaryCardProps } from './DailySummaryCard'
 export { PetHero } from './PetHero'
 export type { PetHeroProps } from './PetHero'
+export { PetHud } from './PetHud'
+export type { PetHudProps } from './PetHud'
+export { PetSpeech } from './PetSpeech'
+export type { PetSpeechProps } from './PetSpeech'
+export { PetStage } from './PetStage'
+export type { PetStageProps } from './PetStage'
+export { PetStatsPanel } from './PetStatsPanel'
+export type { PetStatsPanelProps } from './PetStatsPanel'
+export { nextRewards, PetRewardsPanel } from './PetRewardsPanel'
+export { PetScreenError, PetScreenSkeleton } from './PetScreenStates'
 export {
-  PetScreenEmpty,
-  PetScreenError,
-  PetScreenSkeleton,
-} from './PetScreenStates'
+  DashboardActivity,
+  DashboardHeader,
+  DashboardHome,
+  DashboardNav,
+  DashboardPanel,
+  DashboardSidebar,
+  DashboardStats,
+  DashboardTopBar,
+  dashboardNavItems,
+  dashboardStats,
+  DASHBOARD_STAT_STYLES,
+  HudChip,
+  PetAchievementsPanel,
+  PetDashboard,
+  PetLeaderboardPanel,
+  PetProgressPanel,
+  PetRewardsPanelRoute,
+  PetStatsSummary,
+  StreakMechanicsCard,
+  StreakTracker,
+  STREAK_TARGET_DAYS,
+} from './dashboard'
 export type {
-  PetScreenEmptyProps,
-  PetScreenErrorProps,
-} from './PetScreenStates'
+  DashboardActivityProps,
+  DashboardHeaderProps,
+  DashboardNavItem,
+  DashboardNavKey,
+  DashboardPanelProps,
+  DashboardSidebarProps,
+  DashboardStat,
+  DashboardStatKey,
+  DashboardStatsProps,
+  HudChipProps,
+  HudChipTone,
+  PetDashboardProps,
+  StreakTrackerProps,
+} from './dashboard'
+export type { PetScreenErrorProps } from './PetScreenStates'

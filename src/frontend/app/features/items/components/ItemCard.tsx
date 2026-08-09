@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { formatPrice } from '#/features/items/lib'
+import { useItemPhotosQuery } from '#/features/items/hooks'
 import { FavoriteButton } from '#/features/favorites/components'
 import { ItemStatusBadge } from './ItemStatusBadge'
 import { ItemPhotoThumb } from './ItemPhotoThumb'
@@ -20,10 +21,12 @@ export function ItemCard({
   showFavorite = true,
 }: ItemCardProps) {
   const { t, i18n } = useTranslation('items')
+  const photosQuery = useItemPhotosQuery(photoUrl ? undefined : item.id)
+  const cover = photoUrl ?? photosQuery.data?.[0]?.url
 
   return (
-    <article className="group/item relative flex h-full w-full flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-md">
-      <ItemPhotoThumb url={photoUrl} alt={item.title} />
+    <article className="group/item relative flex h-full w-full flex-col gap-3 rounded-xl bg-card p-3 ring-1 shadow-sm ring-foreground/8 transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-lg dark:shadow-none dark:ring-foreground/10 dark:hover:shadow-md">
+      <ItemPhotoThumb url={cover} alt={item.title} />
 
       <div className="flex flex-1 flex-col gap-2">
         <h3 className="line-clamp-2 min-h-10 text-sm leading-snug font-medium break-words">
@@ -61,7 +64,7 @@ export function ItemCard({
               title: item.title,
               price: item.price,
               status: item.status,
-              photo_url: photoUrl,
+              photo_url: cover,
             }}
           />
         </div>

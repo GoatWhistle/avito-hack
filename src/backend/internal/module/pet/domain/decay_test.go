@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestApplyDecay(t *testing.T) {
@@ -84,6 +85,41 @@ func TestFeedAndCheerClamp(t *testing.T) {
 
 	assert.Equal(t, 100, pet.Satiety())
 	assert.Equal(t, 100, pet.Happiness())
+}
+
+func TestFeedMealRaisesSatietyAndBumpsVersion(t *testing.T) {
+	t.Parallel()
+
+	pet := petWithParams(40, 50, 100)
+	pet.FeedMeal(testTime())
+
+	assert.Equal(t, 40+FeedSatietyGain, pet.Satiety())
+	assert.Equal(t, 50, pet.Happiness())
+	assert.Equal(t, int64(1), pet.InteractionVersion())
+	assert.Equal(t, testTime(), pet.UpdatedAt())
+}
+
+func TestFeedMealClampsAtMaximum(t *testing.T) {
+	t.Parallel()
+
+	pet := petWithParams(95, 50, 100)
+	pet.FeedMeal(testTime())
+	pet.FeedMeal(testTime())
+
+	assert.Equal(t, MaxParameterValue, pet.Satiety())
+	assert.Equal(t, int64(2), pet.InteractionVersion())
+}
+
+func TestFeedMealLiftsPetOutOfHungryPenalty(t *testing.T) {
+	t.Parallel()
+
+	pet := petWithParams(20, 50, 100)
+	require.Equal(t, StateSad, pet.State())
+
+	pet.FeedMeal(testTime())
+
+	assert.Equal(t, 35, pet.Satiety())
+	assert.Equal(t, StateNeutral, pet.State())
 }
 
 func petWithParams(satiety, happiness, energy int) *Pet {

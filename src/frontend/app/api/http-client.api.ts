@@ -1,5 +1,10 @@
-import axios, { AxiosError, type CreateAxiosDefaults } from 'axios'
+import axios, {
+  AxiosError,
+  type CreateAxiosDefaults,
+  type InternalAxiosRequestConfig,
+} from 'axios'
 import { ApiError, apiErrorFromEnvelope } from './api-error'
+import { isAuthPath, SessionRefresher } from './session-refresh'
 import { clearToken, getToken } from './token-store'
 
 const rawBase = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/'
@@ -14,6 +19,14 @@ const config: CreateAxiosDefaults = {
 }
 
 export const httpClient = axios.create(config)
+
+const refreshClient = axios.create(config)
+
+const refresher = new SessionRefresher(refreshClient)
+
+type RetriableConfig = InternalAxiosRequestConfig & {
+  retriedAfterRefresh?: boolean
+}
 
 httpClient.interceptors.request.use((request) => {
   const token = getToken()
@@ -62,13 +75,39 @@ const toApiError = (error: unknown): ApiError => {
   })
 }
 
+const shouldAttemptRefresh = (
+  apiError: ApiError,
+  request: RetriableConfig | undefined,
+): request is RetriableConfig =>
+  apiError.isUnauthorized &&
+  request !== undefined &&
+  request.retriedAfterRefresh !== true &&
+  !isAuthPath(request.url) &&
+  getToken() !== null
+
 httpClient.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
+  async (error: unknown) => {
     const apiError = toApiError(error)
-    if (apiError.isUnauthorized) {
-      clearToken()
+    const request =
+      error instanceof AxiosError
+        ? (error.config as RetriableConfig | undefined)
+        : undefined
+
+    if (!shouldAttemptRefresh(apiError, request)) {
+      return Promise.reject(apiError)
     }
-    return Promise.reject(apiError)
+
+    const token = await refresher.refresh()
+    if (!token) {
+      clearToken('expired')
+
+      return Promise.reject(apiError)
+    }
+
+    request.retriedAfterRefresh = true
+    request.headers.set('Authorization', `Bearer ${token}`)
+
+    return httpClient.request(request)
   },
 )

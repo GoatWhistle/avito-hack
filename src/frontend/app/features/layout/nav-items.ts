@@ -1,15 +1,13 @@
 import {
   Heart,
-  ListOrdered,
-  PawPrint,
   Package,
+  PawPrint,
   Store,
-  Trophy,
   type LucideIcon,
 } from 'lucide-react'
 
 export interface NavItem {
-  key: 'pet' | 'items' | 'myItems' | 'favorites' | 'rewards' | 'leaderboard'
+  key: 'pet' | 'items' | 'myItems' | 'favorites'
   to: string
   icon: LucideIcon
   primary: boolean
@@ -18,8 +16,9 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { key: 'pet', to: '/pet', icon: PawPrint, primary: true },
   { key: 'items', to: '/items', icon: Store, primary: true },
+]
+
+export const accountNavItems: NavItem[] = [
   { key: 'myItems', to: '/items/mine', icon: Package, primary: false },
-  { key: 'favorites', to: '/favorites', icon: Heart, primary: true },
-  { key: 'rewards', to: '/rewards', icon: Trophy, primary: true },
-  { key: 'leaderboard', to: '/leaderboard', icon: ListOrdered, primary: false },
+  { key: 'favorites', to: '/favorites', icon: Heart, primary: false },
 ]

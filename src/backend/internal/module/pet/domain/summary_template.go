@@ -97,14 +97,13 @@ var actionLabels = map[Action]struct {
 	template string
 	forms    pluralForms
 }{
-	ActionQualityListing:     {"оформил %s", listingsForms},
-	ActionFavorite:           {"добавил %s в избранное", favoritesForms},
-	ActionSearchSubscription: {"подписался на %s", searchesForms},
-	ActionNewDialogue:        {"начал %s", dialoguesForms},
-	ActionQuickReply:         {"быстро ответил %s", timesForms},
-	ActionTextReview:         {"оставил %s", reviewsForms},
-	ActionPhotoReview:        {"оставил %s", photoRevForms},
-	ActionVideoReview:        {"снял %s", videoRevForms},
+	ActionQualityListing: {"оформил %s", listingsForms},
+	ActionFavorite:       {"добавил %s в избранное", favoritesForms},
+	ActionItemViewed:     {"посмотрел %s", itemsForms},
+	ActionItemPublished:  {"опубликовал %s", itemsForms},
+	ActionItemUpdated:    {"обновил %s", itemsForms},
+	ActionItemImproved:   {"улучшил %s", itemsForms},
+	ActionItemSold:       {"продал %s", itemsForms},
 }
 
 func activitySentence(facts DayFacts) string {

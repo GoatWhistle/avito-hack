@@ -1,4 +1,5 @@
 export {
+  checkInInfoSchema,
   checkInResultSchema,
   petSchema,
   petStageSchema,
@@ -7,6 +8,7 @@ export {
   streakResultSchema,
 } from './pet.type'
 export type {
+  CheckInInfo,
   CheckInResult,
   Pet,
   PetStageValue,

@@ -1,15 +1,10 @@
-export type PetStage = 'egg' | 'baby' | 'teen' | 'adult' | 'legend'
+export type PetStage = 'baby' | 'teen' | 'adult' | 'legend'
 
-export type PetEmotion = 'eating' | 'celebrate' | 'levelup' | 'hatching'
+export type PetEmotion = 'eating' | 'celebrate' | 'levelup'
 
 export type PetMood = 'idle' | 'happy' | 'hungry' | 'sad' | 'sleeping'
 
 export type PetAvatarSize = 'sm' | 'md' | 'lg' | 'xl'
-
-export interface EyeOffset {
-  x: number
-  y: number
-}
 
 export interface PetAvatarLabels {
   name: string
@@ -17,6 +12,7 @@ export interface PetAvatarLabels {
   mood: Record<PetMood, string>
   emotion: Record<PetEmotion, string>
   strokeHint: string
+  loading: string
 }
 
 export interface PetAvatarProps {
@@ -27,7 +23,6 @@ export interface PetAvatarProps {
   energy: number
   size?: PetAvatarSize
   labels?: Partial<PetAvatarLabels>
-  idleSleepEnabled?: boolean
   emotionResetMs?: number
   onStroke?: () => void
   onEmotionEnd?: () => void

@@ -119,6 +119,61 @@ func TestStrokeReplyErrors(t *testing.T) {
 	}
 }
 
+func TestFeedApplied(t *testing.T) {
+	t.Parallel()
+
+	client := startFakeRedis(t, map[string]string{
+		"EVALSHA": respArray(
+			respBulk("50"), respBulk("65"), respBulk("2"), respBulk("1000"), respInt(1),
+		),
+	})
+
+	now := time.Date(2026, time.March, 5, 0, 0, 0, 0, time.UTC)
+	state, applied, err := NewRedisHotStateStore(client).
+		Feed(context.Background(), testHotState(), now)
+	require.NoError(t, err)
+
+	assert.True(t, applied)
+	assert.Equal(t, 65, state.Satiety)
+	assert.Equal(t, 50, state.Happiness)
+	assert.Equal(t, int64(2), state.Version)
+	assert.Equal(t, time.Unix(0, 1000).UTC(), state.UpdatedAt)
+}
+
+func TestFeedNotAppliedWithinCooldown(t *testing.T) {
+	t.Parallel()
+
+	client := startFakeRedis(t, map[string]string{
+		"EVALSHA": respArray(
+			respBulk("50"), respBulk("50"), respBulk("1"), respBulk("0"), respInt(0),
+		),
+	})
+
+	now := time.Date(2026, time.March, 5, 0, 0, 0, 0, time.UTC)
+	state, applied, err := NewRedisHotStateStore(client).
+		Feed(context.Background(), testHotState(), now)
+	require.NoError(t, err)
+
+	assert.False(t, applied)
+	assert.Equal(t, 50, state.Satiety)
+}
+
+func TestFeedReplyErrors(t *testing.T) {
+	t.Parallel()
+
+	client := startFakeRedis(t, map[string]string{
+		"EVALSHA": respArray(respBulk("1"), respBulk("2"), respBulk("3"), respBulk("4")),
+	})
+	now := time.Date(2026, time.March, 5, 0, 0, 0, 0, time.UTC)
+
+	state, applied, err := NewRedisHotStateStore(client).
+		Feed(context.Background(), testHotState(), now)
+
+	require.ErrorIs(t, err, errInvalidHotState)
+	assert.False(t, applied)
+	assert.Zero(t, state)
+}
+
 func TestAcknowledgeSucceeds(t *testing.T) {
 	t.Parallel()
 

@@ -1,4 +1,7 @@
 import { z } from 'zod'
-import { credentialsShape } from './credentials.schema'
+import { emailSchema, signInPasswordSchema } from './credentials.schema'
 
-export const SignInSchema = z.object({ ...credentialsShape })
+export const SignInSchema = z.object({
+  email: emailSchema,
+  password: signInPasswordSchema,
+})

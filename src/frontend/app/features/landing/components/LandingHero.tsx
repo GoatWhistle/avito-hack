@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
-import { PetAvatar } from '#/components/pet-avatar'
+import { PetCharacter } from '#/components/pet-avatar'
 import { useSession } from '#/features/auth/session'
 
 export function LandingHero() {
@@ -66,7 +66,7 @@ export function LandingHero() {
       </div>
 
       <div className="relative w-full max-w-[16rem] shrink-0 sm:max-w-[20rem]">
-        <PetAvatar
+        <PetCharacter
           stage="adult"
           satiety={90}
           happiness={95}

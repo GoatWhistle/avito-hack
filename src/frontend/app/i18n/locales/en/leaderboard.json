@@ -39,5 +39,9 @@
     "unauthorized": "Sign in to see the leaderboard",
     "network": "No connection to the server. Check your internet",
     "loadFailed": "Failed to load the leaderboard"
-  }
+  },
+  "myRankShort": "Your rank",
+  "rankValue": "#{{rank}}",
+  "cardStats": "lvl {{level}} · {{xp}} XP · {{streak}} d",
+  "listLabel": "Leaderboard participants list"
 }

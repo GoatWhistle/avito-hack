@@ -2,6 +2,7 @@ package infra
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -45,12 +46,23 @@ type badgeRepository interface {
 	EarnedBy(ctx context.Context, userID uuid.UUID) ([]petdomain.EarnedBadge, error)
 }
 
+type badgeProgressReader interface {
+	Progress(ctx context.Context, userID uuid.UUID) ([]petapp.BadgeStatus, error)
+}
+
 type BadgeAdapter struct {
-	badges badgeRepository
+	badges   badgeRepository
+	progress badgeProgressReader
 }
 
 func NewBadgeAdapter(badges badgeRepository) *BadgeAdapter {
 	return &BadgeAdapter{badges: badges}
+}
+
+func (a *BadgeAdapter) WithProgress(progress badgeProgressReader) *BadgeAdapter {
+	a.progress = progress
+
+	return a
 }
 
 func (a *BadgeAdapter) Earned(ctx context.Context, userID uuid.UUID) ([]app.BadgeView, error) {
@@ -59,6 +71,40 @@ func (a *BadgeAdapter) Earned(ctx context.Context, userID uuid.UUID) ([]app.Badg
 		return nil, err
 	}
 
+	earnedAt := make(map[string]time.Time, len(earned))
+	for _, badge := range earned {
+		earnedAt[badge.ID()] = badge.EarnedAt()
+	}
+
+	if a.progress == nil {
+		return earnedViews(earned), nil
+	}
+
+	statuses, err := a.progress.Progress(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	views := make([]app.BadgeView, 0, len(statuses))
+	for _, status := range statuses {
+		view := app.BadgeView{
+			ID:          status.Badge.ID(),
+			Name:        status.Badge.Name(),
+			Description: status.Badge.Description(),
+			IconURL:     status.Badge.IconURL(),
+			Current:     status.Current,
+			Target:      status.Target,
+		}
+		if at, ok := earnedAt[status.Badge.ID()]; ok {
+			view.EarnedAt = &at
+		}
+		views = append(views, view)
+	}
+
+	return views, nil
+}
+
+func earnedViews(earned []petdomain.EarnedBadge) []app.BadgeView {
 	views := make([]app.BadgeView, 0, len(earned))
 	for _, badge := range earned {
 		earnedAt := badge.EarnedAt()
@@ -71,7 +117,7 @@ func (a *BadgeAdapter) Earned(ctx context.Context, userID uuid.UUID) ([]app.Badg
 		})
 	}
 
-	return views, nil
+	return views
 }
 
 type RewardAdapter struct {

@@ -4,7 +4,9 @@ import ruErrors from './locales/ru/errors.json'
 import ruItems from './locales/ru/items.json'
 import ruLanding from './locales/ru/landing.json'
 import ruLeaderboard from './locales/ru/leaderboard.json'
+import ruOnboarding from './locales/ru/onboarding.json'
 import ruPet from './locales/ru/pet.json'
+import ruQuests from './locales/ru/quests.json'
 import ruRewards from './locales/ru/rewards.json'
 import ruValidation from './locales/ru/validation.json'
 
@@ -14,7 +16,9 @@ import enErrors from './locales/en/errors.json'
 import enItems from './locales/en/items.json'
 import enLanding from './locales/en/landing.json'
 import enLeaderboard from './locales/en/leaderboard.json'
+import enOnboarding from './locales/en/onboarding.json'
 import enPet from './locales/en/pet.json'
+import enQuests from './locales/en/quests.json'
 import enRewards from './locales/en/rewards.json'
 import enValidation from './locales/en/validation.json'
 
@@ -23,9 +27,11 @@ export const namespaces = [
   'auth',
   'pet',
   'rewards',
+  'quests',
   'items',
   'landing',
   'leaderboard',
+  'onboarding',
   'errors',
   'validation',
 ] as const
@@ -46,9 +52,11 @@ export const resources = {
     auth: ruAuth,
     pet: ruPet,
     rewards: ruRewards,
+    quests: ruQuests,
     items: ruItems,
     landing: ruLanding,
     leaderboard: ruLeaderboard,
+    onboarding: ruOnboarding,
     errors: ruErrors,
     validation: ruValidation,
   },
@@ -57,9 +65,11 @@ export const resources = {
     auth: enAuth,
     pet: enPet,
     rewards: enRewards,
+    quests: enQuests,
     items: enItems,
     landing: enLanding,
     leaderboard: enLeaderboard,
+    onboarding: enOnboarding,
     errors: enErrors,
     validation: enValidation,
   },

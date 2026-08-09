@@ -51,8 +51,6 @@ CREATE TABLE xp_events (
 );
 
 CREATE INDEX idx_xp_events_user_created ON xp_events (user_id, created_at DESC);
--- Частичный уникальный индекс: одно начисление на пару (действие, объект).
--- Чек-ины с subject_id IS NULL под ограничение не попадают и могут повторяться.
 CREATE UNIQUE INDEX idx_xp_events_subject ON xp_events (user_id, action, subject_id)
     WHERE subject_id IS NOT NULL;
 

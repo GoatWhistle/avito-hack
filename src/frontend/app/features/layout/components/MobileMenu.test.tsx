@@ -44,10 +44,10 @@ describe('MobileMenu', () => {
   })
 
   it('closes when the backdrop is clicked', async () => {
-    const { container } = renderWithShell(<MobileMenu />)
+    renderWithShell(<MobileMenu />)
     await openMenu()
 
-    const backdrop = container.querySelector('[aria-hidden="true"].fixed')
+    const backdrop = document.body.querySelector('[aria-hidden="true"].fixed')
     expect(backdrop).not.toBeNull()
     await userEvent.click(backdrop as Element)
 

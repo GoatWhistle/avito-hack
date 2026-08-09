@@ -15,6 +15,10 @@ import (
 const (
 	hotStateTTL    = 24 * time.Hour
 	strokeCooldown = time.Second
+	feedCooldown   = 5 * time.Hour
+
+	fieldHappiness = "happiness"
+	fieldSatiety   = "satiety"
 )
 
 type RedisHotStateStore struct {
@@ -39,19 +43,68 @@ func (s *RedisHotStateStore) GetOrInitialize(
 	return hotStateFromValues(initial.UserID, values)
 }
 
+type nudgeRule struct {
+	action      string
+	field       string
+	gain        int
+	cooldown    time.Duration
+	cooldownKey func(uuid.UUID) string
+}
+
 func (s *RedisHotStateStore) Stroke(
 	ctx context.Context,
 	initial app.HotState,
 	now time.Time,
 ) (app.HotState, bool, error) {
-	values, err := strokeHotState.Run(ctx, s.client,
-		[]string{hotKey(initial.UserID), cooldownKey(initial.UserID), dirtyKey()},
+	return s.nudge(ctx, initial, now, nudgeRule{
+		action: "stroke", field: fieldHappiness, gain: domain.StrokeHappinessGain,
+		cooldown: strokeCooldown, cooldownKey: strokeCooldownKey,
+	})
+}
+
+func (s *RedisHotStateStore) Feed(
+	ctx context.Context,
+	initial app.HotState,
+	now time.Time,
+) (app.HotState, bool, error) {
+	return s.nudge(ctx, initial, now, nudgeRule{
+		action: "feed", field: fieldSatiety, gain: domain.FeedSatietyGain,
+		cooldown: feedCooldown, cooldownKey: feedCooldownKey,
+	})
+}
+
+func (s *RedisHotStateStore) FeedAvailableAt(
+	ctx context.Context,
+	userID uuid.UUID,
+	now time.Time,
+) (*time.Time, error) {
+	ttl, err := s.client.TTL(ctx, feedCooldownKey(userID)).Result()
+	if err != nil {
+		return nil, fmt.Errorf("read feed cooldown ttl: %w", err)
+	}
+	if ttl <= 0 {
+		return nil, nil
+	}
+
+	available := now.Add(ttl).UTC()
+
+	return &available, nil
+}
+
+func (s *RedisHotStateStore) nudge(
+	ctx context.Context,
+	initial app.HotState,
+	now time.Time,
+	rule nudgeRule,
+) (app.HotState, bool, error) {
+	values, err := nudgeHotState.Run(ctx, s.client,
+		[]string{hotKey(initial.UserID), rule.cooldownKey(initial.UserID), dirtyKey()},
 		initial.UserID.String(), initial.Happiness, initial.Satiety, initial.Version,
 		initial.UpdatedAt.UnixNano(), now.UnixNano(), int(hotStateTTL.Seconds()),
-		int(strokeCooldown.Seconds()), domain.StrokeHappinessGain, domain.MaxParameterValue,
+		int(rule.cooldown.Seconds()), rule.gain, domain.MaxParameterValue, rule.field,
 	).Slice()
 	if err != nil {
-		return app.HotState{}, false, fmt.Errorf("stroke redis hot state: %w", err)
+		return app.HotState{}, false, fmt.Errorf("%s redis hot state: %w", rule.action, err)
 	}
 	if len(values) < 5 {
 		return app.HotState{}, false, errInvalidHotState

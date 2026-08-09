@@ -46,6 +46,7 @@ func New(opts Options) *Module {
 		UpdateItem:    app.NewUpdateItemHandler(repo, photos, opts.Tx, opts.Clock, bus),
 		ChangeStatus:  app.NewChangeStatusHandler(repo, photos, opts.Tx, opts.Clock, bus),
 		GetItem:       app.NewGetItemHandler(repo),
+		ViewItem:      app.NewViewItemHandler(repo, opts.Clock, bus),
 		ListItems:     app.NewListItemsHandler(read, owners),
 		AddPhoto:      app.NewAddPhotoHandler(repo, photos, storage, opts.Tx, opts.Clock),
 		ListPhotos:    app.NewListPhotosHandler(photos),

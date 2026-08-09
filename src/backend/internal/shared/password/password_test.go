@@ -3,6 +3,7 @@ package password_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -121,4 +122,24 @@ func TestRestoredGarbageHashFailsCompare(t *testing.T) {
 	require.NoError(t, err)
 
 	require.ErrorIs(t, hash.Compare("anything"), password.ErrMismatch)
+}
+
+func TestCompareDecoyCostsComparableTimeToRealCompare(t *testing.T) {
+	t.Parallel()
+
+	hash, err := password.NewHash("correct horse battery")
+	require.NoError(t, err)
+
+	password.CompareDecoy("warmup")
+
+	start := time.Now()
+	require.ErrorIs(t, hash.Compare("wrong password"), password.ErrMismatch)
+	genuine := time.Since(start)
+
+	start = time.Now()
+	password.CompareDecoy("wrong password")
+	decoy := time.Since(start)
+
+	assert.Greaterf(t, decoy*4, genuine,
+		"decoy compare must not be trivially fast: genuine=%s decoy=%s", genuine, decoy)
 }

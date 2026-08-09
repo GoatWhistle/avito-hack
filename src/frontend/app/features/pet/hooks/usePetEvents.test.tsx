@@ -127,15 +127,15 @@ describe('usePetEvents cache updates', () => {
     expect(onEvent).toHaveBeenCalledTimes(1)
   })
 
-  it('stores the pet from pet.updated and pet.hatched', () => {
+  it('stores the pet from pet.updated', () => {
     const client = makeClient()
     setup(client)
 
     emit('pet.updated', makePet({ energy: 12 }))
     expect(client.getQueryData<Pet>(petQueryKey)?.energy).toBe(12)
 
-    emit('pet.hatched', makePet({ stage: 'baby', is_hatched: true }))
-    expect(client.getQueryData<Pet>(petQueryKey)?.is_hatched).toBe(true)
+    emit('pet.updated', makePet({ stage: 'teen', energy: 50 }))
+    expect(client.getQueryData<Pet>(petQueryKey)?.stage).toBe('teen')
   })
 
   it('patches the level on level.up', () => {

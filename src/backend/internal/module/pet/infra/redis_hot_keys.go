@@ -13,10 +13,19 @@ import (
 
 var errInvalidHotState = errors.New("invalid redis hot state response")
 
-func hotKey(userID uuid.UUID) string      { return hotKeyString(userID.String()) }
-func hotKeyString(userID string) string   { return "pet:hot:" + userID }
-func cooldownKey(userID uuid.UUID) string { return "pet:cooldown:stroke:" + userID.String() }
-func dirtyKey() string                    { return "pet:hot:dirty" }
+func hotKey(userID uuid.UUID) string    { return hotKeyString(userID.String()) }
+func hotKeyString(userID string) string { return "pet:hot:" + userID }
+func dirtyKey() string                  { return "pet:hot:dirty" }
+
+func cooldownKey(userID uuid.UUID) string { return strokeCooldownKey(userID) }
+
+func strokeCooldownKey(userID uuid.UUID) string {
+	return "pet:cooldown:stroke:" + userID.String()
+}
+
+func feedCooldownKey(userID uuid.UUID) string {
+	return "pet:cooldown:feed:" + userID.String()
+}
 
 func hotStateFromValues(userID uuid.UUID, values []any) (app.HotState, error) {
 	if len(values) < 4 {

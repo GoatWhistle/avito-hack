@@ -8,16 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui'
-import { PetAvatar } from '#/components/pet-avatar'
+import { PetCharacter } from '#/components/pet-avatar'
 import { useProgress } from '#/features/progress'
-import { HatchCelebration } from './HatchCelebration'
 import { OnboardingChecklist, type ChecklistStep } from './OnboardingChecklist'
 import {
   readOnboardingState,
   writeOnboardingState,
   type OnboardingState,
 } from './onboarding-state'
-import { useHatchEvent } from './useHatchEvent'
 
 interface OnboardingCardProps {
   persistent?: boolean
@@ -32,9 +30,7 @@ export function OnboardingCard({ persistent = false }: OnboardingCardProps) {
     setState(readOnboardingState())
   }, [])
 
-  const alreadyHatched = (progress?.xp ?? 0) > 0 || (progress?.level ?? 1) > 1
-  const liveHatched = useHatchEvent(state !== null && !state.hatched)
-  const hatched = Boolean(state?.hatched) || liveHatched || alreadyHatched
+  const hasPublished = (progress?.xp ?? 0) > 0 || (progress?.level ?? 1) > 1
 
   const update = useCallback((next: Partial<OnboardingState>) => {
     setState((current) => {
@@ -46,20 +42,15 @@ export function OnboardingCard({ persistent = false }: OnboardingCardProps) {
     })
   }, [])
 
-  useEffect(() => {
-    if (liveHatched && state && !state.hatched) update({ hatched: true })
-  }, [liveHatched, state, update])
-
   if (!state) return null
   if (state.dismissed && !persistent) return null
 
-  const showCelebration = hatched && !state.celebrated
   const streak = progress?.currentStreak ?? 0
 
   const steps: ChecklistStep[] = [
-    { key: 'publish', done: hatched, to: '/items/new' },
+    { key: 'publish', done: hasPublished, to: '/items/new' },
     { key: 'comeback', done: streak > 1 },
-    { key: 'meet', done: hatched, to: '/pet' },
+    { key: 'meet', done: hasPublished, to: '/pet' },
   ]
 
   return (
@@ -82,8 +73,8 @@ export function OnboardingCard({ persistent = false }: OnboardingCardProps) {
 
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex shrink-0 justify-center sm:justify-start">
-            <PetAvatar
-              stage={hatched ? 'baby' : 'egg'}
+            <PetCharacter
+              stage="baby"
               satiety={80}
               happiness={80}
               energy={80}
@@ -101,10 +92,6 @@ export function OnboardingCard({ persistent = false }: OnboardingCardProps) {
           </div>
         </CardContent>
       </Card>
-
-      {showCelebration && (
-        <HatchCelebration onClose={() => update({ celebrated: true })} />
-      )}
     </>
   )
 }

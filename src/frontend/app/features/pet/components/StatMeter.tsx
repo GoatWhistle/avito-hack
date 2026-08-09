@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { ReactNode } from 'react'
 import { cn } from '#/lib/utils'
 import type { StatKey, StatTone } from '#/features/pet/lib'
 
@@ -24,9 +25,10 @@ export interface StatMeterProps {
   statKey: StatKey
   value: number
   tone: StatTone
+  action?: ReactNode
 }
 
-export function StatMeter({ statKey, value, tone }: StatMeterProps) {
+export function StatMeter({ statKey, value, tone, action }: StatMeterProps) {
   const { t } = useTranslation('pet')
   const label = t(`stats.${statKey}`)
   const toneLabel = t(`tone.${tone}`)
@@ -69,6 +71,8 @@ export function StatMeter({ statKey, value, tone }: StatMeterProps) {
           {t(`hints.${statKey}.${tone}`)}
         </p>
       )}
+
+      {action}
     </div>
   )
 }

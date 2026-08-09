@@ -1,0 +1,75 @@
+@layer components {
+  @keyframes route-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, var(--route-enter-shift, 8px), 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes panel-fade-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, var(--panel-enter-shift, 4px), 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .route-transition {
+    animation: route-enter var(--duration-normal, 220ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+
+  .panel-transition {
+    animation: panel-fade-in var(--duration-fast, 140ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+
+  .tabs-indicator {
+    position: absolute;
+    top: calc(var(--active-tab-top, 0) * 1px);
+    left: calc(var(--active-tab-left, 0) * 1px);
+    z-index: 0;
+    width: calc(var(--active-tab-width, 0) * 1px);
+    height: calc(var(--active-tab-height, 0) * 1px);
+    border-radius: var(--radius-xl, 0.875rem);
+    background: var(--background);
+    box-shadow: var(--shadow-sm);
+    transition:
+      left var(--duration-normal, 220ms)
+        var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)),
+      top var(--duration-normal, 220ms)
+        var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)),
+      width var(--duration-normal, 220ms)
+        var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)),
+      height var(--duration-normal, 220ms)
+        var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1));
+    pointer-events: none;
+  }
+
+  .dark .tabs-indicator {
+    border: 1px solid
+      color-mix(in oklab, var(--border) 50%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-transition,
+  .panel-transition {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .tabs-indicator {
+    transition: none;
+  }
+}

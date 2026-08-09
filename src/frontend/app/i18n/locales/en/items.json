@@ -33,6 +33,10 @@
     "addPhoto": "Add photo",
     "deletePhoto": "Delete photo"
   },
+  "petHint": {
+    "title": "Why there is a pet here",
+    "body": "What you do on Avito — posting, updating and improving listings — is collected as activity metrics. They feed your pet's progress: it grows, unlocks achievements and brings rewards."
+  },
   "price": "{{value}} ₽",
   "owner": "Seller",
   "ownerActions": "Seller actions",

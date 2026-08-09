@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-#
-# Включает HTTPS после того, как certbot выпустил сертификат.
-#
-#   ./deploy/enable-https.sh ваш-домен
-#
-# Что делает:
-#   1. проверяет, что сертификат для домена действительно существует в томе;
-#   2. генерирует conf.d/ssl.conf из шаблона с подстановкой домена;
-#   3. включает редирект с HTTP на HTTPS (кроме acme-challenge);
-#   4. проверяет конфиг через nginx -t и перечитывает его без даунтайма;
-#   5. при любой ошибке откатывает изменения и оставляет рабочий HTTP.
-#
-# Скрипт идемпотентен: повторный запуск с тем же доменом ничего не ломает.
 
 set -euo pipefail
 
@@ -59,9 +46,6 @@ echo "==> Генерирую $SSL_CONF"
 sed "s/__DOMAIN__/$DOMAIN/g" "$NGINX_DIR/ssl.conf.template" > "$SSL_CONF"
 
 echo "==> Включаю редирект HTTP -> HTTPS"
-# Заменяем include общих локаций в 80-м блоке на редирект.
-# acme-challenge объявлен выше по файлу с префиксом ^~ и продолжает работать:
-# без него автопродление сертификата сломается.
 if grep -q 'return 301 https://\$host\$request_uri;' "$APP_CONF"; then
     echo "редирект уже был включён"
 elif grep -q '^    include /etc/nginx/conf.d/locations.inc;' "$APP_CONF"; then
@@ -85,10 +69,14 @@ echo
 echo "HTTPS включён для $DOMAIN."
 echo
 echo "ОСТАЛОСЬ СДЕЛАТЬ ВРУЧНУЮ — иначе фронтенд не заработает:"
-echo "  1. в .env: VITE_API_URL=https://$DOMAIN и ALLOWED_ORIGINS=https://$DOMAIN"
-echo "  2. пересобрать фронтенд (VITE_* вшиваются в бандл на этапе сборки):"
+echo "  1. в .env: ALLOWED_ORIGINS=https://$DOMAIN (схема https обязательна,"
+echo "     иначе WebSocket закроется сразу после handshake)"
+echo "  2. VITE_API_URL оставить пустым: фронт ходит относительными путями"
+echo "  3. пересобрать фронтенд и бэкенд:"
 echo "     $COMPOSE up -d --build frontend backend"
 echo
 echo "Проверка:"
-echo "  curl -sI https://$DOMAIN | head -1                # 200"
-echo "  curl -sI https://$DOMAIN/api/v1/ws | head -1      # 401/426, не 502"
+echo "  curl -sI https://$DOMAIN | head -1"
+echo "     ожидается 200"
+echo "  curl -sI https://$DOMAIN/api/v1/ws | head -1"
+echo "     ожидается 401 или 426, но не 502"

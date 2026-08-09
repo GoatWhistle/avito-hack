@@ -51,13 +51,13 @@ func (s *Service) AddFavorite(ctx context.Context, userID, itemID uuid.UUID) (Ac
 	})
 }
 
-func (s *Service) AddSearchSubscription(ctx context.Context, userID, searchID uuid.UUID) (ActionResult, error) {
-	return s.limited(ctx, userID, searchID, limitedRule{
-		action: domain.ActionSearchSubscription,
-		limit:  domain.MaxSearchesPerWeek,
-		since:  domain.WeekStart,
+func (s *Service) ViewItem(ctx context.Context, userID, itemID uuid.UUID) (ActionResult, error) {
+	return s.limited(ctx, userID, itemID, limitedRule{
+		action: domain.ActionItemViewed,
+		limit:  domain.MaxItemViewsPerDay,
+		since:  domain.DayStart,
 		award: func(pet *domain.Pet, action domain.LimitedAction) (domain.Progress, error) {
-			return pet.RewardSearchSubscription(action)
+			return pet.RewardItemViewed(action)
 		},
 	})
 }
@@ -115,8 +115,15 @@ func (s *Service) limited(
 			return domain.ErrLimitReached
 		}
 
+		unique, err := s.isUniqueSubject(ctx, AwardCommand{
+			UserID: userID, Action: rule.action, SubjectID: subjectID,
+		})
+		if err != nil {
+			return err
+		}
+
 		progress, err := rule.award(pet, domain.LimitedAction{
-			SubjectID: subjectID, Unique: true, RewardedCount: count, Now: now,
+			SubjectID: subjectID, Unique: unique, RewardedCount: count, Now: now,
 		})
 		if err != nil {
 			return err

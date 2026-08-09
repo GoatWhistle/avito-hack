@@ -15,12 +15,15 @@ func TestNewPet(t *testing.T) {
 	now := time.Date(2026, time.August, 3, 12, 0, 0, 0, time.UTC)
 	pet := New(uuid.New(), now)
 
-	assert.Equal(t, StageEgg, pet.Stage())
+	assert.Equal(t, StageBaby, pet.Stage())
 	assert.Equal(t, 1, pet.Level())
 	assert.Equal(t, 5, pet.NextLevelXP())
 	assert.Equal(t, 70, pet.Satiety())
 	assert.Equal(t, 70, pet.Happiness())
 	assert.Equal(t, now, pet.LastDecayTime())
+	assert.True(t, pet.IsHatched())
+	require.NotNil(t, pet.HatchedAt())
+	assert.Equal(t, now, *pet.HatchedAt())
 }
 
 func TestPetRaisesHappinessAndClampsIt(t *testing.T) {

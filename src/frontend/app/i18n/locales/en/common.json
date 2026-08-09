@@ -1,7 +1,9 @@
 {
   "app": {
     "name": "Avito Tamagotchi",
-    "tagline": "Care for your pet and earn rewards"
+    "tagline": "Care for your pet and earn rewards",
+    "metaTitle": "Avito Tamagotchi — your pet grows with your activity",
+    "metaDescription": "Gamified Avito: post listings, sell and show up daily — your pet grows alongside your activity and brings rewards."
   },
   "nav": {
     "pet": "Pet",

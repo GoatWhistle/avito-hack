@@ -5,7 +5,10 @@ export {
   PromoCodeCard,
   RewardCard,
   RewardCatalog,
+  RewardCodeReveal,
+  RewardLevelCard,
   RewardsScreen,
+  RewardTrack,
 } from './components'
 export {
   rewardKeys,
@@ -13,14 +16,19 @@ export {
   useBadges,
   useMyRewards,
   useRewardCatalog,
+  useRewardTrack,
 } from './hooks'
 export {
   activationErrorKey,
+  buildRewardTrack,
   conditionLabel,
   groupRewards,
+  isActivatable,
   loadErrorKey,
   progressRatio,
   toRewardProgress,
+  trackStateOf,
+  trackSummary,
 } from './lib'
 export type {
   BadgeItem,
@@ -28,4 +36,6 @@ export type {
   RewardCatalogItem,
   RewardGroup,
   RewardProgress,
+  RewardTrackEntry,
+  RewardTrackState,
 } from './types'

@@ -40,7 +40,7 @@ func TestMountUploadsServesVisibleItem(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "binary", rec.Body.String())
-	assert.Equal(t, "private, max-age=86400", rec.Header().Get("Cache-Control"))
+	assert.Equal(t, "private, max-age=86400, must-revalidate", rec.Header().Get("Cache-Control"))
 	assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
 }
 

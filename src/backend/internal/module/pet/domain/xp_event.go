@@ -10,15 +10,10 @@ import (
 type Action string
 
 const (
-	ActionDailyCheckIn       Action = "daily_checkin"
-	ActionFavorite           Action = "favorite"
-	ActionSearchSubscription Action = "search_subscription"
-	ActionNewDialogue        Action = "new_dialogue"
-	ActionQuickReply         Action = "quick_reply"
-	ActionQualityListing     Action = "quality_listing"
-	ActionTextReview         Action = "text_review"
-	ActionPhotoReview        Action = "photo_review"
-	ActionVideoReview        Action = "video_review"
+	ActionDailyCheckIn   Action = "daily_checkin"
+	ActionFavorite       Action = "favorite"
+	ActionQualityListing Action = "quality_listing"
+	ActionItemViewed     Action = "item_viewed"
 )
 
 type XPEvent struct {

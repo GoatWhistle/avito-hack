@@ -28,6 +28,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
       -o /out/migrate ./cmd/migrate
 
 RUN mkdir -p /out/uploads
+COPY assets/demo-photos/ /out/uploads/
 
 FROM golang:1.25-alpine AS dev
 

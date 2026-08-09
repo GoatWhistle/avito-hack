@@ -4,7 +4,6 @@ set -euo pipefail
 LIMIT=250
 FAILED=0
 
-# Only source trees are checked: the Go backend and the React Router frontend in app/.
 FILES=$(git ls-files \
   'src/backend/**/*.go' \
   'src/frontend/app/**/*.ts' 'src/frontend/app/**/*.tsx' \
@@ -19,7 +18,6 @@ if [ -z "$FILES" ]; then
   exit 1
 fi
 
-# One awk pass over all files instead of a wc per file: much faster on Windows.
 OVERSIZED=$(printf '%s\n' "$FILES" | tr '\n' '\0' | xargs -0 awk -v limit="$LIMIT" '
   FNR == 1 && NR > 1 && lines > limit { print prev "\t" lines }
   FNR == 1 { prev = FILENAME }

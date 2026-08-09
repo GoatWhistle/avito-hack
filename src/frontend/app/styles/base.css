@@ -4,12 +4,15 @@
   }
 
   html {
-    @apply font-sans antialiased;
+    @apply bg-background font-sans antialiased;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
-    @apply bg-background text-foreground text-base;
+    @apply text-foreground text-base;
+    position: relative;
+    overflow-x: hidden;
   }
 
   h1 {

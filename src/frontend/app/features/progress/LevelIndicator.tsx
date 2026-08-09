@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router'
 import { Flame } from 'lucide-react'
 import { cn } from '#/lib/utils'
 import { useProgress } from './useProgress'
@@ -11,7 +12,11 @@ interface LevelIndicatorProps {
 
 export function LevelIndicator({ className, compact }: LevelIndicatorProps) {
   const { t } = useTranslation('common')
+  const { pathname } = useLocation()
   const { data, isPending, isError } = useProgress()
+  const isPetDashboard = pathname === '/pet' || pathname.startsWith('/pet/')
+
+  if (isPetDashboard) return null
 
   if (isPending) {
     return (

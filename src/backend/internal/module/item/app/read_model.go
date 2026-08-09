@@ -21,11 +21,12 @@ type ListItem struct {
 }
 
 type ListFilter struct {
-	Status  domain.Status
-	OwnerID uuid.UUID
-	Search  string
-	Cursor  pagination.Cursor
-	Limit   int
+	Status   domain.Status
+	OwnerID  uuid.UUID
+	ViewerID uuid.UUID
+	Search   string
+	Cursor   pagination.Cursor
+	Limit    int
 }
 
 type ReadModel interface {

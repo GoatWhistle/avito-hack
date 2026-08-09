@@ -19,7 +19,7 @@ func TestHotScriptsAreLoadable(t *testing.T) {
 		source string
 	}{
 		"initialize":  {hash: initializeHotState.Hash(), source: "HMGET"},
-		"stroke":      {hash: strokeHotState.Hash(), source: "HINCRBY"},
+		"nudge":       {hash: nudgeHotState.Hash(), source: "HINCRBY"},
 		"acknowledge": {hash: acknowledgeHotState.Hash(), source: "SREM"},
 	}
 
@@ -39,6 +39,19 @@ func TestHotStateConstants(t *testing.T) {
 	assert.Equal(t, 86400, int(hotStateTTL.Seconds()))
 	assert.Equal(t, 1, int(strokeCooldown.Seconds()))
 	assert.Equal(t, 5*time.Minute, petCacheTTL)
+	assert.Equal(t, 5*time.Hour, feedCooldown)
+	assert.Equal(t, 18000, int(feedCooldown.Seconds()))
+}
+
+func TestNudgeCooldownKeysAreDistinct(t *testing.T) {
+	t.Parallel()
+
+	stroke := strokeCooldownKey(hotTestUser)
+	feed := feedCooldownKey(hotTestUser)
+
+	assert.Equal(t, "pet:cooldown:stroke:"+hotTestUser.String(), stroke)
+	assert.Equal(t, "pet:cooldown:feed:"+hotTestUser.String(), feed)
+	assert.NotEqual(t, stroke, feed)
 }
 
 func TestHotArgs(t *testing.T) {

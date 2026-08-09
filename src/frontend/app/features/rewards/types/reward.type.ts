@@ -48,6 +48,8 @@ export const badgeItemSchema = z.object({
   description: z.string(),
   icon_url: z.string().optional().default(''),
   earned_at: z.string().optional().default(''),
+  progress_current: z.number().optional().default(0),
+  progress_target: z.number().optional().default(0),
 })
 
 export const listResponseSchema = <T extends z.ZodTypeAny>(item: T) =>

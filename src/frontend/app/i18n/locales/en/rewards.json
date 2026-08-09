@@ -3,9 +3,30 @@
   "subtitle": "Come back daily — rewards unlock as you go",
   "loading": "Loading rewards",
   "tabs": {
-    "catalog": "Catalog",
+    "track": "Reward track",
     "mine": "My rewards",
     "badges": "Badges"
+  },
+  "track": {
+    "title": "Level track",
+    "counter": "{{claimed}} of {{total}} claimed",
+    "progressLabel": "Reward track progress: {{percent}}%",
+    "levelLabel": "Unlocks at level {{level}}",
+    "lockedHint": "Grow your pet to level {{level}} to claim",
+    "progressShort": "{{current}}/{{target}} {{unit}}",
+    "unit": {
+      "level": "lvl",
+      "streak": "d.",
+      "achievement": "ach.",
+      "generic": "steps"
+    }
+  },
+  "trackStatus": {
+    "locked": "Locked",
+    "available": "Ready to claim",
+    "granted": "Yours",
+    "activated": "Activated",
+    "expired": "Expired"
   },
   "groups": {
     "close": "Almost there",
@@ -77,7 +98,19 @@
     "earnedAt": "Earned {{date}}",
     "locked": "Not earned yet",
     "empty": "No badges yet",
-    "emptyHint": "Badges unlock through achievements and long streaks"
+    "emptyHint": "Badges unlock through achievements and long streaks",
+    "progressLabel": "Achievements collected: {{percent}}%",
+    "allEarned": "Every achievement collected — you are a legend",
+    "remaining_one": "{{count}} left to complete the collection",
+    "remaining_other": "{{count}} left to complete the collection",
+    "groups": {
+      "earned": "Earned",
+      "locked": "In progress"
+    },
+    "progress": "{{current}} of {{target}}",
+    "progressMeter": "{{name}}: {{current}} of {{target}}",
+    "remainingToEarn_one": "{{count}} more to earn this badge",
+    "remainingToEarn_other": "{{count}} more to earn this badge"
   },
   "errors": {
     "alreadyActivated": "This promo code has already been activated",

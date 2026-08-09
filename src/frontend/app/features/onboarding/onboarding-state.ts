@@ -2,14 +2,14 @@ export const onboardingStorageKey = 'avito-hack.onboarding'
 
 export interface OnboardingState {
   dismissed: boolean
-  hatched: boolean
-  celebrated: boolean
+  tourSeen: boolean
+  tourRequested: boolean
 }
 
 export const defaultOnboardingState: OnboardingState = {
   dismissed: false,
-  hatched: false,
-  celebrated: false,
+  tourSeen: false,
+  tourRequested: false,
 }
 
 export const readOnboardingState = (): OnboardingState => {
@@ -41,4 +41,31 @@ export const writeOnboardingState = (state: OnboardingState) => {
   } catch {
     return
   }
+}
+
+const patchOnboardingState = (patch: Partial<OnboardingState>) => {
+  writeOnboardingState({ ...readOnboardingState(), ...patch })
+}
+
+export const requestPlatformTour = () => {
+  const state = readOnboardingState()
+  if (state.tourSeen) {
+    if (state.tourRequested) {
+      writeOnboardingState({ ...state, tourRequested: false })
+    }
+
+    return
+  }
+
+  writeOnboardingState({ ...state, tourRequested: true })
+}
+
+export const completePlatformTour = () => {
+  patchOnboardingState({ tourSeen: true, tourRequested: false })
+}
+
+export const shouldShowPlatformTour = (): boolean => {
+  const state = readOnboardingState()
+
+  return state.tourRequested && !state.tourSeen
 }

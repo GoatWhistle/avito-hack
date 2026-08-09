@@ -48,7 +48,38 @@ describe('UserMenu', () => {
     const menu = screen.getByRole('menu')
     expect(menu).toHaveTextContent('Иван Иванов')
     expect(menu).toHaveTextContent('demo@example.com')
-    expect(screen.getAllByRole('menuitem')).toHaveLength(2)
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4)
+  })
+
+  it('offers the account shortcuts moved out of the header', async () => {
+    renderWithShell(<UserMenu />, authed())
+    await openMenu()
+
+    expect(
+      screen.getByRole('menuitem', { name: /Мои объявления/ }),
+    ).toHaveAttribute('href', '/items/mine')
+    expect(screen.getByRole('menuitem', { name: /Избранное/ })).toHaveAttribute(
+      'href',
+      '/favorites',
+    )
+  })
+
+  it('closes after an account shortcut is chosen', async () => {
+    renderWithShell(<UserMenu />, authed())
+    await openMenu()
+
+    await userEvent.click(screen.getByRole('menuitem', { name: /Избранное/ }))
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('opens from the keyboard', async () => {
+    renderWithShell(<UserMenu />, authed())
+
+    await userEvent.tab()
+    await userEvent.keyboard('{Enter}')
+
+    expect(screen.getByRole('menu')).toBeInTheDocument()
   })
 
   it('toggles closed when the trigger is pressed again', async () => {
@@ -96,12 +127,19 @@ describe('UserMenu', () => {
     expect(screen.getByRole('menu')).toBeInTheDocument()
   })
 
+  it('reaches the standalone profile page from the account menu', async () => {
+    renderWithShell(<UserMenu />, authed())
+    await openMenu()
+
+    const profile = screen.getByRole('menuitem', { name: /Профиль/ })
+    expect(profile).toHaveAttribute('href', '/profile')
+  })
+
   it('closes when the profile link is chosen', async () => {
     renderWithShell(<UserMenu />, authed())
     await openMenu()
 
-    const [profile] = screen.getAllByRole('menuitem')
-    await userEvent.click(profile)
+    await userEvent.click(screen.getByRole('menuitem', { name: /Профиль/ }))
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
@@ -113,8 +151,7 @@ describe('UserMenu', () => {
     })
     await openMenu()
 
-    const [, signOutItem] = screen.getAllByRole('menuitem')
-    await userEvent.click(signOutItem)
+    await userEvent.click(screen.getByRole('menuitem', { name: /Выйти/ }))
 
     expect(signOut).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()

@@ -22,6 +22,14 @@ type HotStateStore interface {
 	Acknowledge(ctx context.Context, state HotState) error
 }
 
+type HotFeeder interface {
+	Feed(ctx context.Context, initial HotState, now time.Time) (HotState, bool, error)
+}
+
+type FeedCooldownReader interface {
+	FeedAvailableAt(ctx context.Context, userID uuid.UUID, now time.Time) (*time.Time, error)
+}
+
 type HotStateWriter interface {
 	SaveHotStates(ctx context.Context, states []HotState) error
 }

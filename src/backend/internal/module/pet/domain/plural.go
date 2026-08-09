@@ -39,10 +39,5 @@ var (
 		many: "качественных объявлений",
 	}
 	favoritesForms = pluralForms{one: "товар", few: "товара", many: "товаров"}
-	searchesForms  = pluralForms{one: "поиск", few: "поиска", many: "поисков"}
-	dialoguesForms = pluralForms{one: "диалог", few: "диалога", many: "диалогов"}
-	reviewsForms   = pluralForms{one: "отзыв", few: "отзыва", many: "отзывов"}
-	photoRevForms  = pluralForms{one: "отзыв с фото", few: "отзыва с фото", many: "отзывов с фото"}
-	videoRevForms  = pluralForms{one: "видеоотзыв", few: "видеоотзыва", many: "видеоотзывов"}
-	timesForms     = pluralForms{one: "раз", few: "раза", many: "раз"}
+	itemsForms     = pluralForms{one: "объявление", few: "объявления", many: "объявлений"}
 )

@@ -6,6 +6,8 @@ type BadgeResponse struct {
 	Description string `json:"description"`
 	Icon        string `json:"icon_url"`
 	EarnedAt    string `json:"earned_at,omitempty"`
+	Current     int    `json:"progress_current"`
+	Target      int    `json:"progress_target"`
 }
 
 type RaccoonProfileResponse struct {

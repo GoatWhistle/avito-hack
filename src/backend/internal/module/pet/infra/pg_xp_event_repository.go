@@ -42,6 +42,36 @@ func (r *PgXPEventRepository) Append(ctx context.Context, event domain.XPEvent) 
 	return nil
 }
 
+func (r *PgXPEventRepository) CountByAction(
+	ctx context.Context,
+	userID uuid.UUID,
+) (map[domain.Action]int, error) {
+	const query = `SELECT action, count(*) FROM xp_events WHERE user_id = $1 GROUP BY action`
+
+	rows, err := postgres.QuerierFrom(ctx, r.pool).Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("count xp events by action: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make(map[domain.Action]int)
+	for rows.Next() {
+		var (
+			action string
+			count  int
+		)
+		if err := rows.Scan(&action, &count); err != nil {
+			return nil, fmt.Errorf("scan xp action count: %w", err)
+		}
+		counts[domain.Action(action)] = count
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate xp action counts: %w", err)
+	}
+
+	return counts, nil
+}
+
 func (r *PgXPEventRepository) CountSince(
 	ctx context.Context,
 	userID uuid.UUID,

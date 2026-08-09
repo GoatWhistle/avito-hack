@@ -107,6 +107,9 @@ type memoryReadModel struct {
 func (m *memoryReadModel) List(_ context.Context, f app.ListFilter) ([]app.ListItem, error) {
 	filtered := make([]app.ListItem, 0, len(m.rows))
 	for _, row := range m.rows {
+		if !row.Status.IsPublic() && row.OwnerID != f.ViewerID {
+			continue
+		}
 		if f.Status != "" && row.Status != f.Status {
 			continue
 		}

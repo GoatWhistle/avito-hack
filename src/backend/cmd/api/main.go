@@ -20,17 +20,13 @@ import (
 // @title Avito Hack API
 // @version 1.0.0
 // @description REST и WebSocket API маркетплейса с геймификацией (питомец-енот)
-//
 // @contact.name Avito Hack Team
 // @license.name MIT
-//
 // @servers.url http://localhost:8080
 // @servers.description Локальная разработка
-//
 // @securityDefinitions.apikey bearerAuth
 // @in header
 // @name Authorization
-//
 // @tag.name Auth
 // @tag.name Users
 // @tag.name Items

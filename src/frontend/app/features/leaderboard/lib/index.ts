@@ -2,6 +2,7 @@ export {
   NEIGHBOR_RADIUS,
   chaseTarget,
   isMe,
+  initialsOf,
   medalOf,
   mergePages,
   neighborsOf,

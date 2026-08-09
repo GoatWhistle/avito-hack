@@ -13,7 +13,6 @@ CREATE TABLE items (
     deleted_at   timestamptz
 );
 
--- Частичные индексы под основные выборки каталога: лента, кабинет владельца, модерация.
 CREATE INDEX idx_items_published_created ON items (created_at DESC, id DESC)
     WHERE status = 'published' AND deleted_at IS NULL;
 

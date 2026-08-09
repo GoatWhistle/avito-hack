@@ -4,6 +4,10 @@ import { Link, useNavigate } from 'react-router'
 import { LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '#/components/ui'
 import { useSession } from '#/features/auth/session'
+import { accountNavItems } from '#/features/layout/nav-items'
+
+const menuItemClass =
+  'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm no-underline hover:bg-muted focus-visible:bg-muted'
 
 const initialsOf = (fullName: string) =>
   fullName
@@ -75,11 +79,24 @@ export function UserMenu() {
             </p>
           </div>
           <div className="my-1 h-px bg-border" />
+          {accountNavItems.map((item) => (
+            <Link
+              key={item.key}
+              to={item.to}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={menuItemClass}
+            >
+              <item.icon className="size-4" aria-hidden="true" />
+              {t(`common:nav.${item.key}`)}
+            </Link>
+          ))}
+          <div className="my-1 h-px bg-border" />
           <Link
             to="/profile"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm no-underline hover:bg-muted focus-visible:bg-muted"
+            className={menuItemClass}
           >
             <UserIcon className="size-4" aria-hidden="true" />
             {t('common:nav.profile')}

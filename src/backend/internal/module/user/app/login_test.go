@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -58,6 +59,54 @@ func TestLoginUserRejectsBadCredentials(t *testing.T) {
 			require.ErrorIs(t, err, domainerr.ErrUnauthorized)
 		})
 	}
+}
+
+func medianLoginDuration(t *testing.T, handler *app.LoginUserHandler, cmd app.LoginUserCommand) time.Duration {
+	t.Helper()
+
+	const samples = 5
+
+	durations := make([]time.Duration, 0, samples)
+
+	for range samples {
+		start := time.Now()
+		_, err := handler.Handle(t.Context(), cmd)
+		durations = append(durations, time.Since(start))
+
+		require.ErrorIs(t, err, domain.ErrInvalidCredential)
+	}
+
+	slices.Sort(durations)
+
+	return durations[samples/2]
+}
+
+func TestLoginUserDoesNotLeakAccountExistenceByTiming(t *testing.T) {
+	t.Parallel()
+
+	repo := newStubUsers()
+	seedUser(t, repo, "timing@example.com")
+	handler := app.NewLoginUserHandler(repo, stubTokens{token: "jwt"})
+
+	_, _ = handler.Handle(t.Context(), app.LoginUserCommand{Email: "warmup@example.com", Password: testPassword})
+
+	existing := medianLoginDuration(t, handler, app.LoginUserCommand{
+		Email: "timing@example.com", Password: "wrong password",
+	})
+	missing := medianLoginDuration(t, handler, app.LoginUserCommand{
+		Email: "ghost@example.com", Password: "wrong password",
+	})
+
+	require.Positive(t, existing)
+	require.Positive(t, missing)
+
+	ratio := float64(existing) / float64(missing)
+	if ratio < 1 {
+		ratio = 1 / ratio
+	}
+
+	assert.Lessf(t, ratio, 5.0,
+		"login timing must not reveal account existence: existing=%s missing=%s", existing, missing)
 }
 
 func TestLoginUserPropagatesInfraErrors(t *testing.T) {

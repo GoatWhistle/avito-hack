@@ -75,6 +75,17 @@ func TestRedisHotStateStoreUnreachable(t *testing.T) {
 		assert.Zero(t, state)
 	})
 
+	t.Run("feed", func(t *testing.T) {
+		t.Parallel()
+
+		now := time.Date(2026, time.March, 1, 1, 0, 0, 0, time.UTC)
+		state, applied, err := store.Feed(ctx, initial, now)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "feed redis hot state")
+		assert.False(t, applied)
+		assert.Zero(t, state)
+	})
+
 	t.Run("dirty batch", func(t *testing.T) {
 		t.Parallel()
 

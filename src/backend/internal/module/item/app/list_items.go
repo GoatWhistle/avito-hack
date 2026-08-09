@@ -7,12 +7,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/avito-hack/backend/internal/module/item/domain"
+	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/pagination"
 )
 
 type ListItemsQuery struct {
 	Status  domain.Status
 	OwnerID uuid.UUID
+	Viewer  auth.Actor
 	Search  string
 	Cursor  pagination.Cursor
 	Limit   int
@@ -36,11 +38,12 @@ func (h *ListItemsHandler) Handle(ctx context.Context, q ListItemsQuery) (ListIt
 	limit := pagination.NormalizeLimit(q.Limit)
 
 	rows, err := h.read.List(ctx, ListFilter{
-		Status:  q.Status,
-		OwnerID: q.OwnerID,
-		Search:  q.Search,
-		Cursor:  q.Cursor,
-		Limit:   limit + 1,
+		Status:   q.Status,
+		OwnerID:  q.OwnerID,
+		ViewerID: q.Viewer.ID,
+		Search:   q.Search,
+		Cursor:   q.Cursor,
+		Limit:    limit + 1,
 	})
 	if err != nil {
 		return ListItemsResult{}, fmt.Errorf("list items: %w", err)

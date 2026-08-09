@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { PetAvatar, type PetEmotion } from '#/components/pet-avatar'
+import { PetCharacter, type PetEmotion } from '#/components/pet-avatar'
 import { buildAvatarLabels } from '#/features/pet/lib'
 import type { Pet } from '#/features/pet/types'
 import type { XpToast } from '#/features/pet/hooks'
@@ -46,7 +46,7 @@ export function PetHero({
 
       <div className="relative w-full max-w-[18rem]">
         <XpToasts toasts={xpToasts} />
-        <PetAvatar
+        <PetCharacter
           stage={pet.stage}
           emotion={emotion}
           satiety={pet.satiety}

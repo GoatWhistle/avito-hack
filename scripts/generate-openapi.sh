@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Regenerates docs/openapi.yaml from swaggo annotations in the Go sources.
-# Runs inside the golang image; see the api-spec target in the Makefile.
-
 SWAG_VERSION="${SWAG_VERSION:-v2.0.0-rc5}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="${BACKEND_DIR:-$REPO_ROOT/src/backend}"
@@ -20,8 +17,6 @@ SWAG="$(go env GOPATH)/bin/swag"
 
 cd "$BACKEND_DIR"
 
-# swag logs a "TypeSpecDef is nil" line per stdlib type it cannot resolve and a
-# warning per non-decimal const; neither affects the output, so both are hidden.
 "$SWAG" init \
   --v3.1 \
   -g cmd/api/main.go \
