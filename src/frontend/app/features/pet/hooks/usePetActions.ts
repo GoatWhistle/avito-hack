@@ -6,6 +6,7 @@ import { petQueryKey } from './usePetQuery'
 
 const STROKE_HAPPINESS_STEP = 5
 const FEED_SATIETY_STEP = 15
+const FEED_COOLDOWN_MS = 5 * 60 * 60 * 1_000
 
 export const useStrokeMutation = () => {
   const queryClient = useQueryClient()
@@ -51,6 +52,9 @@ export const useFeedMutation = () => {
         queryClient.setQueryData<Pet>(petQueryKey, {
           ...previous,
           satiety: clampPercent(previous.satiety + FEED_SATIETY_STEP),
+          feed_available_at:
+            previous.feed_available_at ??
+            new Date(Date.now() + FEED_COOLDOWN_MS).toISOString(),
         })
       }
 

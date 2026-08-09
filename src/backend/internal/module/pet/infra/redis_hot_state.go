@@ -78,7 +78,7 @@ func (s *RedisHotStateStore) FeedAvailableAt(
 	userID uuid.UUID,
 	now time.Time,
 ) (*time.Time, error) {
-	ttl, err := s.client.TTL(ctx, feedCooldownKey(userID)).Result()
+	ttl, err := s.client.PTTL(ctx, feedCooldownKey(userID)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("read feed cooldown ttl: %w", err)
 	}
@@ -86,7 +86,7 @@ func (s *RedisHotStateStore) FeedAvailableAt(
 		return nil, nil
 	}
 
-	available := now.Add(ttl).UTC()
+	available := now.Add(ttl).UTC().Truncate(time.Second)
 
 	return &available, nil
 }

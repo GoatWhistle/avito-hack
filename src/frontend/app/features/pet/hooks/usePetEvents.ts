@@ -56,7 +56,11 @@ const applyEventToCache = (queryClient: Cache, event: PetEvent) => {
   switch (event.type) {
     case 'pet.state':
     case 'pet.updated':
-      queryClient.setQueryData<Pet>(petQueryKey, event.payload)
+      queryClient.setQueryData<Pet>(petQueryKey, (current) => ({
+        ...event.payload,
+        feed_available_at:
+          event.payload.feed_available_at ?? current?.feed_available_at ?? null,
+      }))
 
       return
     case 'level.up':
