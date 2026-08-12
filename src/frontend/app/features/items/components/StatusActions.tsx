@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { availableActions } from '#/features/items/lib'
 import { useChangeItemStatus } from '#/features/items/hooks'
 import type { ItemStatus, ItemStatusAction } from '#/features/items/types'
@@ -13,7 +14,7 @@ interface StatusActionsProps {
 }
 
 const variantFor = (action: ItemStatusAction) => {
-  if (action === 'sell' || action === 'publish') return 'default' as const
+  if (action === 'sell' || action === 'submit') return 'default' as const
   if (action === 'archive') return 'destructive' as const
 
   return 'outline' as const
@@ -26,7 +27,7 @@ export function StatusActions({
   onSold,
   onError,
 }: StatusActionsProps) {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
   const { mutate, isPending, variables } = useChangeItemStatus(itemId)
 
   const actions = availableActions(status)
@@ -48,9 +49,7 @@ export function StatusActions({
                 if (action === 'sell') onSold?.()
               },
               onError: (error) => {
-                onError?.(
-                  error instanceof Error ? error.message : String(error),
-                )
+                onError?.(translateApiError(error, t) ?? t('errors:unknown'))
               },
             })
           }

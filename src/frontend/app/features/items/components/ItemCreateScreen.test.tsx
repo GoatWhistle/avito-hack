@@ -47,6 +47,10 @@ describe('ItemCreateScreen', () => {
         title: 'Велосипед Stels',
         description: 'Отличное состояние',
         price: 1_250_000,
+        attributes: {
+          category: 'electronics',
+          condition: 'used',
+        },
       })
     })
   })
@@ -68,14 +72,14 @@ describe('ItemCreateScreen', () => {
   })
 
   it('reports a failed creation without losing input', async () => {
-    create.mockRejectedValue(new Error('Сервер недоступен'))
+    create.mockRejectedValue(new Error('raw backend failure'))
     renderWithProviders(<ItemCreateScreen />)
 
     await fill('Велосипед Stels', 'Отличное состояние', '100')
     await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Сервер недоступен',
+      'Неизвестная ошибка',
     )
     expect(screen.getByLabelText('Название')).toHaveValue('Велосипед Stels')
   })

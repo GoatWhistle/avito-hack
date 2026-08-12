@@ -1,9 +1,9 @@
 package pagination
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,11 +15,18 @@ const (
 	MaxLimit     = 100
 )
 
+const (
+	cursorMinParts = 2
+	cursorMaxParts = 4
+)
+
 var ErrInvalidCursor = errors.New("invalid cursor")
 
 type Cursor struct {
-	CreatedAt time.Time
-	ID        uuid.UUID
+	CreatedAt   time.Time
+	ID          uuid.UUID
+	PriceKopeks int64
+	Sort        string
 }
 
 func (c Cursor) IsZero() bool {
@@ -31,9 +38,11 @@ func (c Cursor) Encode() string {
 		return ""
 	}
 
-	raw := fmt.Sprintf("%s|%s", c.CreatedAt.UTC().Format(time.RFC3339Nano), c.ID)
+	raw := fmt.Sprintf("%s|%s|%s|%s",
+		c.CreatedAt.UTC().Format(time.RFC3339Nano), c.ID,
+		strconv.FormatInt(c.PriceKopeks, 10), c.Sort)
 
-	return base64.RawURLEncoding.EncodeToString([]byte(raw))
+	return sealCursor(raw)
 }
 
 func DecodeCursor(raw string) (Cursor, error) {
@@ -41,13 +50,13 @@ func DecodeCursor(raw string) (Cursor, error) {
 		return Cursor{}, nil
 	}
 
-	decoded, err := base64.RawURLEncoding.DecodeString(raw)
+	decoded, err := openCursor(raw)
 	if err != nil {
 		return Cursor{}, ErrInvalidCursor
 	}
 
-	parts := strings.SplitN(string(decoded), "|", 2)
-	if len(parts) != 2 {
+	parts := strings.Split(decoded, "|")
+	if len(parts) < cursorMinParts || len(parts) > cursorMaxParts {
 		return Cursor{}, ErrInvalidCursor
 	}
 
@@ -61,7 +70,22 @@ func DecodeCursor(raw string) (Cursor, error) {
 		return Cursor{}, ErrInvalidCursor
 	}
 
-	return Cursor{CreatedAt: createdAt, ID: id}, nil
+	cursor := Cursor{CreatedAt: createdAt, ID: id}
+
+	if len(parts) > cursorMinParts {
+		price, err := strconv.ParseInt(parts[2], 10, 64)
+		if err != nil {
+			return Cursor{}, ErrInvalidCursor
+		}
+
+		cursor.PriceKopeks = price
+	}
+
+	if len(parts) == cursorMaxParts {
+		cursor.Sort = parts[3]
+	}
+
+	return cursor, nil
 }
 
 func NormalizeLimit(limit int) int {

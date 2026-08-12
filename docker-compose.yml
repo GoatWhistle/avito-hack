@@ -110,6 +110,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL:-1h}
       REWARD_HMAC_SECRET: ${REWARD_HMAC_SECRET}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-pretty}
       LOG_COLOR: ${LOG_COLOR:-always}
@@ -124,6 +125,8 @@ services:
       KAFKA_TIMEOUT: ${KAFKA_TIMEOUT:-3s}
       PET_FLUSH_INTERVAL: ${PET_FLUSH_INTERVAL:-15s}
       PET_FLUSH_BATCH_SIZE: ${PET_FLUSH_BATCH_SIZE:-100}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.0-flash-exp:free}
     user: "65532:65532"
     volumes:
       - uploads:/data/uploads

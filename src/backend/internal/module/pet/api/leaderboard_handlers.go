@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/avito-hack/backend/internal/module/pet/app"
+	"github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/shared/apierr"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
@@ -114,7 +115,7 @@ func toLeaderboardResponse(result app.LeaderboardResult) leaderboardResponse {
 
 	for _, entry := range result.Items {
 		items = append(items, leaderboardEntryResponse{
-			UserID:     entry.UserID.String(),
+			UserID:     domain.PublicToken(entry.UserID),
 			Name:       entry.Name,
 			Level:      entry.Level,
 			XP:         entry.XP,

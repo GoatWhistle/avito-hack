@@ -18,7 +18,6 @@ type StatusAction string
 
 const (
 	ActionSubmit  StatusAction = "submit"
-	ActionPublish StatusAction = "publish"
 	ActionSell    StatusAction = "sell"
 	ActionArchive StatusAction = "archive"
 	ActionRestore StatusAction = "restore"
@@ -31,11 +30,12 @@ type ChangeStatusCommand struct {
 }
 
 type ChangeStatusHandler struct {
-	items  domain.Repository
-	photos domain.PhotoRepository
-	tx     TxManager
-	clock  Clock
-	bus    events.Publisher
+	items    domain.Repository
+	photos   domain.PhotoRepository
+	tx       TxManager
+	clock    Clock
+	bus      events.Publisher
+	moderate *ModerateItemHandler
 }
 
 func NewChangeStatusHandler(
@@ -44,8 +44,9 @@ func NewChangeStatusHandler(
 	tx TxManager,
 	clock Clock,
 	bus events.Publisher,
+	moderate *ModerateItemHandler,
 ) *ChangeStatusHandler {
-	return &ChangeStatusHandler{items: items, photos: photos, tx: tx, clock: clock, bus: bus}
+	return &ChangeStatusHandler{items: items, photos: photos, tx: tx, clock: clock, bus: bus, moderate: moderate}
 }
 
 func (h *ChangeStatusHandler) Handle(ctx context.Context, cmd ChangeStatusCommand) (*domain.Item, error) {
@@ -86,6 +87,12 @@ func (h *ChangeStatusHandler) Handle(ctx context.Context, cmd ChangeStatusComman
 		return nil, err
 	}
 
+	if cmd.Action == ActionSubmit && h.moderate != nil {
+		if moderated := h.moderate.HandleOrLog(ctx, updated.ID(), cmd.Actor.ID); moderated != nil {
+			updated = moderated
+		}
+	}
+
 	return updated, nil
 }
 
@@ -97,8 +104,6 @@ func (h *ChangeStatusHandler) statusEvent(
 	var eventType events.Type
 
 	switch action {
-	case ActionPublish:
-		eventType = events.TypeItemPublished
 	case ActionSell:
 		eventType = events.TypeItemSold
 	case ActionSubmit, ActionArchive, ActionRestore:
@@ -163,8 +168,6 @@ func applyAction(item *domain.Item, action StatusAction, now time.Time) error {
 	switch action {
 	case ActionSubmit:
 		return item.SubmitForModeration(now)
-	case ActionPublish:
-		return item.Publish(now)
 	case ActionSell:
 		return item.MarkSold(now)
 	case ActionArchive:

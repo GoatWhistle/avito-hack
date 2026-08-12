@@ -122,7 +122,7 @@ func TestFactCollectorDetectsBrokenStreak(t *testing.T) {
 func TestFactCollectorCollectsListingIssues(t *testing.T) {
 	t.Parallel()
 
-	itemID := uuid.New()
+	itemID := "abc123def456"
 	collector := app.NewFactCollector(app.FactCollectorDeps{
 		Pets: &stubSummaryPets{pet: petWith(2, 6, 0, nil)},
 		Activity: &stubActivity{

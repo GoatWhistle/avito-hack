@@ -6,6 +6,7 @@ import {
   fallbackLocale,
   isLocale,
   namespaces,
+  ogLocales,
   resources,
   supportedLocales,
   type Locale,
@@ -21,7 +22,14 @@ export const readStoredLocale = (): Locale => {
 
 const applyDocumentLocale = (locale: Locale) => {
   if (typeof document === 'undefined') return
+
   document.documentElement.lang = locale
+
+  const { app } = resources[locale].common
+  document.title = app.metaTitle
+
+  const ogLocale = document.querySelector('meta[property="og:locale"]')
+  if (ogLocale) ogLocale.setAttribute('content', ogLocales[locale])
 }
 
 export const persistLocale = (locale: Locale) => {

@@ -21,7 +21,9 @@
   "page": {
     "notFoundTitle": "Page not found",
     "notFoundHint": "Check the address or go back home",
+    "notFoundLostLabel": "Noti got lost",
     "crashTitle": "Something broke",
-    "crashHint": "Try reloading the page"
+    "crashHint": "Try reloading the page",
+    "goHome": "Go home"
   }
 }

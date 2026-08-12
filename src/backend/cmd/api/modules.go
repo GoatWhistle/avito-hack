@@ -123,17 +123,19 @@ func buildModules(
 	petModule.Service.WithAccountGate(newAccountGate(userModule.Repository))
 
 	itemModule := item.New(item.Options{
-		Pool:          pool,
-		Tx:            tx,
-		Clock:         appClock,
-		Bus:           publisher,
-		Validator:     validator,
-		Authenticate:  authenticate,
-		OptionalAuth:  optionalAuth,
-		MaxBodyBytes:  cfg.MaxBodyBytes,
-		MaxPhotoBytes: cfg.MaxPhotoBytes,
-		UploadDir:     cfg.UploadDir,
-		UploadURL:     cfg.UploadURL,
+		Pool:             pool,
+		Tx:               tx,
+		Clock:            appClock,
+		Bus:              publisher,
+		Validator:        validator,
+		Authenticate:     authenticate,
+		OptionalAuth:     optionalAuth,
+		MaxBodyBytes:     cfg.MaxBodyBytes,
+		MaxPhotoBytes:    cfg.MaxPhotoBytes,
+		UploadDir:        cfg.UploadDir,
+		UploadURL:        cfg.UploadURL,
+		OpenRouterAPIKey: cfg.OpenRouterAPIKey,
+		OpenRouterModel:  cfg.OpenRouterModel,
 	})
 
 	favoriteModule := favorite.New(favorite.Options{
@@ -141,6 +143,7 @@ func buildModules(
 		Tx:           tx,
 		Clock:        appClock,
 		Bus:          publisher,
+		Items:        itemModule.Repository,
 		Authenticate: authenticate,
 	})
 

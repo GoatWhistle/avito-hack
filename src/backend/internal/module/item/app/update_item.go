@@ -24,11 +24,12 @@ type UpdateItemCommand struct {
 }
 
 type UpdateItemHandler struct {
-	items  domain.Repository
-	photos domain.PhotoRepository
-	tx     TxManager
-	clock  Clock
-	bus    events.Publisher
+	items    domain.Repository
+	photos   domain.PhotoRepository
+	tx       TxManager
+	clock    Clock
+	bus      events.Publisher
+	moderate *ModerateItemHandler
 }
 
 func NewUpdateItemHandler(
@@ -37,8 +38,9 @@ func NewUpdateItemHandler(
 	tx TxManager,
 	clock Clock,
 	bus events.Publisher,
+	moderate *ModerateItemHandler,
 ) *UpdateItemHandler {
-	return &UpdateItemHandler{items: items, photos: photos, tx: tx, clock: clock, bus: bus}
+	return &UpdateItemHandler{items: items, photos: photos, tx: tx, clock: clock, bus: bus, moderate: moderate}
 }
 
 func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (*domain.Item, error) {
@@ -95,6 +97,12 @@ func (h *UpdateItemHandler) Handle(ctx context.Context, cmd UpdateItemCommand) (
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if updated.Status() == domain.StatusModeration && h.moderate != nil {
+		if moderated := h.moderate.HandleOrLog(ctx, updated.ID(), cmd.ActorID); moderated != nil {
+			updated = moderated
+		}
 	}
 
 	return updated, nil

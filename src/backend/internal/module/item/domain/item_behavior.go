@@ -7,7 +7,14 @@ import (
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
+func errSeedImmutable() error {
+	return domainerr.NewConflict("platform-provided listing cannot be modified")
+}
+
 func (i *Item) SubmitForModeration(now time.Time) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
 	if !i.status.CanTransitionTo(StatusModeration) {
 		return errTransition(i.status, StatusModeration)
 	}
@@ -33,6 +40,9 @@ func (i *Item) Publish(now time.Time) error {
 }
 
 func (i *Item) MarkSold(now time.Time) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
 	if !i.status.CanTransitionTo(StatusSold) {
 		return errTransition(i.status, StatusSold)
 	}
@@ -44,6 +54,9 @@ func (i *Item) MarkSold(now time.Time) error {
 }
 
 func (i *Item) Archive(now time.Time) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
 	if !i.status.CanTransitionTo(StatusArchived) {
 		return errTransition(i.status, StatusArchived)
 	}
@@ -55,6 +68,9 @@ func (i *Item) Archive(now time.Time) error {
 }
 
 func (i *Item) Restore(now time.Time) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
 	if !i.status.CanTransitionTo(StatusDraft) {
 		return errTransition(i.status, StatusDraft)
 	}
@@ -73,7 +89,25 @@ type UpdateItemParams struct {
 	Now         time.Time
 }
 
+func (i *Item) RequireReverification(now time.Time) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
+
+	i.aiVerified = false
+	if i.status == StatusPublished {
+		i.status = StatusModeration
+	}
+	i.updatedAt = now
+
+	return nil
+}
+
 func (i *Item) Update(p UpdateItemParams) error {
+	if i.isSeed {
+		return errSeedImmutable()
+	}
+
 	if i.status == StatusArchived {
 		return domainerr.NewConflict("archived item cannot be modified")
 	}
@@ -82,10 +116,15 @@ func (i *Item) Update(p UpdateItemParams) error {
 		return domainerr.NewConflict("sold item cannot be modified")
 	}
 
+	contentChanged := false
+
 	if p.Title != nil {
 		title, err := normalizeTitle(*p.Title)
 		if err != nil {
 			return err
+		}
+		if title != i.title {
+			contentChanged = true
 		}
 		i.title = title
 	}
@@ -94,6 +133,9 @@ func (i *Item) Update(p UpdateItemParams) error {
 		description, err := normalizeDescription(*p.Description)
 		if err != nil {
 			return err
+		}
+		if description != i.description {
+			contentChanged = true
 		}
 		i.description = description
 	}
@@ -104,6 +146,13 @@ func (i *Item) Update(p UpdateItemParams) error {
 
 	if p.Attributes != nil {
 		i.attributes = p.Attributes.Clone()
+	}
+
+	if contentChanged {
+		i.aiVerified = false
+		if i.status == StatusPublished {
+			i.status = StatusModeration
+		}
 	}
 
 	i.updatedAt = p.Now

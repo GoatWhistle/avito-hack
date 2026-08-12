@@ -23,11 +23,11 @@ func NewPgPhotoRepository(pool *pgxpool.Pool) *PgPhotoRepository {
 
 func (r *PgPhotoRepository) Add(ctx context.Context, photo *domain.Photo) error {
 	const query = `
-		INSERT INTO item_photos (id, item_id, url, position, created_at)
-		VALUES ($1, $2, $3, $4, $5)`
+		INSERT INTO item_photos (id, display_id, item_id, url, position, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query,
-		photo.ID(), photo.ItemID(), photo.URL(), photo.Position(), photo.CreatedAt())
+		photo.ID(), photo.DisplayID(), photo.ItemID(), photo.URL(), photo.Position(), photo.CreatedAt())
 	if err != nil {
 		return fmt.Errorf("insert photo: %w", err)
 	}
@@ -37,7 +37,7 @@ func (r *PgPhotoRepository) Add(ctx context.Context, photo *domain.Photo) error 
 
 func (r *PgPhotoRepository) ByItemID(ctx context.Context, itemID uuid.UUID) ([]*domain.Photo, error) {
 	const query = `
-		SELECT id, item_id, url, position, created_at
+		SELECT id, display_id, item_id, url, position, created_at
 		FROM item_photos
 		WHERE item_id = $1
 		ORDER BY position`
@@ -57,11 +57,11 @@ func (r *PgPhotoRepository) CountByItemID(ctx context.Context, itemID uuid.UUID)
 	return count, nil
 }
 
-func (r *PgPhotoRepository) DeleteByID(ctx context.Context, itemID, photoID uuid.UUID) (string, error) {
-	const query = `DELETE FROM item_photos WHERE item_id = $1 AND id = $2 RETURNING url`
+func (r *PgPhotoRepository) DeleteByDisplayID(ctx context.Context, itemID uuid.UUID, displayID string) (string, error) {
+	const query = `DELETE FROM item_photos WHERE item_id = $1 AND display_id = $2 RETURNING url`
 
 	var url string
-	err := postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, itemID, photoID).Scan(&url)
+	err := postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, itemID, displayID).Scan(&url)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", domain.ErrPhotoNotFound
 	}

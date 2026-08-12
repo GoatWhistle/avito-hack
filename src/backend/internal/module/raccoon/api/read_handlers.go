@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	petdomain "github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/module/raccoon/app"
 	"github.com/avito-hack/backend/internal/shared/apierr"
 	"github.com/avito-hack/backend/internal/shared/auth"
@@ -18,8 +19,7 @@ import (
 // @Description
 // @Description Данные берутся из того же сервиса, что и `GET /api/v1/pet`, но поля
 // @Description названы иначе — `xp_to_next_level` вместо `next_level_xp`,
-// @Description `current_streak` вместо `streak_days`. Все идентификаторы здесь
-// @Description отдаются строками, хотя по сути являются UUID.
+// @Description `current_streak` вместо `streak_days`.
 // @Tags Raccoon
 // @Produce json
 // @Success 200 {object} RaccoonProfileResponse "Профиль енота"
@@ -44,8 +44,8 @@ func (h *Handlers) GetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.OK(w, RaccoonProfileResponse{
-		ID:            profile.ID.String(),
-		UserID:        profile.UserID.String(),
+		ID:            petdomain.PublicToken(profile.ID),
+		UserID:        petdomain.PublicToken(profile.UserID),
 		Name:          profile.Name,
 		Level:         profile.Level,
 		XP:            profile.XP,

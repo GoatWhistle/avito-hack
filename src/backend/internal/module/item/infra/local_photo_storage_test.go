@@ -134,10 +134,10 @@ func TestLocalPhotoStorageDeleteWrapsUnexpectedError(t *testing.T) {
 func TestLocalPhotoStorageURL(t *testing.T) {
 	t.Parallel()
 
-	itemID := uuid.New()
+	displayID := "abc123def456"
 	storage := infra.NewLocalPhotoStorage(t.TempDir(), "/media/photos")
 
-	assert.Equal(t, "/media/photos/"+itemID.String()+"/a.jpg", storage.URL(itemID, "a.jpg"))
+	assert.Equal(t, "/media/photos/"+displayID+"/a.jpg", storage.URL(displayID, "a.jpg"))
 }
 
 func TestLocalPhotoStorageDeleteRemovesExistingFile(t *testing.T) {

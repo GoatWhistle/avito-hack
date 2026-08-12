@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-hack/backend/internal/module/pet/api"
+	"github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/shared/ws"
 )
 
@@ -52,7 +53,8 @@ func TestNotifierPetUpdatedBroadcastsPetPayload(t *testing.T) {
 
 	payload := payloadOf(t, hub.last())
 	assert.Equal(t, "Enot", payload["name"])
-	assert.Equal(t, userID.String(), payload["user_id"])
+	assert.Equal(t, domain.PublicToken(userID), payload["user_id"])
+	assert.NotEqual(t, userID.String(), payload["user_id"])
 }
 
 func TestNotifierPetHatchedBroadcastsPetPayload(t *testing.T) {

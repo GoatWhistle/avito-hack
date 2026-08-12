@@ -3,8 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/avito-hack/backend/internal/module/user/domain"
 )
 
@@ -24,7 +22,7 @@ type updateProfileRequest struct {
 }
 
 type userResponse struct {
-	ID        uuid.UUID `json:"id"`
+	ID        string    `json:"id"`
 	Email     string    `json:"email"`
 	FullName  string    `json:"full_name"`
 	Role      string    `json:"role"`
@@ -38,7 +36,7 @@ type sessionResponse struct {
 
 func toUserResponse(u *domain.User) userResponse {
 	return userResponse{
-		ID:        u.ID(),
+		ID:        u.DisplayID(),
 		Email:     u.Email().String(),
 		FullName:  u.FullName(),
 		Role:      string(u.Role()),

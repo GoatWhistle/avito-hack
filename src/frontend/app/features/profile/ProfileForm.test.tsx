@@ -67,11 +67,11 @@ describe('ProfileForm', () => {
     expect(updateProfile).not.toHaveBeenCalled()
   })
 
-  it('surfaces a server error message', async () => {
+  it('surfaces a translated server error message', async () => {
     updateProfile.mockRejectedValue(
       new ApiError({
         kind: 'validation_error',
-        message: 'Имя слишком длинное',
+        message: 'full name is too long',
         status: 422,
       }),
     )
@@ -82,6 +82,8 @@ describe('ProfileForm', () => {
     await userEvent.type(screen.getByLabelText('Имя и фамилия'), 'ы')
     await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
 
-    expect(await screen.findByText('Имя слишком длинное')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Проверьте введённые данные'),
+    ).toBeInTheDocument()
   })
 })

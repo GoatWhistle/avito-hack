@@ -52,20 +52,24 @@ describe('ItemEditScreen', () => {
         title: 'Новый заголовок',
         description: 'Отличное состояние',
         price: 1_250_000,
+        attributes: {
+          category: 'electronics',
+          condition: 'used',
+        },
       })
     })
     expect(await screen.findByText('Сохранено')).toBeInTheDocument()
   })
 
   it('reports a failed save', async () => {
-    update.mockRejectedValue(new Error('Сервер недоступен'))
+    update.mockRejectedValue(new Error('raw backend failure'))
     renderWithProviders(<ItemEditScreen itemId="item-1" />)
 
     await screen.findByLabelText('Название')
     await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Сервер недоступен',
+      'Неизвестная ошибка',
     )
   })
 
@@ -75,10 +79,12 @@ describe('ItemEditScreen', () => {
     expect(await screen.findByLabelText('Добавить фото')).toBeEnabled()
     expect(screen.getByText('Действия продавца')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Опубликовать' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Отправить на модерацию' }),
+    )
 
     await waitFor(() => {
-      expect(changeStatus).toHaveBeenCalledWith('item-1', 'publish')
+      expect(changeStatus).toHaveBeenCalledWith('item-1', 'submit')
     })
   })
 

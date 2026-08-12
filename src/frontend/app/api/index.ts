@@ -16,3 +16,5 @@ export {
 } from './token-store'
 export type { SessionEndReason } from './token-store'
 export type * from './generated'
+export { translateApiError } from './translate-error'
+export type { TranslateFn } from './translate-error'

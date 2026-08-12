@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,10 +14,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/avito-hack/backend/internal/config"
+	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/middleware"
 )
 
@@ -30,7 +34,7 @@ type ModuleRegistrar interface {
 	RegisterRoutes(r chi.Router)
 }
 
-type uploadGuard func(ctx context.Context, itemID uuid.UUID) (bool, error)
+type uploadGuard func(ctx context.Context, displayID string) (uuid.UUID, bool, error)
 
 type RouterDeps struct {
 	Config    config.Config
@@ -51,12 +55,33 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	r.Get("/healthz", healthHandler)
 	r.Get("/readyz", readyHandler(deps.Pool))
-	r.Handle("/metrics", promhttp.Handler())
+
+	r.Group(func(metricsRoute chi.Router) {
+		if deps.Config.RateLimitEnabled {
+			metricsRoute.Use(middleware.RateLimit(middleware.RateLimitConfig{
+				Rate:       deps.Config.RateLimitRPS,
+				Burst:      deps.Config.RateLimitBurst,
+				TrustProxy: deps.Config.RateLimitTrustProxy,
+			}))
+		}
+		metricsRoute.Use(metricsAuth(deps.Config.MetricsToken))
+		metricsRoute.Handle("/metrics", promhttp.Handler())
+	})
 
 	mountUploads(r, deps.Config.UploadURL, deps.Config.UploadDir, newUploadGuard(deps.Pool))
 
 	r.Route("/api/v1", func(v1 chi.Router) {
-		v1.Handle("/ws", deps.WebSocket)
+		v1.Group(func(ws chi.Router) {
+			if deps.Config.RateLimitEnabled {
+				ws.Use(middleware.RateLimit(middleware.RateLimitConfig{
+					Rate:       deps.Config.RateLimitRPS,
+					Burst:      deps.Config.RateLimitBurst,
+					TrustProxy: deps.Config.RateLimitTrustProxy,
+				}))
+			}
+			ws.Handle("/ws", deps.WebSocket)
+		})
+
 		v1.Group(func(api chi.Router) {
 			api.Use(chimw.Compress(compressionLevel))
 
@@ -75,6 +100,24 @@ func NewRouter(deps RouterDeps) http.Handler {
 	})
 
 	return r
+}
+
+func metricsAuth(token string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		if token == "" {
+			return next
+		}
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if subtleCompare(r.Header.Get("Authorization"), "Bearer "+token) {
+				next.ServeHTTP(w, r)
+
+				return
+			}
+
+			http.NotFound(w, r)
+		})
+	}
 }
 
 func rateLimiters(cfg config.Config) []func(http.Handler) http.Handler {
@@ -122,14 +165,14 @@ func mountUploads(r chi.Router, publicURL, dir string, guard uploadGuard) {
 	fileServer := http.StripPrefix(prefix, http.FileServer(http.Dir(dir)))
 
 	r.Get(prefix+"/*", func(w http.ResponseWriter, req *http.Request) {
-		itemID, ok := uploadItemID(strings.TrimPrefix(req.URL.Path, prefix))
+		displayID, name, ok := uploadPathParams(strings.TrimPrefix(req.URL.Path, prefix))
 		if !ok {
 			http.NotFound(w, req)
 
 			return
 		}
 
-		visible, err := guard(req.Context(), itemID)
+		itemID, visible, err := guard(req.Context(), displayID)
 		if err != nil {
 			writeStatus(w, http.StatusServiceUnavailable, `{"status":"unavailable"}`)
 
@@ -144,42 +187,46 @@ func mountUploads(r chi.Router, publicURL, dir string, guard uploadGuard) {
 
 		w.Header().Set("Cache-Control", "private, max-age=86400, must-revalidate")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		fileServer.ServeHTTP(w, req)
+
+		rewritten := req.Clone(req.Context())
+		rewritten.URL.Path = prefix + "/" + itemID.String() + "/" + name
+		fileServer.ServeHTTP(w, rewritten)
 	})
 }
 
-func uploadItemID(rest string) (uuid.UUID, bool) {
+func uploadPathParams(rest string) (string, string, bool) {
 	parts := strings.Split(strings.Trim(path.Clean(rest), "/"), "/")
 	if len(parts) != uploadPathParts {
-		return uuid.Nil, false
+		return "", "", false
 	}
 
-	id, err := uuid.Parse(parts[0])
-	if err != nil {
-		return uuid.Nil, false
+	if !domain.IsValidDisplayID(parts[0]) {
+		return "", "", false
 	}
 
-	return id, true
+	return parts[0], parts[1], true
 }
 
 func newUploadGuard(pool *pgxpool.Pool) uploadGuard {
 	if pool == nil {
-		return func(context.Context, uuid.UUID) (bool, error) { return true, nil }
+		return func(context.Context, string) (uuid.UUID, bool, error) { return uuid.Nil, false, nil }
 	}
 
-	return func(ctx context.Context, itemID uuid.UUID) (bool, error) {
+	return func(ctx context.Context, displayID string) (uuid.UUID, bool, error) {
 		const query = `
-			SELECT EXISTS (
-				SELECT 1 FROM items
-				WHERE id = $1 AND deleted_at IS NULL AND status IN ('published', 'sold')
-			)`
+			SELECT id FROM items
+			WHERE display_id = $1 AND deleted_at IS NULL AND status IN ('published', 'sold')`
 
-		var visible bool
-		if err := pool.QueryRow(ctx, query, itemID).Scan(&visible); err != nil {
-			return false, fmt.Errorf("check item visibility: %w", err)
+		var itemID uuid.UUID
+		err := pool.QueryRow(ctx, query, displayID).Scan(&itemID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, false, nil
+		}
+		if err != nil {
+			return uuid.Nil, false, fmt.Errorf("check item visibility: %w", err)
 		}
 
-		return visible, nil
+		return itemID, true, nil
 	}
 }
 
@@ -206,6 +253,10 @@ func readyHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		writeStatus(w, http.StatusOK, `{"status":"ready"}`)
 	}
+}
+
+func subtleCompare(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func writeStatus(w http.ResponseWriter, status int, body string) {

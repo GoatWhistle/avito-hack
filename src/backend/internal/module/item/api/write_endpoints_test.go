@@ -36,7 +36,7 @@ func TestCreateItemEndpoint(t *testing.T) {
 	assert.Equal(t, "Mountain bike", decoded["title"])
 	assert.Equal(t, "draft", decoded["status"])
 	assert.InDelta(t, float64(150000), decoded["price"], 0.1)
-	assert.Equal(t, actor.ID.String(), decoded["owner_id"])
+	assert.NotContains(t, decoded["owner_id"], actor.ID.String())
 	assert.Len(t, f.items.items, 1)
 }
 
@@ -84,7 +84,7 @@ func TestUpdateItemEndpoint(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.do(t, http.MethodPatch, "/items/"+item.ID().String(), `{"title":"Updated bike","price":99}`)
+	rec := f.do(t, http.MethodPatch, "/items/"+item.DisplayID(), `{"title":"Updated bike","price":99}`)
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
@@ -99,12 +99,12 @@ func TestUpdateItemEndpointErrors(t *testing.T) {
 	owner := userActor()
 	stranger := userActor()
 
-	t.Run("malformed id", func(t *testing.T) {
+	t.Run("unknown id", func(t *testing.T) {
 		t.Parallel()
 
 		f := newFixture(t, &owner)
 
-		assert.Equal(t, http.StatusBadRequest, f.do(t, http.MethodPatch, "/items/abc", `{"title":"New"}`).Code)
+		assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodPatch, "/items/abc", `{"title":"New"}`).Code)
 	})
 
 	t.Run("unknown item", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestUpdateItemEndpointErrors(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
 		assert.Equal(t, http.StatusForbidden,
-			f.do(t, http.MethodPatch, "/items/"+item.ID().String(), `{"title":"Hijack"}`).Code)
+			f.do(t, http.MethodPatch, "/items/"+item.DisplayID(), `{"title":"Hijack"}`).Code)
 	})
 
 	t.Run("invalid payload", func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestUpdateItemEndpointErrors(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
 		assert.Equal(t, http.StatusBadRequest,
-			f.do(t, http.MethodPatch, "/items/"+item.ID().String(), `{"title":"ab"}`).Code)
+			f.do(t, http.MethodPatch, "/items/"+item.DisplayID(), `{"title":"ab"}`).Code)
 	})
 
 	t.Run("requires auth", func(t *testing.T) {
@@ -158,13 +158,12 @@ func TestChangeStatusEndpoint(t *testing.T) {
 		wantCode int
 		wantTo   string
 	}{
-		{name: "publish draft", from: domain.StatusDraft, action: "publish", wantCode: 200, wantTo: "published"},
 		{name: "submit draft", from: domain.StatusDraft, action: "submit", wantCode: 200, wantTo: "moderation"},
 		{name: "sell published", from: domain.StatusPublished, action: "sell", wantCode: 200, wantTo: "sold"},
 		{name: "archive published", from: domain.StatusPublished, action: "archive", wantCode: 200, wantTo: "archived"},
 		{name: "restore archived", from: domain.StatusArchived, action: "restore", wantCode: 200, wantTo: "draft"},
 		{name: "sell draft is a conflict", from: domain.StatusDraft, action: "sell", wantCode: 409},
-		{name: "publish sold is a conflict", from: domain.StatusSold, action: "publish", wantCode: 409},
+		{name: "submit sold is a conflict", from: domain.StatusSold, action: "submit", wantCode: 409},
 	}
 
 	for _, tc := range tests {
@@ -174,7 +173,7 @@ func TestChangeStatusEndpoint(t *testing.T) {
 			f := newFixture(t, &actor)
 			item := f.seedItem(t, actor.ID, tc.from)
 
-			rec := f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"`+tc.action+`"}`)
+			rec := f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"`+tc.action+`"}`)
 
 			require.Equal(t, tc.wantCode, rec.Code)
 
@@ -192,7 +191,7 @@ func TestChangeStatusEndpointRejectsUnknownAction(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"delete"}`)
+	rec := f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"delete"}`)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }

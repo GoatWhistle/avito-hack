@@ -44,7 +44,7 @@ export function ErrorState({
       <p className="text-sm">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          {t('actions.retry', { defaultValue: 'Повторить' })}
+          {t('actions.retry')}
         </Button>
       )}
     </div>

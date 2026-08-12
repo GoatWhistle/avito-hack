@@ -49,6 +49,11 @@ export type Locale = (typeof supportedLocales)[number]
 
 export const fallbackLocale = 'ru' satisfies Locale
 
+export const ogLocales: Record<Locale, string> = {
+  ru: 'ru_RU',
+  en: 'en_US',
+}
+
 export const resources = {
   ru: {
     common: ruCommon,

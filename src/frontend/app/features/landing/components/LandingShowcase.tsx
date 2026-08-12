@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { ItemCard } from '#/features/items/components/ItemCard'
 import {
   ErrorState,
@@ -10,7 +11,7 @@ import { flattenPages, useItemsQuery } from '#/features/items/hooks'
 import { SHOWCASE_LIMIT } from '../lib'
 
 export function LandingShowcase() {
-  const { t } = useTranslation('landing')
+  const { t } = useTranslation(['landing', 'errors'])
   const query = useItemsQuery({ status: 'published', search: '' })
   const items = flattenPages(query.data?.pages).slice(0, SHOWCASE_LIMIT)
 
@@ -46,9 +47,7 @@ export function LandingShowcase() {
 
       {query.isError && (
         <ErrorState
-          message={
-            query.error instanceof Error ? query.error.message : undefined
-          }
+          message={translateApiError(query.error, t)}
           onRetry={() => void query.refetch()}
         />
       )}

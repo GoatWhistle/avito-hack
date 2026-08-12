@@ -31,7 +31,8 @@ func TestPetGetReturnsState(t *testing.T) {
 	assert.Equal(t, "Enot", body["name"])
 	assert.InDelta(t, 3, body["level"], 0)
 	assert.Equal(t, true, body["is_hatched"])
-	assert.Equal(t, userID.String(), body["user_id"])
+	assert.Equal(t, domain.PublicToken(userID), body["user_id"])
+	assert.NotEqual(t, userID.String(), body["user_id"])
 }
 
 func TestPetEndpointsRequireActor(t *testing.T) {

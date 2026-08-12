@@ -13,13 +13,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/avito-hack/backend/internal/module/item/domain"
 )
 
-func uploadsRouter(t *testing.T, guard uploadGuard) (chi.Router, uuid.UUID) {
+func uploadsRouter(t *testing.T, itemID uuid.UUID, guard uploadGuard) chi.Router {
 	t.Helper()
 
 	dir := t.TempDir()
-	itemID := uuid.New()
 
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, itemID.String()), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, itemID.String(), "photo.jpg"), []byte("binary"), 0o600))
@@ -27,16 +28,21 @@ func uploadsRouter(t *testing.T, guard uploadGuard) (chi.Router, uuid.UUID) {
 	r := chi.NewRouter()
 	mountUploads(r, "/uploads", dir, guard)
 
-	return r, itemID
+	return r
 }
 
 func TestMountUploadsServesVisibleItem(t *testing.T) {
 	t.Parallel()
 
-	r, itemID := uploadsRouter(t, func(context.Context, uuid.UUID) (bool, error) { return true, nil })
+	itemID := uuid.New()
+	displayID := domain.NewDisplayID()
+
+	r := uploadsRouter(t, itemID, func(context.Context, string) (uuid.UUID, bool, error) {
+		return itemID, true, nil
+	})
 
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+itemID.String()+"/photo.jpg", http.NoBody))
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+displayID+"/photo.jpg", http.NoBody))
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "binary", rec.Body.String())
@@ -47,50 +53,72 @@ func TestMountUploadsServesVisibleItem(t *testing.T) {
 func TestMountUploadsHidesInvisibleItem(t *testing.T) {
 	t.Parallel()
 
-	var asked uuid.UUID
+	var asked string
 
-	r, itemID := uploadsRouter(t, func(_ context.Context, id uuid.UUID) (bool, error) {
+	displayID := domain.NewDisplayID()
+
+	r := uploadsRouter(t, uuid.New(), func(_ context.Context, id string) (uuid.UUID, bool, error) {
 		asked = id
 
-		return false, nil
+		return uuid.Nil, false, nil
 	})
 
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+itemID.String()+"/photo.jpg", http.NoBody))
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+displayID+"/photo.jpg", http.NoBody))
 
 	require.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Equal(t, itemID, asked)
+	assert.Equal(t, displayID, asked)
 	assert.NotContains(t, rec.Body.String(), "binary")
 }
 
 func TestMountUploadsGuardFailureIsNotLeaking(t *testing.T) {
 	t.Parallel()
 
-	r, itemID := uploadsRouter(t, func(context.Context, uuid.UUID) (bool, error) {
-		return false, errors.New("database is down")
+	displayID := domain.NewDisplayID()
+
+	r := uploadsRouter(t, uuid.New(), func(context.Context, string) (uuid.UUID, bool, error) {
+		return uuid.Nil, false, errors.New("database is down")
+	})
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+displayID+"/photo.jpg", http.NoBody))
+
+	require.Equal(t, http.StatusServiceUnavailable, rec.Code)
+	assert.NotContains(t, rec.Body.String(), "database is down")
+}
+
+func TestMountUploadsDoesNotExposeItemUUID(t *testing.T) {
+	t.Parallel()
+
+	itemID := uuid.New()
+
+	r := uploadsRouter(t, itemID, func(context.Context, string) (uuid.UUID, bool, error) {
+		return itemID, true, nil
 	})
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/"+itemID.String()+"/photo.jpg", http.NoBody))
 
-	require.Equal(t, http.StatusServiceUnavailable, rec.Code)
-	assert.NotContains(t, rec.Body.String(), "database is down")
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.NotContains(t, rec.Body.String(), "binary")
 }
 
 func TestMountUploadsRejectsMalformedPaths(t *testing.T) {
 	t.Parallel()
 
 	called := 0
-	r, _ := uploadsRouter(t, func(context.Context, uuid.UUID) (bool, error) {
+	displayID := domain.NewDisplayID()
+
+	r := uploadsRouter(t, uuid.New(), func(context.Context, string) (uuid.UUID, bool, error) {
 		called++
 
-		return true, nil
+		return uuid.New(), true, nil
 	})
 
 	paths := []string{
-		"/uploads/not-a-uuid/photo.jpg",
+		"/uploads/not-a-display-id/photo.jpg",
 		"/uploads/photo.jpg",
-		"/uploads/" + uuid.New().String() + "/nested/photo.jpg",
+		"/uploads/" + displayID + "/nested/photo.jpg",
 	}
 
 	for _, p := range paths {
@@ -103,11 +131,12 @@ func TestMountUploadsRejectsMalformedPaths(t *testing.T) {
 	assert.Equal(t, 0, called)
 }
 
-func TestUploadGuardWithoutPoolAllows(t *testing.T) {
+func TestUploadGuardWithoutPoolDenies(t *testing.T) {
 	t.Parallel()
 
-	visible, err := newUploadGuard(nil)(context.Background(), uuid.New())
+	itemID, visible, err := newUploadGuard(nil)(context.Background(), domain.NewDisplayID())
 
 	require.NoError(t, err)
-	assert.True(t, visible)
+	assert.False(t, visible)
+	assert.Equal(t, uuid.Nil, itemID)
 }

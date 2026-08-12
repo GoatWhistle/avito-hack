@@ -19,6 +19,7 @@ var mapperTime = time.Date(2023, 9, 20, 14, 0, 0, 0, time.UTC)
 func validItemRow(id uuid.UUID) itemRow {
 	return itemRow{
 		id:          id,
+		displayID:   domain.NewDisplayID(),
 		ownerID:     uuid.New(),
 		title:       "Bike",
 		description: "A fast bike",
@@ -90,8 +91,8 @@ func TestScanItemReadsAllColumns(t *testing.T) {
 
 	id, ownerID := uuid.New(), uuid.New()
 	row := pgtest.Row{Values: []any{
-		id, ownerID, "Chair", "Wooden", int64(500),
-		string(domain.StatusDraft), []byte(`{}`), mapperTime, mapperTime,
+		id, domain.NewDisplayID(), ownerID, "Chair", "Wooden", int64(500),
+		string(domain.StatusDraft), []byte(`{}`), mapperTime, mapperTime, false, false,
 	}}
 
 	item, err := scanItem(row)
@@ -116,12 +117,13 @@ func TestScanPhotoReadsRow(t *testing.T) {
 	t.Parallel()
 
 	id, itemID := uuid.New(), uuid.New()
-	row := pgtest.Row{Values: []any{id, itemID, "http://cdn/p.jpg", 2, mapperTime}}
+	row := pgtest.Row{Values: []any{id, "abc123def456", itemID, "http://cdn/p.jpg", 2, mapperTime}}
 
 	photo, err := scanPhoto(row)
 
 	require.NoError(t, err)
 	assert.Equal(t, id, photo.ID())
+	assert.Equal(t, "abc123def456", photo.DisplayID())
 	assert.Equal(t, itemID, photo.ItemID())
 	assert.Equal(t, "http://cdn/p.jpg", photo.URL())
 	assert.Equal(t, 2, photo.Position())

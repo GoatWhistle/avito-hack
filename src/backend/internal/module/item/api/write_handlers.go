@@ -54,7 +54,7 @@ func (h *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.Created(w, toItemResponse(item))
+	httpx.Created(w, toItemResponse(item, h.ownerDisplayID(r.Context(), item.OwnerID())))
 }
 
 // @Id updateItem
@@ -67,7 +67,7 @@ func (h *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 // @Tags Items
 // @Accept json
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Param request body updateItemRequest true "Изменяемые поля"
 // @Success 200 {object} itemResponse "Объявление обновлено"
 // @Failure 400 {object} apierr.ErrorEnvelope
@@ -85,9 +85,8 @@ func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := httpx.UUIDParam(r, "id")
-	if err != nil {
-		apierr.Write(w, r, err)
+	resolved, ok := h.resolveDisplayID(w, r, "id")
+	if !ok {
 		return
 	}
 
@@ -97,7 +96,7 @@ func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.deps.UpdateItem.Handle(r.Context(), app.UpdateItemCommand{
-		ItemID:      id,
+		ItemID:      resolved.ID(),
 		ActorID:     actor.ID,
 		Title:       req.Title,
 		Description: req.Description,
@@ -109,7 +108,7 @@ func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.OK(w, toItemResponse(item))
+	httpx.OK(w, toItemResponse(item, h.ownerDisplayID(r.Context(), item.OwnerID())))
 }
 
 // @Id changeItemStatus
@@ -121,24 +120,31 @@ func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 // @Description
 // @Description | Из | В |
 // @Description |---|---|
-// @Description | `draft` | `published`, `moderation`, `archived` |
+// @Description | `draft` | `moderation`, `archived` |
 // @Description | `moderation` | `published`, `draft`, `archived` |
 // @Description | `published` | `sold`, `archived` |
 // @Description | `sold` | — (терминальный) |
 // @Description | `archived` | `draft` |
 // @Description
-// @Description Соответствие действий: `submit` → `moderation`, `publish` → `published`,
-// @Description `sell` → `sold`, `archive` → `archived`, `restore` → `draft`.
+// @Description Соответствие действий: `submit` → `moderation`, `sell` → `sold`,
+// @Description `archive` → `archived`, `restore` → `draft`.
+// @Description
+// @Description `moderation` → `published` не является ручным действием: сразу после
+// @Description `submit` объявление синхронно проходит ИИ-модерацию (текст и фото).
+// @Description При одобрении оно переводится в `published` автоматически. При отказе
+// @Description или недоступности ИИ-провайдера объявление остаётся в `moderation`
+// @Description навсегда — ручной модерации нет, повторный `submit` запускает проверку
+// @Description заново после того как автор исправит объявление.
 // @Description
 // @Description Недопустимый переход даёт 409. Доступно только владельцу.
 // @Description
-// @Description Побочный эффект: публикация (`publish`) и продажа (`sell`) порождают
-// @Description доменные события, за которые игровой модуль асинхронно начисляет опыт
-// @Description питомцу.
+// @Description Побочный эффект: продажа (`sell`) и автоматическая публикация после
+// @Description одобрения модерации порождают доменные события, за которые игровой
+// @Description модуль асинхронно начисляет опыт питомцу.
 // @Tags Items
 // @Accept json
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Param request body changeStatusRequest true "Действие"
 // @Success 200 {object} itemResponse "Статус изменён"
 // @Failure 400 {object} apierr.ErrorEnvelope
@@ -156,9 +162,8 @@ func (h *Handlers) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := httpx.UUIDParam(r, "id")
-	if err != nil {
-		apierr.Write(w, r, err)
+	resolved, ok := h.resolveDisplayID(w, r, "id")
+	if !ok {
 		return
 	}
 
@@ -168,7 +173,7 @@ func (h *Handlers) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.deps.ChangeStatus.Handle(r.Context(), app.ChangeStatusCommand{
-		ItemID: id,
+		ItemID: resolved.ID(),
 		Actor:  actor,
 		Action: app.StatusAction(req.Action),
 	})
@@ -177,5 +182,5 @@ func (h *Handlers) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.OK(w, toItemResponse(item))
+	httpx.OK(w, toItemResponse(item, h.ownerDisplayID(r.Context(), item.OwnerID())))
 }

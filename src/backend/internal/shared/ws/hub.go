@@ -55,6 +55,13 @@ func (h *Hub) unregister(userID uuid.UUID, s Sink) {
 	}
 }
 
+func (h *Hub) CountFor(userID uuid.UUID) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return len(h.conns[userID])
+}
+
 func (h *Hub) Broadcast(userID uuid.UUID, m Message) {
 	for _, s := range h.sinks(userID) {
 		s.Send(m)

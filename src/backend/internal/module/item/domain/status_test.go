@@ -26,8 +26,9 @@ func itemInStatus(t *testing.T, status domain.Status) *domain.Item {
 	t.Helper()
 
 	return domain.RestoreItem(domain.RestoreItemParams{
-		ID: uuid.New(), OwnerID: uuid.New(), Title: "Bicycle", Description: "good one",
-		Price: vo.MustMoney(50000), Status: status, Attributes: domain.NewAttributes(nil),
+		ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: uuid.New(), Title: "Bicycle",
+		Description: "good one",
+		Price:       vo.MustMoney(50000), Status: status, Attributes: domain.NewAttributes(nil),
 		CreatedAt: statusTestTime, UpdatedAt: statusTestTime,
 	})
 }
@@ -62,7 +63,7 @@ func TestStatusTransitionMatrix(t *testing.T) {
 
 	allowed := map[domain.Status]map[domain.Status]bool{
 		domain.StatusDraft: {
-			domain.StatusPublished: true, domain.StatusModeration: true, domain.StatusArchived: true,
+			domain.StatusModeration: true, domain.StatusArchived: true,
 		},
 		domain.StatusModeration: {
 			domain.StatusPublished: true, domain.StatusDraft: true, domain.StatusArchived: true,
@@ -111,12 +112,6 @@ func TestItemBehaviorAllowedTransitions(t *testing.T) {
 				return i.SubmitForModeration(later)
 			},
 			want: domain.StatusModeration,
-		},
-		{
-			name:  "draft to published",
-			from:  domain.StatusDraft,
-			apply: func(i *domain.Item) error { return i.Publish(later) },
-			want:  domain.StatusPublished,
 		},
 		{
 			name:  "moderation to published",
@@ -188,6 +183,9 @@ func TestItemBehaviorForbiddenTransitions(t *testing.T) {
 		{name: "draft cannot be sold", from: domain.StatusDraft, apply: func(i *domain.Item) error {
 			return i.MarkSold(later)
 		}},
+		{name: "draft cannot be published directly", from: domain.StatusDraft, apply: func(i *domain.Item) error {
+			return i.Publish(later)
+		}},
 		{name: "draft cannot be restored", from: domain.StatusDraft, apply: func(i *domain.Item) error {
 			return i.Restore(later)
 		}},
@@ -230,7 +228,7 @@ func TestSubmitForModerationRequiresDescription(t *testing.T) {
 	t.Parallel()
 
 	item := domain.RestoreItem(domain.RestoreItemParams{
-		ID: uuid.New(), OwnerID: uuid.New(), Title: "Bicycle", Description: "",
+		ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: uuid.New(), Title: "Bicycle", Description: "",
 		Price: vo.MustMoney(1), Status: domain.StatusDraft,
 		CreatedAt: statusTestTime, UpdatedAt: statusTestTime,
 	})

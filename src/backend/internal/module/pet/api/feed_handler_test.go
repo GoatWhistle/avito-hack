@@ -44,7 +44,8 @@ func TestPetFeedReturnsUpdatedPet(t *testing.T) {
 	var body map[string]any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.InDelta(t, 70, body["satiety"], 0)
-	assert.Equal(t, userID.String(), body["user_id"])
+	assert.Equal(t, domain.PublicToken(userID), body["user_id"])
+	assert.NotEqual(t, userID.String(), body["user_id"])
 }
 
 func TestPetFeedRequiresActor(t *testing.T) {

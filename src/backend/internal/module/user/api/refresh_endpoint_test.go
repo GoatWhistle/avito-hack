@@ -21,10 +21,15 @@ func TestRefreshEndpointIssuesNewToken(t *testing.T) {
 		`{"email":"refresh@example.com","password":"`+testPassword+`","full_name":"Ivan"}`)
 	require.Equal(t, http.StatusCreated, registerRec.Code)
 
-	var stored *auth.Actor
+	var (
+		stored          *auth.Actor
+		storedDisplayID string
+	)
+
 	for _, user := range repo.byID {
 		actor := user.Actor()
 		stored = &actor
+		storedDisplayID = user.DisplayID()
 	}
 	require.NotNil(t, stored)
 
@@ -40,7 +45,7 @@ func TestRefreshEndpointIssuesNewToken(t *testing.T) {
 	user, ok := body["user"].(map[string]any)
 	require.True(t, ok)
 	assert.Equal(t, "refresh@example.com", user["email"])
-	assert.Equal(t, stored.ID.String(), user["id"])
+	assert.Equal(t, storedDisplayID, user["id"])
 }
 
 func TestRefreshEndpointMatchesLoginEnvelope(t *testing.T) {

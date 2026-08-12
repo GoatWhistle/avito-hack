@@ -22,7 +22,7 @@ func TestAddPhotoStoresAtNextPosition(t *testing.T) {
 	photos := &countingPhotos{stubPhotos: stubPhotos{count: 3}}
 	storage := &stubStorage{}
 
-	handler := app.NewAddPhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{})
+	handler := app.NewAddPhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{}, nil)
 
 	photo, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: ownerID,
@@ -46,7 +46,7 @@ func TestAddPhotoRejectsNonOwner(t *testing.T) {
 	storage := &stubStorage{}
 
 	handler := app.NewAddPhotoHandler(
-		&stubRepository{item: item}, &countingPhotos{}, storage, passthroughTx{}, fakeClock{})
+		&stubRepository{item: item}, &countingPhotos{}, storage, passthroughTx{}, fakeClock{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: uuid.New(),
@@ -65,7 +65,7 @@ func TestAddPhotoEnforcesLimit(t *testing.T) {
 	storage := &stubStorage{}
 	photos := &countingPhotos{stubPhotos: stubPhotos{count: domain.MaxPhotosPerItem}}
 
-	handler := app.NewAddPhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{})
+	handler := app.NewAddPhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: ownerID,
@@ -122,7 +122,7 @@ func TestAddPhotoPropagatesFailures(t *testing.T) {
 				repo = &stubRepository{item: item}
 			}
 
-			handler := app.NewAddPhotoHandler(repo, tc.photos, tc.storage, passthroughTx{}, fakeClock{})
+			handler := app.NewAddPhotoHandler(repo, tc.photos, tc.storage, passthroughTx{}, fakeClock{}, nil)
 
 			_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 				ItemID: item.ID(), ActorID: ownerID,
@@ -142,10 +142,10 @@ func TestDeletePhotoRemovesFileAfterCommit(t *testing.T) {
 	photos := &countingPhotos{}
 	storage := &stubStorage{}
 
-	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{})
+	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{}, nil)
 
 	err := handler.Handle(t.Context(), app.DeletePhotoCommand{
-		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: ownerID,
+		ItemID: item.ID(), PhotoDisplayID: domain.NewDisplayID(), ActorID: ownerID,
 	})
 
 	require.NoError(t, err)
@@ -160,10 +160,10 @@ func TestDeletePhotoKeepsFileOnRollback(t *testing.T) {
 	photos := &countingPhotos{}
 	storage := &stubStorage{}
 
-	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{})
+	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, storage, passthroughTx{}, fakeClock{}, nil)
 
 	err := handler.Handle(t.Context(), app.DeletePhotoCommand{
-		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: uuid.New(),
+		ItemID: item.ID(), PhotoDisplayID: domain.NewDisplayID(), ActorID: uuid.New(),
 	})
 
 	require.ErrorIs(t, err, domainerr.ErrForbidden)
@@ -179,7 +179,7 @@ func TestAddPhotoRejectsEmptyStorageURL(t *testing.T) {
 
 	handler := app.NewAddPhotoHandler(
 		&stubRepository{item: item}, &countingPhotos{}, &stubStorage{returnedURL: "   "},
-		passthroughTx{}, fakeClock{})
+		passthroughTx{}, fakeClock{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: ownerID,

@@ -3,8 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/avito-hack/backend/internal/module/favorite/app"
 )
 
@@ -14,8 +12,8 @@ type FavoriteListResponse struct {
 }
 
 type favoriteItemResponse struct {
-	ItemID      uuid.UUID `json:"item_id"`
-	OwnerID     uuid.UUID `json:"owner_id"`
+	ItemID      string    `json:"item_id"`
+	OwnerID     string    `json:"owner_id"`
 	Title       string    `json:"title"`
 	PriceKopeks int64     `json:"price"`
 	Status      string    `json:"status"`
@@ -28,8 +26,8 @@ func toFavoriteListResponse(items []app.FavoriteItem) []favoriteItemResponse {
 
 	for _, item := range items {
 		result = append(result, favoriteItemResponse{
-			ItemID:      item.ItemID,
-			OwnerID:     item.OwnerID,
+			ItemID:      item.ItemDisplayID,
+			OwnerID:     item.OwnerDisplayID,
 			Title:       item.Title,
 			PriceKopeks: item.PriceKopeks,
 			Status:      item.Status,

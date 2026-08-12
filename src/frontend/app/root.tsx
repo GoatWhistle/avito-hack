@@ -1,4 +1,5 @@
 import {
+  isRouteErrorResponse,
   Links,
   type LinksFunction,
   Meta,
@@ -7,9 +8,11 @@ import {
   Scripts,
   ScrollRestoration,
   useLocation,
+  useRouteError,
 } from 'react-router'
 import { Providers } from '#/providers'
 import { AppLayout, Aurora } from '#/features/layout'
+import { CrashScreen, NotFoundScreen } from '#/features/errors'
 import { fallbackLocale, resources } from '#/i18n/resources'
 import { themeColors } from '#/tokens'
 import type { PropsWithChildren } from 'react'
@@ -88,5 +91,14 @@ export default function App() {
     <AppLayout>
       <RouteTransition />
     </AppLayout>
+  )
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()
+  const isNotFound = isRouteErrorResponse(error) && error.status === 404
+
+  return (
+    <AppLayout>{isNotFound ? <NotFoundScreen /> : <CrashScreen />}</AppLayout>
   )
 }

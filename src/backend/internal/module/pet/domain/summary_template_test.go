@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -140,7 +139,7 @@ func TestBuildSummaryMessageVariesAcrossDays(t *testing.T) {
 func TestBuildAdvice(t *testing.T) {
 	t.Parallel()
 
-	itemID := uuid.New()
+	itemID := "abc123def456"
 
 	tests := []struct {
 		name       string
@@ -158,7 +157,7 @@ func TestBuildAdvice(t *testing.T) {
 			facts: domain.DayFacts{
 				Date: summaryDay(),
 				Issues: []domain.ListingIssue{
-					{ItemID: uuid.New(), Title: "Стул", Kind: domain.IssueStale, StaleDays: 30},
+					{ItemID: "def456abc123", Title: "Стул", Kind: domain.IssueStale, StaleDays: 30},
 					{ItemID: itemID, Title: "iPhone 12", Kind: domain.IssueNoPhoto},
 				},
 			},

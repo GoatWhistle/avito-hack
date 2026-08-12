@@ -3,7 +3,6 @@ package domain
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +25,7 @@ func TestBuildAdviceExposesStructuredFields(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			itemID := uuid.New()
+			itemID := "abc123def456"
 			facts := DayFacts{
 				Issues: []ListingIssue{{ItemID: itemID, Title: "Велосипед", Kind: tc.kind}},
 			}

@@ -19,7 +19,7 @@ func TestListFavoritesEndpoint(t *testing.T) {
 	current := actor()
 	rows := []app.FavoriteItem{
 		{
-			ItemID: uuid.New(), OwnerID: uuid.New(), Title: "Chair",
+			ItemID: uuid.New(), ItemDisplayID: "abcd12345678", OwnerID: uuid.New(), Title: "Chair",
 			PriceKopeks: 1500, Status: "published", PhotoURL: "/media/a.jpg", CreatedAt: fixedTime,
 		},
 	}
@@ -42,7 +42,7 @@ func TestListFavoritesEndpoint(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 
 	require.Len(t, body.Items, 1)
-	assert.Equal(t, rows[0].ItemID.String(), body.Items[0].ItemID)
+	assert.Equal(t, rows[0].ItemDisplayID, body.Items[0].ItemID)
 	assert.Equal(t, "Chair", body.Items[0].Title)
 	assert.Equal(t, int64(1500), body.Items[0].PriceKopeks)
 	assert.Equal(t, "/media/a.jpg", body.Items[0].PhotoURL)

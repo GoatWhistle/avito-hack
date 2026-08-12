@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	itemapp "github.com/avito-hack/backend/internal/module/item/app"
+	itemdomain "github.com/avito-hack/backend/internal/module/item/domain"
 	iteminfra "github.com/avito-hack/backend/internal/module/item/infra"
 	petapp "github.com/avito-hack/backend/internal/module/pet/app"
 	petdomain "github.com/avito-hack/backend/internal/module/pet/domain"
@@ -19,6 +20,7 @@ import (
 	userapp "github.com/avito-hack/backend/internal/module/user/app"
 	userinfra "github.com/avito-hack/backend/internal/module/user/infra"
 	"github.com/avito-hack/backend/internal/shared/auth"
+	"github.com/avito-hack/backend/internal/shared/events"
 	"github.com/avito-hack/backend/internal/shared/postgres"
 )
 
@@ -87,6 +89,7 @@ type env struct {
 	profile  *userapp.GetProfileHandler
 	create   *itemapp.CreateItemHandler
 	status   *itemapp.ChangeStatusHandler
+	items    itemdomain.Repository
 	pets     *petapp.Service
 	rewards  *petapp.RewardService
 }
@@ -126,7 +129,8 @@ func newEnv(t *testing.T) *env {
 		login:    userapp.NewLoginUserHandler(users, tokens),
 		profile:  userapp.NewGetProfileHandler(users),
 		create:   itemapp.NewCreateItemHandler(items, tx, clk),
-		status:   itemapp.NewChangeStatusHandler(items, photos, tx, clk, nil),
+		status:   itemapp.NewChangeStatusHandler(items, photos, tx, clk, events.NopPublisher{}, nil),
+		items:    items,
 		pets:     pets,
 		rewards:  rewards,
 	}

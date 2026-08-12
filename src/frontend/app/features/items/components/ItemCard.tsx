@@ -3,9 +3,21 @@ import { Link } from 'react-router'
 import { formatPrice } from '#/features/items/lib'
 import { useItemPhotosQuery } from '#/features/items/hooks'
 import { FavoriteButton } from '#/features/favorites/components'
+import { itemCategories, itemConditions } from '#/features/items/types'
+import { ItemSourceBadge } from './ItemSourceBadge'
 import { ItemStatusBadge } from './ItemStatusBadge'
 import { ItemPhotoThumb } from './ItemPhotoThumb'
 import type { ItemListEntry } from '#/features/items/types'
+
+const isKnownCategory = (
+  value: string,
+): value is (typeof itemCategories)[number] =>
+  (itemCategories as readonly string[]).includes(value)
+
+const isKnownCondition = (
+  value: string,
+): value is (typeof itemConditions)[number] =>
+  (itemConditions as readonly string[]).includes(value)
 
 interface ItemCardProps {
   item: ItemListEntry
@@ -42,8 +54,29 @@ export function ItemCard({
           {t('price', { value: formatPrice(item.price, i18n.language) })}
         </p>
 
+        {(item.category ?? item.condition) && (
+          <p className="truncate text-xs text-muted-foreground">
+            {[
+              item.category
+                ? isKnownCategory(item.category)
+                  ? t(`category.${item.category}`)
+                  : item.category
+                : null,
+              item.condition && isKnownCondition(item.condition)
+                ? t(`condition.${item.condition}`)
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        )}
+
         <div className="mt-auto flex flex-wrap items-center gap-2">
           <ItemStatusBadge status={item.status} />
+          <ItemSourceBadge
+            isSeed={item.is_seed}
+            aiVerified={item.ai_verified}
+          />
           {item.owner_name && (
             <span className="truncate text-xs text-muted-foreground">
               {item.owner_name}

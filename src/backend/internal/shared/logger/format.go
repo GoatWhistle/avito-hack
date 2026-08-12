@@ -59,11 +59,25 @@ func renderValue(value slog.Value) string {
 	}
 
 	text := value.String()
-	if strings.ContainsAny(text, " \t\"") {
+	if needsQuoting(text) {
 		return strconv.Quote(text)
 	}
 
 	return text
+}
+
+func needsQuoting(text string) bool {
+	if strings.ContainsAny(text, " \t\"") {
+		return true
+	}
+
+	for _, r := range text {
+		if r < 0x20 || r == 0x7f {
+			return true
+		}
+	}
+
+	return false
 }
 
 func formatDuration(elapsed time.Duration) string {

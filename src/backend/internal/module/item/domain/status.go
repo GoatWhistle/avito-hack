@@ -15,7 +15,7 @@ const (
 var PublicStatuses = []Status{StatusPublished, StatusSold}
 
 var transitions = map[Status][]Status{
-	StatusDraft:      {StatusPublished, StatusModeration, StatusArchived},
+	StatusDraft:      {StatusModeration, StatusArchived},
 	StatusModeration: {StatusPublished, StatusDraft, StatusArchived},
 	StatusPublished:  {StatusSold, StatusArchived},
 	StatusSold:       {},

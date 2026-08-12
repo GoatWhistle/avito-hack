@@ -66,13 +66,17 @@ func TestFullUserJourney(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, itemdomain.StatusDraft, item.Status())
 
-	published, err := e.status.Handle(ctx, itemapp.ChangeStatusCommand{
+	submitted, err := e.status.Handle(ctx, itemapp.ChangeStatusCommand{
 		ItemID: item.ID(),
 		Actor:  auth.Actor{ID: userID, Role: auth.RoleUser},
-		Action: itemapp.ActionPublish,
+		Action: itemapp.ActionSubmit,
 	})
 	require.NoError(t, err)
-	require.Equal(t, itemdomain.StatusPublished, published.Status())
+	require.Equal(t, itemdomain.StatusModeration, submitted.Status())
+
+	require.NoError(t, submitted.Publish(e.clock.Now()))
+	require.NoError(t, e.items.Save(ctx, submitted))
+	published := submitted
 
 	awarded, err := e.pets.RewardQualityListing(ctx, userID, item.ID(), petdomain.QualityListing{
 		HasPhoto:    true,

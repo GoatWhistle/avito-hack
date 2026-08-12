@@ -2,6 +2,7 @@ package pagination_test
 
 import (
 	"encoding/base64"
+	"math"
 	"testing"
 	"time"
 
@@ -26,6 +27,131 @@ func TestCursorRoundTrip(t *testing.T) {
 	assert.True(t, original.CreatedAt.Equal(decoded.CreatedAt))
 	assert.Equal(t, original.ID, decoded.ID)
 	assert.False(t, decoded.IsZero())
+}
+
+func TestCursorRoundTripPreservesPrice(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		price int64
+	}{
+		{name: "zero price", price: 0},
+		{name: "positive price", price: 1234567},
+		{name: "negative price", price: -42},
+		{name: "max int64", price: math.MaxInt64},
+		{name: "min int64", price: math.MinInt64},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			original := pagination.Cursor{
+				CreatedAt:   time.Date(2026, time.February, 3, 14, 25, 36, 123456789, time.UTC),
+				ID:          uuid.New(),
+				PriceKopeks: tc.price,
+			}
+
+			decoded, err := pagination.DecodeCursor(original.Encode())
+
+			require.NoError(t, err)
+			assert.True(t, original.CreatedAt.Equal(decoded.CreatedAt))
+			assert.Equal(t, original.ID, decoded.ID)
+			assert.Equal(t, tc.price, decoded.PriceKopeks)
+		})
+	}
+}
+
+func TestDecodeCursorAcceptsLegacyTwoPartPayload(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	legacy := pagination.SealForTest("2026-02-03T14:00:00Z|" + id.String())
+
+	decoded, err := pagination.DecodeCursor(legacy)
+
+	require.NoError(t, err)
+	assert.Equal(t, id, decoded.ID)
+	assert.Zero(t, decoded.PriceKopeks)
+}
+
+func TestDecodeCursorRejectsMalformedPrice(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+
+	tests := []struct {
+		name string
+		raw  string
+	}{
+		{name: "price is not a number", raw: "2026-02-03T14:00:00Z|" + id.String() + "|abc"},
+		{name: "price is empty", raw: "2026-02-03T14:00:00Z|" + id.String() + "|"},
+		{name: "price overflows int64", raw: "2026-02-03T14:00:00Z|" + id.String() + "|99999999999999999999"},
+		{name: "price is a float", raw: "2026-02-03T14:00:00Z|" + id.String() + "|12.5"},
+		{name: "too many segments", raw: "2026-02-03T14:00:00Z|" + id.String() + "|1|newest|x"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cursor, err := pagination.DecodeCursor(pagination.SealForTest(tc.raw))
+
+			require.ErrorIs(t, err, pagination.ErrInvalidCursor)
+			assert.True(t, cursor.IsZero())
+		})
+	}
+}
+
+func TestDecodeCursorRejectsTamperedPriceCursor(t *testing.T) {
+	t.Parallel()
+
+	encoded := pagination.Cursor{
+		CreatedAt:   time.Now().UTC(),
+		ID:          uuid.New(),
+		PriceKopeks: 999,
+	}.Encode()
+
+	tampered := flipLastByte(t, encoded)
+
+	cursor, err := pagination.DecodeCursor(tampered)
+
+	require.ErrorIs(t, err, pagination.ErrInvalidCursor)
+	assert.True(t, cursor.IsZero())
+}
+
+func TestCursorRoundTripsSort(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	created := time.Date(2026, time.March, 1, 9, 0, 0, 0, time.UTC)
+
+	encoded := pagination.Cursor{
+		CreatedAt: created, ID: id, PriceKopeks: 4200, Sort: "price_asc",
+	}.Encode()
+
+	cursor, err := pagination.DecodeCursor(encoded)
+
+	require.NoError(t, err)
+	assert.Equal(t, "price_asc", cursor.Sort)
+	assert.Equal(t, int64(4200), cursor.PriceKopeks)
+	assert.Equal(t, id, cursor.ID)
+	assert.Equal(t, created, cursor.CreatedAt)
+}
+
+func TestDecodeCursorAcceptsLegacyCursorWithoutSort(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	raw := "2026-02-03T14:00:00Z|" + id.String()
+
+	cursor, err := pagination.DecodeCursor(pagination.SealForTest(raw))
+
+	require.NoError(t, err)
+	assert.Equal(t, id, cursor.ID)
+	assert.Empty(t, cursor.Sort)
+	assert.Zero(t, cursor.PriceKopeks)
 }
 
 func TestCursorNormalizesTimezoneToUTC(t *testing.T) {
@@ -68,22 +194,22 @@ func TestDecodeCursorFailures(t *testing.T) {
 		{name: "empty string yields zero cursor", raw: ""},
 		{name: "not base64", raw: "!!!not-base64!!!", wantErr: true},
 		{
-			name:    "missing separator",
+			name:    "unencrypted payload without separator",
 			raw:     base64.RawURLEncoding.EncodeToString([]byte("2026-02-03T14:00:00Z")),
 			wantErr: true,
 		},
 		{
-			name:    "invalid timestamp",
+			name:    "unencrypted invalid timestamp",
 			raw:     base64.RawURLEncoding.EncodeToString([]byte("yesterday|" + uuid.NewString())),
 			wantErr: true,
 		},
 		{
-			name:    "invalid uuid",
+			name:    "unencrypted invalid uuid",
 			raw:     base64.RawURLEncoding.EncodeToString([]byte("2026-02-03T14:00:00Z|not-a-uuid")),
 			wantErr: true,
 		},
 		{
-			name:    "nil uuid is rejected",
+			name:    "unencrypted nil uuid is rejected",
 			raw:     base64.RawURLEncoding.EncodeToString([]byte("2026-02-03T14:00:00Z|" + uuid.Nil.String())),
 			wantErr: true,
 		},

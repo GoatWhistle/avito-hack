@@ -5,11 +5,11 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/avito-hack/backend/internal/shared/auth"
+	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
 func TestRegisterEndpoint(t *testing.T) {
@@ -71,10 +71,14 @@ func TestRegisterTokenAuthenticatesFollowUpRequest(t *testing.T) {
 	user, ok := body["user"].(map[string]any)
 	require.True(t, ok)
 
-	id, err := uuid.Parse(user["id"].(string))
+	email, err := vo.NewEmail("session@example.com")
 	require.NoError(t, err)
 
-	actor := auth.Actor{ID: id, Role: auth.RoleUser}
+	stored, err := repo.ByEmail(t.Context(), email)
+	require.NoError(t, err)
+	assert.Equal(t, stored.DisplayID(), user["id"])
+
+	actor := auth.Actor{ID: stored.ID(), Role: auth.RoleUser}
 	meRec := do(t, newRouter(t, repo, &actor), http.MethodGet, "/users/me", "")
 
 	require.Equal(t, http.StatusOK, meRec.Code)

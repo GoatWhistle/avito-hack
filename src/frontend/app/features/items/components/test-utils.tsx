@@ -26,6 +26,8 @@ export const makeItem = (overrides: Partial<Item> = {}): Item => ({
   attributes: null,
   created_at: '2026-08-01T10:00:00Z',
   updated_at: '2026-08-01T10:00:00Z',
+  is_seed: false,
+  ai_verified: false,
   ...overrides,
 })
 
@@ -38,6 +40,8 @@ export const makeEntry = (
   price: 1_250_000,
   status: 'published',
   created_at: '2026-08-01T10:00:00Z',
+  is_seed: false,
+  ai_verified: false,
   ...overrides,
 })
 

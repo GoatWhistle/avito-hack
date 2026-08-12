@@ -13,6 +13,7 @@ const MaxPhotosPerItem = 10
 
 type Photo struct {
 	id        uuid.UUID
+	displayID string
 	itemID    uuid.UUID
 	url       string
 	position  int
@@ -42,6 +43,7 @@ func NewPhoto(p NewPhotoParams) (*Photo, error) {
 
 	return &Photo{
 		id:        uuid.New(),
+		displayID: NewDisplayID(),
 		itemID:    p.ItemID,
 		url:       url,
 		position:  p.Position,
@@ -49,11 +51,12 @@ func NewPhoto(p NewPhotoParams) (*Photo, error) {
 	}, nil
 }
 
-func RestorePhoto(id, itemID uuid.UUID, url string, position int, createdAt time.Time) *Photo {
-	return &Photo{id: id, itemID: itemID, url: url, position: position, createdAt: createdAt}
+func RestorePhoto(id uuid.UUID, displayID string, itemID uuid.UUID, url string, position int, createdAt time.Time) *Photo {
+	return &Photo{id: id, displayID: displayID, itemID: itemID, url: url, position: position, createdAt: createdAt}
 }
 
 func (p *Photo) ID() uuid.UUID        { return p.id }
+func (p *Photo) DisplayID() string    { return p.displayID }
 func (p *Photo) ItemID() uuid.UUID    { return p.itemID }
 func (p *Photo) URL() string          { return p.url }
 func (p *Photo) Position() int        { return p.position }

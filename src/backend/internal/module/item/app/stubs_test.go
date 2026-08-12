@@ -47,6 +47,10 @@ func (s *stubRepository) ByIDForUpdate(_ context.Context, _ uuid.UUID) (*domain.
 	return s.item, nil
 }
 
+func (s *stubRepository) ByDisplayID(_ context.Context, _ string) (*domain.Item, error) {
+	return s.item, nil
+}
+
 func (s *stubRepository) Delete(_ context.Context, _ uuid.UUID) error { return nil }
 
 type stubPhotos struct{ count int }
@@ -61,7 +65,7 @@ func (s *stubPhotos) CountByItemID(_ context.Context, _ uuid.UUID) (int, error) 
 	return s.count, nil
 }
 
-func (s *stubPhotos) DeleteByID(_ context.Context, _, _ uuid.UUID) (string, error) {
+func (s *stubPhotos) DeleteByDisplayID(_ context.Context, _ uuid.UUID, _ string) (string, error) {
 	return "", nil
 }
 
@@ -97,7 +101,7 @@ func (s *stubStorage) Delete(_ context.Context, _ uuid.UUID, _ string) error {
 	return nil
 }
 
-func (s *stubStorage) URL(_ uuid.UUID, name string) string {
+func (s *stubStorage) URL(_, name string) string {
 	if s.returnedURL != "" {
 		return s.returnedURL
 	}
@@ -146,7 +150,7 @@ func (c *countingPhotos) ByItemID(_ context.Context, itemID uuid.UUID) ([]*domai
 	return result, nil
 }
 
-func (c *countingPhotos) DeleteByID(_ context.Context, _, _ uuid.UUID) (string, error) {
+func (c *countingPhotos) DeleteByDisplayID(_ context.Context, _ uuid.UUID, _ string) (string, error) {
 	c.deleted++
 
 	return "/media/photo.jpg", nil
@@ -171,6 +175,7 @@ func newPublishedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
 	t.Helper()
 
 	item := newDraftItem(t, ownerID)
+	require.NoError(t, item.SubmitForModeration(fixedTime))
 	require.NoError(t, item.Publish(fixedTime))
 
 	return item
@@ -186,7 +191,49 @@ func newArchivedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
 }
 
 func newHandler(repo *stubRepository, bus events.Publisher) *app.ChangeStatusHandler {
-	return app.NewChangeStatusHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus)
+	return app.NewChangeStatusHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus, nil)
+}
+
+func newHandlerWithModeration(
+	repo *stubRepository, bus events.Publisher, moderate *app.ModerateItemHandler,
+) *app.ChangeStatusHandler {
+	return app.NewChangeStatusHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus, moderate)
+}
+
+type stubModerationProvider struct {
+	result domain.ModerationResult
+}
+
+func (s *stubModerationProvider) Review(_ context.Context, _ domain.ModerationSubject) domain.ModerationResult {
+	return s.result
+}
+
+type stubModerationLog struct {
+	entries []domain.ModerationLogEntry
+}
+
+func (s *stubModerationLog) Add(_ context.Context, entry domain.ModerationLogEntry) error {
+	s.entries = append(s.entries, entry)
+
+	return nil
+}
+
+func (s *stubModerationLog) LatestByItemID(
+	_ context.Context, itemID uuid.UUID,
+) (*domain.ModerationLogEntry, error) {
+	for i := len(s.entries) - 1; i >= 0; i-- {
+		if s.entries[i].ItemID == itemID {
+			return &s.entries[i], nil
+		}
+	}
+
+	return nil, nil //nolint:nilnil // absence of a moderation entry is a valid, expected state
+}
+
+type stubPhotoBytesLoader struct{}
+
+func (stubPhotoBytesLoader) DataURL(_ context.Context, _ uuid.UUID, publicURL string) (string, error) {
+	return "data:image/jpeg;base64,stub-" + publicURL, nil
 }
 
 func collectEvents(t *testing.T, types ...events.Type) (*events.Bus, *[]events.Event) {

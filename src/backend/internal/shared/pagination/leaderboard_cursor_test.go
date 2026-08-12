@@ -72,14 +72,14 @@ func TestDecodeLeaderboardCursor(t *testing.T) {
 	}{
 		{name: "empty means first page", raw: "", want: pagination.LeaderboardCursor{}},
 		{name: "not base64", raw: "!!!not base64!!!", wantErr: true},
-		{name: "too few parts", raw: encode("5|100"), wantErr: true},
-		{name: "too many parts", raw: encode("5|100|" + uuid.Nil.String() + "|extra"), wantErr: true},
-		{name: "level not a number", raw: encode("abc|100|" + uuid.New().String()), wantErr: true},
-		{name: "xp not a number", raw: encode("5|abc|" + uuid.New().String()), wantErr: true},
-		{name: "malformed uuid", raw: encode("5|100|not-a-uuid"), wantErr: true},
-		{name: "nil uuid rejected", raw: encode("5|100|" + uuid.Nil.String()), wantErr: true},
-		{name: "blank payload", raw: encode("||"), wantErr: true},
-		{name: "empty fields", raw: encode("5||" + uuid.New().String()), wantErr: true},
+		{name: "unencrypted too few parts", raw: encode("5|100"), wantErr: true},
+		{name: "unencrypted too many parts", raw: encode("5|100|" + uuid.Nil.String() + "|extra"), wantErr: true},
+		{name: "unencrypted level not a number", raw: encode("abc|100|" + uuid.New().String()), wantErr: true},
+		{name: "unencrypted xp not a number", raw: encode("5|abc|" + uuid.New().String()), wantErr: true},
+		{name: "unencrypted malformed uuid", raw: encode("5|100|not-a-uuid"), wantErr: true},
+		{name: "unencrypted nil uuid rejected", raw: encode("5|100|" + uuid.Nil.String()), wantErr: true},
+		{name: "unencrypted blank payload", raw: encode("||"), wantErr: true},
+		{name: "unencrypted empty fields", raw: encode("5||" + uuid.New().String()), wantErr: true},
 	}
 
 	for _, tt := range tests {

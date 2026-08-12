@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { formatDate, formatPrice } from '#/features/items/lib'
+import { ItemSourceBadge } from './ItemSourceBadge'
 import { ItemStatusBadge } from './ItemStatusBadge'
 import { StatusActions } from './StatusActions'
 import type { ItemListEntry } from '#/features/items/types'
@@ -33,19 +34,27 @@ export function MyItemRow({ item }: MyItemRowProps) {
             {formatDate(item.created_at, i18n.language)}
           </p>
         </div>
-        <ItemStatusBadge status={item.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ItemStatusBadge status={item.status} />
+          <ItemSourceBadge
+            isSeed={item.is_seed}
+            aiVerified={item.ai_verified}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          render={<Link to={`/items/${item.id}/edit`} />}
-        >
-          {tCommon('actions.edit')}
-        </Button>
-        <StatusActions itemId={item.id} status={item.status} size="sm" />
-      </div>
+      {!item.is_seed && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link to={`/items/${item.id}/edit`} />}
+          >
+            {tCommon('actions.edit')}
+          </Button>
+          <StatusActions itemId={item.id} status={item.status} size="sm" />
+        </div>
+      )}
     </article>
   )
 }

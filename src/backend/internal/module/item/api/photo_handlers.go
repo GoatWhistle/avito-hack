@@ -5,7 +5,10 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/avito-hack/backend/internal/module/item/app"
+	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/apierr"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
@@ -44,7 +47,7 @@ var allowedPhotoTypes = map[string]struct{}{
 // @Tags Photos
 // @Accept multipart/form-data
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Param photo formData file true "Файл изображения — jpeg, png или webp."
 // @Success 201 {object} photoResponse "Фотография загружена"
 // @Failure 400 {object} apierr.ErrorEnvelope "Файл отсутствует, слишком велик или имеет недопустимый тип."
@@ -62,9 +65,8 @@ func (h *Handlers) AddPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := httpx.UUIDParam(r, "id")
-	if err != nil {
-		apierr.Write(w, r, err)
+	resolved, ok := h.resolveDisplayID(w, r, "id")
+	if !ok {
 		return
 	}
 
@@ -75,7 +77,7 @@ func (h *Handlers) AddPhoto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	photo, err := h.deps.AddPhoto.Handle(r.Context(), app.AddPhotoCommand{
-		ItemID:      id,
+		ItemID:      resolved.ID(),
 		ActorID:     actor.ID,
 		Content:     content,
 		ContentType: contentType,
@@ -85,7 +87,7 @@ func (h *Handlers) AddPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.Created(w, toPhotoResponse(photo))
+	httpx.Created(w, toPhotoResponse(photo, resolved.DisplayID()))
 }
 
 func (h *Handlers) readPhoto(w http.ResponseWriter, r *http.Request) (io.Reader, string, error) {
@@ -139,7 +141,7 @@ func detectPhotoType(raw []byte) (string, error) {
 // @Description в отличие от прочих списков. Анонимный доступ разрешён.
 // @Tags Photos
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Success 200 {array} photoResponse "Массив фотографий"
 // @Failure 400 {object} apierr.ErrorEnvelope
 // @Failure 404 {object} apierr.ErrorEnvelope
@@ -148,19 +150,18 @@ func detectPhotoType(raw []byte) (string, error) {
 // @Security []
 // @Router /api/v1/items/{id}/photos [get]
 func (h *Handlers) ListPhotos(w http.ResponseWriter, r *http.Request) {
-	id, err := httpx.UUIDParam(r, "id")
+	resolved, ok := h.resolveDisplayID(w, r, "id")
+	if !ok {
+		return
+	}
+
+	photos, err := h.deps.ListPhotos.Handle(r.Context(), resolved.ID())
 	if err != nil {
 		apierr.Write(w, r, err)
 		return
 	}
 
-	photos, err := h.deps.ListPhotos.Handle(r.Context(), id)
-	if err != nil {
-		apierr.Write(w, r, err)
-		return
-	}
-
-	httpx.OK(w, toPhotoListResponse(photos))
+	httpx.OK(w, toPhotoListResponse(photos, resolved.DisplayID()))
 }
 
 // @Id deleteItemPhoto
@@ -170,8 +171,8 @@ func (h *Handlers) ListPhotos(w http.ResponseWriter, r *http.Request) {
 // @Description так как записи уже нет. Тело ответа пустое.
 // @Tags Photos
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
-// @Param photoID path string true "Идентификатор фотографии." format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
+// @Param photoID path string true "Публичный идентификатор фотографии (display_id)."
 // @Success 204 "Фотография удалена"
 // @Failure 400 {object} apierr.ErrorEnvelope
 // @Failure 401 {object} apierr.ErrorEnvelope
@@ -187,22 +188,21 @@ func (h *Handlers) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemID, err := httpx.UUIDParam(r, "id")
-	if err != nil {
-		apierr.Write(w, r, err)
+	resolved, ok := h.resolveDisplayID(w, r, "id")
+	if !ok {
 		return
 	}
 
-	photoID, err := httpx.UUIDParam(r, "photoID")
-	if err != nil {
-		apierr.Write(w, r, err)
+	photoDisplayID := chi.URLParam(r, "photoID")
+	if !domain.IsValidDisplayID(photoDisplayID) {
+		apierr.Write(w, r, domain.ErrPhotoNotFound)
 		return
 	}
 
 	if err := h.deps.DeletePhoto.Handle(r.Context(), app.DeletePhotoCommand{
-		ItemID:  itemID,
-		PhotoID: photoID,
-		ActorID: actor.ID,
+		ItemID:         resolved.ID(),
+		PhotoDisplayID: photoDisplayID,
+		ActorID:        actor.ID,
 	}); err != nil {
 		apierr.Write(w, r, err)
 		return

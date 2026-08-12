@@ -37,7 +37,7 @@ const (
 
 type Advice struct {
 	Text      string       `json:"text"`
-	ItemID    *uuid.UUID   `json:"item_id,omitempty"`
+	ItemID    *string      `json:"item_id,omitempty"`
 	ItemTitle string       `json:"item_title,omitempty"`
 	Action    AdviceAction `json:"action"`
 }

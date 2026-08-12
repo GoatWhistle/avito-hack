@@ -67,8 +67,8 @@ describe('formatDate', () => {
 
 describe('availableActions', () => {
   it('lists the transitions of every status', () => {
-    expect(availableActions('draft')).toEqual(['publish', 'submit', 'archive'])
-    expect(availableActions('moderation')).toEqual(['publish', 'archive'])
+    expect(availableActions('draft')).toEqual(['submit', 'archive'])
+    expect(availableActions('moderation')).toEqual(['archive'])
     expect(availableActions('published')).toEqual(['sell', 'archive'])
     expect(availableActions('sold')).toEqual(['archive'])
     expect(availableActions('archived')).toEqual(['restore'])

@@ -3,8 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/avito-hack/backend/internal/module/pet/app"
 	"github.com/avito-hack/backend/internal/module/pet/domain"
 )
@@ -83,8 +81,8 @@ type errorPayload struct {
 }
 
 type petPayload struct {
-	ID              uuid.UUID    `json:"id"`
-	UserID          uuid.UUID    `json:"user_id"`
+	ID              string       `json:"id"`
+	UserID          string       `json:"user_id"`
 	Name            string       `json:"name"`
 	Stage           domain.Stage `json:"stage"`
 	State           domain.State `json:"state"`
@@ -117,7 +115,9 @@ type checkInInfo struct {
 
 func toPetPayload(p *domain.Pet) petPayload {
 	return petPayload{
-		ID: p.ID(), UserID: p.UserID(), Name: p.Name(), Stage: p.Stage(), State: p.State(),
+		ID:     domain.PublicToken(p.ID()),
+		UserID: domain.PublicToken(p.UserID()),
+		Name:   p.Name(), Stage: p.Stage(), State: p.State(),
 		Level: p.Level(), XP: p.XP(), NextLevelXP: p.NextLevelXP(),
 		Satiety: p.Satiety(), Happiness: p.Happiness(), Energy: p.Energy(),
 		StreakDays: p.StreakDays(), Freezes: p.Freezes(),

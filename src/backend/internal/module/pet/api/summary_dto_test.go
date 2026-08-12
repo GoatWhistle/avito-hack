@@ -45,7 +45,7 @@ func TestToAdvicePayloadNil(t *testing.T) {
 func TestToAdvicePayloadPopulated(t *testing.T) {
 	t.Parallel()
 
-	itemID := uuid.New()
+	itemID := "abc123def456"
 	advice := &domain.Advice{
 		Text: "Добавь фото", ItemID: &itemID,
 		ItemTitle: "Велосипед", Action: domain.AdviceAddPhoto,
@@ -104,8 +104,8 @@ func TestToFactsPayloadPopulated(t *testing.T) {
 		Streak:      domain.StreakFacts{Days: 5, Broken: true},
 		Leaderboard: domain.LeaderboardFacts{Rank: 9, Previous: 14, Known: true},
 		Issues: []domain.ListingIssue{
-			{ItemID: uuid.New(), Title: "Bike", Kind: domain.IssueNoPhoto},
-			{ItemID: uuid.New(), Title: "Chair", Kind: domain.IssueStale},
+			{ItemID: "abc123def456", Title: "Bike", Kind: domain.IssueNoPhoto},
+			{ItemID: "def456abc123", Title: "Chair", Kind: domain.IssueStale},
 		},
 	}
 
@@ -155,7 +155,8 @@ func TestToSummaryPayload(t *testing.T) {
 
 	got := toSummaryPayload(summary)
 
-	assert.Equal(t, summary.ID().String(), got.ID)
+	assert.Equal(t, domain.PublicToken(summary.ID()), got.ID)
+	assert.NotEqual(t, summary.ID().String(), got.ID)
 	assert.Equal(t, "2026-03-02", got.Date)
 	assert.Equal(t, "Хороший день", got.Message)
 	assert.Equal(t, domain.SummarySourceLLM, got.GeneratedBy)

@@ -3,16 +3,14 @@ package api
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/avito-hack/backend/internal/module/pet/domain"
 )
 
 type advicePayload struct {
-	Text      string     `json:"text"`
-	ItemID    *uuid.UUID `json:"item_id,omitempty"`
-	ItemTitle string     `json:"item_title,omitempty"`
-	Action    string     `json:"action"`
+	Text      string  `json:"text"`
+	ItemID    *string `json:"item_id,omitempty"`
+	ItemTitle string  `json:"item_title,omitempty"`
+	Action    string  `json:"action"`
 }
 
 type summaryActionPayload struct {
@@ -57,7 +55,7 @@ func toSummaryPayload(summary *domain.DailySummary) summaryPayload {
 	facts := summary.Facts()
 
 	return summaryPayload{
-		ID:          summary.ID().String(),
+		ID:          domain.PublicToken(summary.ID()),
 		Date:        summary.Date().Format(time.DateOnly),
 		Message:     summary.Message(),
 		Advice:      toAdvicePayload(summary.Advice()),

@@ -138,6 +138,53 @@ func TestListItemsPassesFiltersThrough(t *testing.T) {
 	assert.Equal(t, cursor.ID, read.lastFilter.Cursor.ID)
 }
 
+func TestListItemsRejectsCursorFromAnotherSort(t *testing.T) {
+	t.Parallel()
+
+	cursor := pagination.Cursor{CreatedAt: fixedTime, ID: uuid.New(), Sort: "newest"}
+	read := &stubReadModel{}
+	handler := app.NewListItemsHandler(read, nil)
+
+	_, err := handler.Handle(t.Context(), app.ListItemsQuery{
+		Sort: "price_asc", Cursor: cursor, Limit: 7,
+	})
+
+	var invalid *domainerr.InvalidError
+	require.ErrorAs(t, err, &invalid)
+	assert.Equal(t, "cursor", invalid.Field)
+}
+
+func TestListItemsAcceptsCursorMatchingSort(t *testing.T) {
+	t.Parallel()
+
+	cursor := pagination.Cursor{
+		CreatedAt: fixedTime, ID: uuid.New(), PriceKopeks: 500, Sort: "price_asc",
+	}
+	read := &stubReadModel{}
+	handler := app.NewListItemsHandler(read, nil)
+
+	_, err := handler.Handle(t.Context(), app.ListItemsQuery{
+		Sort: "price_asc", Cursor: cursor, Limit: 7,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, app.ListSortPriceAsc, read.lastFilter.Sort)
+	assert.Equal(t, int64(500), read.lastFilter.Cursor.PriceKopeks)
+}
+
+func TestListItemsAcceptsLegacyCursorOnDefaultSort(t *testing.T) {
+	t.Parallel()
+
+	cursor := pagination.Cursor{CreatedAt: fixedTime, ID: uuid.New()}
+	read := &stubReadModel{}
+	handler := app.NewListItemsHandler(read, nil)
+
+	_, err := handler.Handle(t.Context(), app.ListItemsQuery{Cursor: cursor, Limit: 7})
+
+	require.NoError(t, err)
+	assert.Equal(t, app.ListSortNewest, read.lastFilter.Sort)
+}
+
 func TestListItemsFillsOwnerNamesWithoutDuplicates(t *testing.T) {
 	t.Parallel()
 
@@ -226,20 +273,20 @@ func TestDeletePhotoHandler(t *testing.T) {
 	item := itemWithStatus(t, ownerID, domain.StatusDraft)
 	photos := &countingPhotos{}
 
-	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, &stubStorage{}, passthroughTx{})
+	handler := app.NewDeletePhotoHandler(&stubRepository{item: item}, photos, &stubStorage{}, passthroughTx{}, fakeClock{}, nil)
 
 	require.NoError(t, handler.Handle(t.Context(), app.DeletePhotoCommand{
-		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: ownerID,
+		ItemID: item.ID(), PhotoDisplayID: domain.NewDisplayID(), ActorID: ownerID,
 	}))
 	assert.Equal(t, 1, photos.deleted)
 
 	err := handler.Handle(t.Context(), app.DeletePhotoCommand{
-		ItemID: item.ID(), PhotoID: uuid.New(), ActorID: uuid.New(),
+		ItemID: item.ID(), PhotoDisplayID: domain.NewDisplayID(), ActorID: uuid.New(),
 	})
 	require.ErrorIs(t, err, domainerr.ErrForbidden)
 	assert.Equal(t, 1, photos.deleted)
 
 	sentinel := errors.New("load failed")
-	failing := app.NewDeletePhotoHandler(&failingRepository{err: sentinel}, photos, &stubStorage{}, passthroughTx{})
+	failing := app.NewDeletePhotoHandler(&failingRepository{err: sentinel}, photos, &stubStorage{}, passthroughTx{}, fakeClock{}, nil)
 	require.ErrorIs(t, failing.Handle(t.Context(), app.DeletePhotoCommand{}), sentinel)
 }

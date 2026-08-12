@@ -94,7 +94,7 @@ describe('ItemDetailScreen', () => {
   })
 
   it('reports a failed status change', async () => {
-    changeStatus.mockRejectedValue(new Error('Нельзя продать'))
+    changeStatus.mockRejectedValue(new Error('raw backend failure'))
     renderWithProviders(<ItemDetailScreen itemId="item-1" />)
 
     await screen.findByRole('heading', { name: 'Велосипед Stels', level: 1 })
@@ -102,7 +102,9 @@ describe('ItemDetailScreen', () => {
       screen.getByRole('button', { name: 'Отметить проданным' }),
     )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Нельзя продать')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Неизвестная ошибка',
+    )
   })
 
   it('shows the favorite toggle for a foreign item instead of owner actions', async () => {

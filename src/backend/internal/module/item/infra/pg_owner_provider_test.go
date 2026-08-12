@@ -31,8 +31,8 @@ func TestOwnerProviderByIDsReturnsMap(t *testing.T) {
 	ids := []uuid.UUID{first, second}
 
 	rows := &pgtest.Rows{Records: [][]any{
-		{first, "Alice"},
-		{second, "Bob"},
+		{first, "alice1234567", "Alice"},
+		{second, "bob123456789", "Bob"},
 	}}
 	tx := &pgtest.Tx{QueryRows: []pgx.Rows{rows}}
 
@@ -41,9 +41,10 @@ func TestOwnerProviderByIDsReturnsMap(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, owners, 2)
 	assert.Equal(t, "Alice", owners[first].DisplayName)
+	assert.Equal(t, "alice1234567", owners[first].DisplayID)
 	assert.Equal(t, second, owners[second].ID)
 	require.Len(t, tx.QueryCalls, 1)
-	assert.Contains(t, tx.QueryCalls[0].SQL, "SELECT id, full_name FROM users WHERE id = ANY($1)")
+	assert.Contains(t, tx.QueryCalls[0].SQL, "SELECT id, display_id, full_name FROM users WHERE id = ANY($1)")
 	assert.Equal(t, []any{ids}, tx.QueryCalls[0].Args)
 }
 

@@ -19,9 +19,9 @@ const (
 )
 
 var extensions = map[string]string{
-	"image/jpeg": ".jpg",
-	"image/png":  ".png",
-	"image/webp": ".webp",
+	contentTypeJPEG: ".jpg",
+	contentTypePNG:  ".png",
+	contentTypeWebP: ".webp",
 }
 
 type LocalPhotoStorage struct {
@@ -70,8 +70,8 @@ func (s *LocalPhotoStorage) Save(
 	return app.StoredFile{Name: name, ContentType: contentType, Size: written}, nil
 }
 
-func (s *LocalPhotoStorage) URL(itemID uuid.UUID, name string) string {
-	return path.Join(s.publicURL, itemID.String(), name)
+func (s *LocalPhotoStorage) URL(itemDisplayID, name string) string {
+	return path.Join(s.publicURL, itemDisplayID, name)
 }
 
 func (s *LocalPhotoStorage) Delete(_ context.Context, itemID uuid.UUID, name string) error {

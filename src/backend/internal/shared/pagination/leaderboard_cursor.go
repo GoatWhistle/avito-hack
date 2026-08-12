@@ -1,7 +1,6 @@
 package pagination
 
 import (
-	"encoding/base64"
 	"strconv"
 	"strings"
 
@@ -27,7 +26,7 @@ func (c LeaderboardCursor) Encode() string {
 
 	raw := strconv.Itoa(c.Level) + "|" + strconv.Itoa(c.XP) + "|" + c.UserID.String()
 
-	return base64.RawURLEncoding.EncodeToString([]byte(raw))
+	return sealCursor(raw)
 }
 
 func DecodeLeaderboardCursor(raw string) (LeaderboardCursor, error) {
@@ -35,12 +34,12 @@ func DecodeLeaderboardCursor(raw string) (LeaderboardCursor, error) {
 		return LeaderboardCursor{}, nil
 	}
 
-	decoded, err := base64.RawURLEncoding.DecodeString(raw)
+	decoded, err := openCursor(raw)
 	if err != nil {
 		return LeaderboardCursor{}, ErrInvalidCursor
 	}
 
-	parts := strings.Split(string(decoded), "|")
+	parts := strings.Split(decoded, "|")
 	if len(parts) != leaderboardCursorParts {
 		return LeaderboardCursor{}, ErrInvalidCursor
 	}

@@ -20,8 +20,9 @@ func itemWithStatus(t *testing.T, ownerID uuid.UUID, status domain.Status) *doma
 	t.Helper()
 
 	return domain.RestoreItem(domain.RestoreItemParams{
-		ID: uuid.New(), OwnerID: ownerID, Title: "Chair", Description: "solid oak",
-		Price: vo.MustMoney(1000), Status: status, Attributes: domain.NewAttributes(nil),
+		ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: ownerID, Title: "Chair",
+		Description: "solid oak",
+		Price:       vo.MustMoney(1000), Status: status, Attributes: domain.NewAttributes(nil),
 		CreatedAt: fixedTime, UpdatedAt: fixedTime,
 	})
 }
@@ -84,19 +85,19 @@ func TestGetItemVisibility(t *testing.T) {
 			t.Parallel()
 
 			item := itemWithStatus(t, ownerID, tc.status)
-			handler := app.NewGetItemHandler(&stubRepository{item: item})
+			handler := app.NewGetItemHandler(&stubRepository{item: item}, nil, nil)
 
-			loaded, err := handler.Handle(t.Context(), app.GetItemQuery{ItemID: item.ID(), Actor: tc.actor})
+			view, err := handler.Handle(t.Context(), app.GetItemQuery{ItemID: item.ID(), Actor: tc.actor})
 
 			if tc.wantErr != nil {
 				require.ErrorIs(t, err, tc.wantErr)
-				assert.Nil(t, loaded)
+				assert.Nil(t, view.Item)
 
 				return
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, item.ID(), loaded.ID())
+			assert.Equal(t, item.ID(), view.Item.ID())
 		})
 	}
 }
@@ -105,7 +106,7 @@ func TestGetItemPropagatesRepositoryError(t *testing.T) {
 	t.Parallel()
 
 	sentinel := errors.New("db unreachable")
-	handler := app.NewGetItemHandler(&failingRepository{err: sentinel})
+	handler := app.NewGetItemHandler(&failingRepository{err: sentinel}, nil, nil)
 
 	_, err := handler.Handle(t.Context(), app.GetItemQuery{ItemID: uuid.New()})
 
@@ -201,6 +202,10 @@ func (f *failingRepository) ByID(_ context.Context, _ uuid.UUID) (*domain.Item, 
 }
 
 func (f *failingRepository) ByIDForUpdate(_ context.Context, _ uuid.UUID) (*domain.Item, error) {
+	return nil, f.err
+}
+
+func (f *failingRepository) ByDisplayID(_ context.Context, _ string) (*domain.Item, error) {
 	return nil, f.err
 }
 

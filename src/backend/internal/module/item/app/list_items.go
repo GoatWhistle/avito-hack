@@ -8,16 +8,20 @@ import (
 
 	"github.com/avito-hack/backend/internal/module/item/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
+	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/pagination"
 )
 
 type ListItemsQuery struct {
-	Status  domain.Status
-	OwnerID uuid.UUID
-	Viewer  auth.Actor
-	Search  string
-	Cursor  pagination.Cursor
-	Limit   int
+	Status    domain.Status
+	OwnerID   uuid.UUID
+	Viewer    auth.Actor
+	Search    string
+	Category  string
+	Condition string
+	Sort      string
+	Cursor    pagination.Cursor
+	Limit     int
 }
 
 type ListItemsResult struct {
@@ -36,14 +40,23 @@ func NewListItemsHandler(read ReadModel, owners OwnerProvider) *ListItemsHandler
 
 func (h *ListItemsHandler) Handle(ctx context.Context, q ListItemsQuery) (ListItemsResult, error) {
 	limit := pagination.NormalizeLimit(q.Limit)
+	sort := NormalizeListSort(q.Sort)
+
+	cursor := q.Cursor
+	if !cursor.IsZero() && NormalizeListSort(cursor.Sort) != sort {
+		return ListItemsResult{}, domainerr.NewInvalid("cursor", "invalid cursor")
+	}
 
 	rows, err := h.read.List(ctx, ListFilter{
-		Status:   q.Status,
-		OwnerID:  q.OwnerID,
-		ViewerID: q.Viewer.ID,
-		Search:   q.Search,
-		Cursor:   q.Cursor,
-		Limit:    limit + 1,
+		Status:    q.Status,
+		OwnerID:   q.OwnerID,
+		ViewerID:  q.Viewer.ID,
+		Search:    q.Search,
+		Category:  q.Category,
+		Condition: q.Condition,
+		Sort:      sort,
+		Cursor:    cursor,
+		Limit:     limit + 1,
 	})
 	if err != nil {
 		return ListItemsResult{}, fmt.Errorf("list items: %w", err)
@@ -52,7 +65,12 @@ func (h *ListItemsHandler) Handle(ctx context.Context, q ListItemsQuery) (ListIt
 	var next string
 	if len(rows) > limit {
 		last := rows[limit-1]
-		next = pagination.Cursor{CreatedAt: last.CreatedAt, ID: last.ID}.Encode()
+		next = pagination.Cursor{
+			CreatedAt:   last.CreatedAt,
+			ID:          last.ID,
+			PriceKopeks: last.PriceKopeks,
+			Sort:        string(sort),
+		}.Encode()
 		rows = rows[:limit]
 	}
 
@@ -86,6 +104,7 @@ func (h *ListItemsHandler) fillOwners(ctx context.Context, rows []ListItem) erro
 
 	for i := range rows {
 		if owner, ok := owners[rows[i].OwnerID]; ok {
+			rows[i].OwnerDisplayID = owner.DisplayID
 			rows[i].OwnerName = owner.DisplayName
 		}
 	}

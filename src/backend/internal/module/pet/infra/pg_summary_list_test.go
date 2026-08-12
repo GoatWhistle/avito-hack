@@ -63,7 +63,8 @@ func TestSummaryListByUserWithBeforeCursor(t *testing.T) {
 func TestSummaryInsert(t *testing.T) {
 	t.Parallel()
 
-	advice := &domain.Advice{Text: "Add a photo", ItemID: &itemA, Action: domain.AdviceAddPhoto}
+	adviceItemID := "abc123def456"
+	advice := &domain.Advice{Text: "Add a photo", ItemID: &adviceItemID, Action: domain.AdviceAddPhoto}
 
 	tests := []struct {
 		name    string

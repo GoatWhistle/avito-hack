@@ -5,6 +5,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	itemdomain "github.com/avito-hack/backend/internal/module/item/domain"
+
 	"github.com/avito-hack/backend/internal/module/favorite/api"
 	"github.com/avito-hack/backend/internal/module/favorite/app"
 	"github.com/avito-hack/backend/internal/module/favorite/infra"
@@ -16,6 +18,7 @@ type Options struct {
 	Tx           app.TxManager
 	Clock        app.Clock
 	Bus          events.Publisher
+	Items        itemdomain.Repository
 	Authenticate func(http.Handler) http.Handler
 }
 
@@ -34,6 +37,7 @@ func New(opts Options) *Module {
 	}
 
 	handlers := api.NewHandlers(api.Deps{
+		Items:          opts.Items,
 		AddFavorite:    app.NewAddFavoriteHandler(repo, items, opts.Tx, opts.Clock, bus),
 		RemoveFavorite: app.NewRemoveFavoriteHandler(repo, opts.Tx),
 		ListFavorites:  app.NewListFavoritesHandler(read),

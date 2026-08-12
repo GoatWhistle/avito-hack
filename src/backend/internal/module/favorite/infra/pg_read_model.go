@@ -12,10 +12,12 @@ import (
 )
 
 const listQuery = `
-	SELECT i.id, i.owner_id, i.title, i.price_kopeks, i.status, f.created_at,
+	SELECT i.id, i.display_id, i.owner_id, coalesce(u.display_id, ''), i.title, i.price_kopeks,
+	       i.status, f.created_at,
 	       coalesce((SELECT p.url FROM item_photos p WHERE p.item_id = i.id ORDER BY p.position LIMIT 1), '')
 	FROM favorites f
 	JOIN items i ON i.id = f.item_id AND i.deleted_at IS NULL
+	LEFT JOIN users u ON u.id = i.owner_id
 	WHERE f.user_id = $1 AND ($2::timestamptz IS NULL OR (f.created_at, f.item_id) < ($2::timestamptz, $3::uuid))
 	ORDER BY f.created_at DESC, f.item_id DESC
 	LIMIT $4`
@@ -41,8 +43,8 @@ func (m *PgReadModel) List(ctx context.Context, f app.ListFilter) ([]app.Favorit
 func scanFavoriteItem(row pgx.Row) (app.FavoriteItem, error) {
 	var item app.FavoriteItem
 
-	if err := row.Scan(&item.ItemID, &item.OwnerID, &item.Title,
-		&item.PriceKopeks, &item.Status, &item.CreatedAt, &item.PhotoURL); err != nil {
+	if err := row.Scan(&item.ItemID, &item.ItemDisplayID, &item.OwnerID, &item.OwnerDisplayID,
+		&item.Title, &item.PriceKopeks, &item.Status, &item.CreatedAt, &item.PhotoURL); err != nil {
 		return app.FavoriteItem{}, fmt.Errorf("scan favorite: %w", err)
 	}
 

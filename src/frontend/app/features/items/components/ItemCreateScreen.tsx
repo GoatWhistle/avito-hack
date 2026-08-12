@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { useCreateItem } from '#/features/items/hooks'
 import { useItemForm } from '#/features/items/forms'
 import { ItemFormFields } from './ItemFormFields'
 import { QualityHint } from './QualityHint'
 
 export function ItemCreateScreen() {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
   const { t: tCommon } = useTranslation()
   const navigate = useNavigate()
   const { mutateAsync } = useCreateItem()
@@ -21,7 +22,7 @@ export function ItemCreateScreen() {
         const created = await mutateAsync(payload)
         await navigate(`/items/${created.id}/edit`, { replace: true })
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : String(cause))
+        setError(translateApiError(cause, t) ?? null)
       }
     },
   })

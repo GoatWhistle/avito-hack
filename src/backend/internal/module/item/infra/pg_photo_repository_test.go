@@ -17,7 +17,7 @@ func TestPhotoRepositoryAddInsertsRow(t *testing.T) {
 	t.Parallel()
 
 	tx := &pgtest.Tx{}
-	photo := domain.RestorePhoto(uuid.New(), uuid.New(), "http://cdn/a.jpg", 3, fixedTime)
+	photo := domain.RestorePhoto(uuid.New(), "abc123def456", uuid.New(), "http://cdn/a.jpg", 3, fixedTime)
 
 	err := infra.NewPgPhotoRepository(nil).Add(ctxWith(tx), photo)
 
@@ -25,7 +25,7 @@ func TestPhotoRepositoryAddInsertsRow(t *testing.T) {
 	require.Len(t, tx.ExecCalls, 1)
 	assert.Contains(t, tx.ExecCalls[0].SQL, "INSERT INTO item_photos")
 	assert.Equal(t,
-		[]any{photo.ID(), photo.ItemID(), "http://cdn/a.jpg", 3, fixedTime},
+		[]any{photo.ID(), photo.DisplayID(), photo.ItemID(), "http://cdn/a.jpg", 3, fixedTime},
 		tx.ExecCalls[0].Args)
 }
 
@@ -33,7 +33,7 @@ func TestPhotoRepositoryAddWrapsError(t *testing.T) {
 	t.Parallel()
 
 	tx := &pgtest.Tx{ExecErrs: []error{errDB}}
-	photo := domain.RestorePhoto(uuid.New(), uuid.New(), "http://cdn/a.jpg", 0, fixedTime)
+	photo := domain.RestorePhoto(uuid.New(), "abc123def456", uuid.New(), "http://cdn/a.jpg", 0, fixedTime)
 
 	err := infra.NewPgPhotoRepository(nil).Add(ctxWith(tx), photo)
 
@@ -48,8 +48,8 @@ func TestPhotoRepositoryByItemIDReturnsPhotos(t *testing.T) {
 	first, second := uuid.New(), uuid.New()
 
 	rows := &pgtest.Rows{Records: [][]any{
-		{first, itemID, "http://cdn/1.jpg", 0, fixedTime},
-		{second, itemID, "http://cdn/2.jpg", 1, fixedTime},
+		{first, "abc123def456", itemID, "http://cdn/1.jpg", 0, fixedTime},
+		{second, "def456abc123", itemID, "http://cdn/2.jpg", 1, fixedTime},
 	}}
 	tx := &pgtest.Tx{QueryRows: []pgx.Rows{rows}}
 
@@ -137,37 +137,37 @@ func TestPhotoRepositoryCountByItemIDWrapsError(t *testing.T) {
 	assert.Contains(t, err.Error(), "count photos")
 }
 
-func TestPhotoRepositoryDeleteByIDReturnsURL(t *testing.T) {
+func TestPhotoRepositoryDeleteByDisplayIDReturnsURL(t *testing.T) {
 	t.Parallel()
 
-	itemID, photoID := uuid.New(), uuid.New()
+	itemID, photoDisplayID := uuid.New(), "abc123def456"
 	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Values: []any{"http://cdn/a.jpg"}}}}
 
-	url, err := infra.NewPgPhotoRepository(nil).DeleteByID(ctxWith(tx), itemID, photoID)
+	url, err := infra.NewPgPhotoRepository(nil).DeleteByDisplayID(ctxWith(tx), itemID, photoDisplayID)
 
 	require.NoError(t, err)
 	assert.Equal(t, "http://cdn/a.jpg", url)
 	assert.Contains(t, tx.QueryRowCalls[0].SQL, "DELETE FROM item_photos")
 	assert.Contains(t, tx.QueryRowCalls[0].SQL, "RETURNING url")
-	assert.Equal(t, []any{itemID, photoID}, tx.QueryRowCalls[0].Args)
+	assert.Equal(t, []any{itemID, photoDisplayID}, tx.QueryRowCalls[0].Args)
 }
 
-func TestPhotoRepositoryDeleteByIDReturnsNotFound(t *testing.T) {
+func TestPhotoRepositoryDeleteByDisplayIDReturnsNotFound(t *testing.T) {
 	t.Parallel()
 
 	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Err: pgx.ErrNoRows}}}
 
-	_, err := infra.NewPgPhotoRepository(nil).DeleteByID(ctxWith(tx), uuid.New(), uuid.New())
+	_, err := infra.NewPgPhotoRepository(nil).DeleteByDisplayID(ctxWith(tx), uuid.New(), "abc123def456")
 
 	require.ErrorIs(t, err, domain.ErrPhotoNotFound)
 }
 
-func TestPhotoRepositoryDeleteByIDWrapsError(t *testing.T) {
+func TestPhotoRepositoryDeleteByDisplayIDWrapsError(t *testing.T) {
 	t.Parallel()
 
 	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Err: errDB}}}
 
-	_, err := infra.NewPgPhotoRepository(nil).DeleteByID(ctxWith(tx), uuid.New(), uuid.New())
+	_, err := infra.NewPgPhotoRepository(nil).DeleteByDisplayID(ctxWith(tx), uuid.New(), "abc123def456")
 
 	require.ErrorIs(t, err, errDB)
 	assert.Contains(t, err.Error(), "delete photo")

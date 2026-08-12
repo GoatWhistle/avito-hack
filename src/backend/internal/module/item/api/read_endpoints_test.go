@@ -39,10 +39,10 @@ func TestGetItemEndpointPublicAccess(t *testing.T) {
 	f := newFixture(t, nil)
 	item := f.seedItem(t, owner.ID, domain.StatusPublished)
 
-	rec := f.do(t, http.MethodGet, "/items/"+item.ID().String(), "")
+	rec := f.do(t, http.MethodGet, "/items/"+item.DisplayID(), "")
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, item.ID().String(), body(t, rec.Result())["id"])
+	assert.Equal(t, item.DisplayID(), body(t, rec.Result())["id"])
 }
 
 func TestGetItemEndpointHidesDraftsFromAnonymous(t *testing.T) {
@@ -52,7 +52,7 @@ func TestGetItemEndpointHidesDraftsFromAnonymous(t *testing.T) {
 	f := newFixture(t, nil)
 	item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
-	assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodGet, "/items/"+item.ID().String(), "").Code)
+	assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodGet, "/items/"+item.DisplayID(), "").Code)
 }
 
 func TestGetItemEndpointOwnerSeesDraft(t *testing.T) {
@@ -62,7 +62,7 @@ func TestGetItemEndpointOwnerSeesDraft(t *testing.T) {
 	f := newFixture(t, &owner)
 	item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
-	assert.Equal(t, http.StatusOK, f.do(t, http.MethodGet, "/items/"+item.ID().String(), "").Code)
+	assert.Equal(t, http.StatusOK, f.do(t, http.MethodGet, "/items/"+item.DisplayID(), "").Code)
 }
 
 func TestGetItemEndpointErrors(t *testing.T) {
@@ -70,7 +70,7 @@ func TestGetItemEndpointErrors(t *testing.T) {
 
 	f := newFixture(t, nil)
 
-	assert.Equal(t, http.StatusBadRequest, f.do(t, http.MethodGet, "/items/not-a-uuid", "").Code)
+	assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodGet, "/items/not-a-uuid", "").Code)
 	assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodGet, "/items/"+uuid.NewString(), "").Code)
 }
 
@@ -80,8 +80,10 @@ func TestListItemsEndpoint(t *testing.T) {
 	f := newFixture(t, nil)
 	ownerID := uuid.New()
 	f.read.rows = []app.ListItem{
-		{ID: uuid.New(), OwnerID: ownerID, Title: "Bike", Status: domain.StatusPublished, CreatedAt: fixedTime},
-		{ID: uuid.New(), OwnerID: uuid.New(), Title: "Chair", Status: domain.StatusDraft, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: ownerID, Title: "Bike",
+			Status: domain.StatusPublished, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: uuid.New(), Title: "Chair",
+			Status: domain.StatusDraft, CreatedAt: fixedTime},
 	}
 
 	rec := f.do(t, http.MethodGet, "/items/?limit=10", "")
@@ -100,8 +102,10 @@ func TestListItemsEndpointFilters(t *testing.T) {
 	f := newFixture(t, nil)
 	ownerID := uuid.New()
 	f.read.rows = []app.ListItem{
-		{ID: uuid.New(), OwnerID: ownerID, Title: "Bike", Status: domain.StatusPublished, CreatedAt: fixedTime},
-		{ID: uuid.New(), OwnerID: uuid.New(), Title: "Chair", Status: domain.StatusDraft, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: ownerID, Title: "Bike",
+			Status: domain.StatusPublished, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: uuid.New(), Title: "Chair",
+			Status: domain.StatusDraft, CreatedAt: fixedTime},
 	}
 
 	byStatus := decodeList(t, f.do(t, http.MethodGet, "/items/?status=published", "").Result())
@@ -145,8 +149,10 @@ func TestListMineEndpoint(t *testing.T) {
 	actor := userActor()
 	f := newFixture(t, &actor)
 	f.read.rows = []app.ListItem{
-		{ID: uuid.New(), OwnerID: actor.ID, Title: "Mine", Status: domain.StatusDraft, CreatedAt: fixedTime},
-		{ID: uuid.New(), OwnerID: uuid.New(), Title: "Theirs", Status: domain.StatusDraft, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: actor.ID, Title: "Mine",
+			Status: domain.StatusDraft, CreatedAt: fixedTime},
+		{ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: uuid.New(), Title: "Theirs",
+			Status: domain.StatusDraft, CreatedAt: fixedTime},
 	}
 
 	rec := f.do(t, http.MethodGet, "/items/mine", "")
@@ -183,7 +189,7 @@ func TestListPhotosEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.photos.Add(t.Context(), photo))
 
-	rec := f.do(t, http.MethodGet, "/items/"+item.ID().String()+"/photos", "")
+	rec := f.do(t, http.MethodGet, "/items/"+item.DisplayID()+"/photos", "")
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
@@ -198,5 +204,5 @@ func TestListPhotosEndpointRejectsMalformedID(t *testing.T) {
 
 	f := newFixture(t, nil)
 
-	assert.Equal(t, http.StatusBadRequest, f.do(t, http.MethodGet, "/items/nope/photos", "").Code)
+	assert.Equal(t, http.StatusNotFound, f.do(t, http.MethodGet, "/items/nope/photos", "").Code)
 }

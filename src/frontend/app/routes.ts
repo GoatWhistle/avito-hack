@@ -29,4 +29,5 @@ export default [
   route('sign-up', 'routes/sign-up.tsx'),
   route('onboarding', 'routes/onboarding.tsx'),
   route('profile', 'routes/profile.tsx'),
+  route('*', 'routes/$.tsx'),
 ] satisfies RouteConfig

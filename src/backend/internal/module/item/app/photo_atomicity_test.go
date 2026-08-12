@@ -33,6 +33,10 @@ func (r *lockRecordingRepository) ByIDForUpdate(_ context.Context, _ uuid.UUID) 
 	return r.item, nil
 }
 
+func (r *lockRecordingRepository) ByDisplayID(_ context.Context, _ string) (*domain.Item, error) {
+	return r.item, nil
+}
+
 type recordingPhotos struct {
 	countingPhotos
 	events *[]string
@@ -76,7 +80,7 @@ func TestAddPhotoCountsAndInsertsUnderRowLockInOneTx(t *testing.T) {
 	repo := &lockRecordingRepository{item: item, events: &events}
 	photos := &recordingPhotos{countingPhotos: countingPhotos{stubPhotos: stubPhotos{count: 1}}, events: &events}
 
-	handler := app.NewAddPhotoHandler(repo, photos, &stubStorage{}, recordingTx{events: &events}, fakeClock{})
+	handler := app.NewAddPhotoHandler(repo, photos, &stubStorage{}, recordingTx{events: &events}, fakeClock{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: ownerID,
@@ -97,7 +101,7 @@ func TestAddPhotoRemovesFileWhenCommitFails(t *testing.T) {
 
 	handler := app.NewAddPhotoHandler(
 		&stubRepository{item: item}, &countingPhotos{}, storage,
-		failingCommitTx{err: commitErr}, fakeClock{})
+		failingCommitTx{err: commitErr}, fakeClock{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.AddPhotoCommand{
 		ItemID: item.ID(), ActorID: ownerID,

@@ -72,16 +72,16 @@ func TestNewItem_Validation(t *testing.T) {
 func TestItem_StatusTransitions(t *testing.T) {
 	t.Parallel()
 
-	t.Run("owner publishes draft directly", func(t *testing.T) {
+	t.Run("owner cannot publish draft directly", func(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
 
-		require.NoError(t, item.Publish(fixedTime))
-		require.Equal(t, domain.StatusPublished, item.Status())
+		require.Error(t, item.Publish(fixedTime))
+		require.Equal(t, domain.StatusDraft, item.Status())
 	})
 
-	t.Run("moderation stays an optional path", func(t *testing.T) {
+	t.Run("moderation approval publishes the item", func(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
@@ -101,6 +101,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		item := newItem(t)
 
+		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.NoError(t, item.Publish(fixedTime))
 		require.NoError(t, item.MarkSold(fixedTime))
 		require.Equal(t, domain.StatusSold, item.Status())
@@ -119,6 +120,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
+		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.NoError(t, item.Publish(fixedTime))
 		require.NoError(t, item.MarkSold(fixedTime))
 
@@ -133,6 +135,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 		t.Parallel()
 
 		item := newItem(t)
+		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.NoError(t, item.Publish(fixedTime))
 		require.NoError(t, item.MarkSold(fixedTime))
 

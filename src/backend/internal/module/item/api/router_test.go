@@ -61,6 +61,16 @@ func (m *memoryItems) ByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.
 	return m.ByID(ctx, id)
 }
 
+func (m *memoryItems) ByDisplayID(_ context.Context, displayID string) (*domain.Item, error) {
+	for _, item := range m.items {
+		if item.DisplayID() == displayID {
+			return item, nil
+		}
+	}
+
+	return nil, domain.ErrItemNotFound
+}
+
 type memoryPhotos struct {
 	photos map[uuid.UUID][]*domain.Photo
 }
@@ -83,12 +93,12 @@ func (m *memoryPhotos) CountByItemID(_ context.Context, itemID uuid.UUID) (int, 
 	return len(m.photos[itemID]), nil
 }
 
-func (m *memoryPhotos) DeleteByID(_ context.Context, itemID, photoID uuid.UUID) (string, error) {
+func (m *memoryPhotos) DeleteByDisplayID(_ context.Context, itemID uuid.UUID, displayID string) (string, error) {
 	kept := make([]*domain.Photo, 0, len(m.photos[itemID]))
 	url := ""
 
 	for _, photo := range m.photos[itemID] {
-		if photo.ID() == photoID {
+		if photo.DisplayID() == displayID {
 			url = photo.URL()
 
 			continue
@@ -97,7 +107,33 @@ func (m *memoryPhotos) DeleteByID(_ context.Context, itemID, photoID uuid.UUID) 
 	}
 	m.photos[itemID] = kept
 
+	if url == "" {
+		return "", domain.ErrPhotoNotFound
+	}
+
 	return url, nil
+}
+
+type memoryModerationLog struct {
+	entries []domain.ModerationLogEntry
+}
+
+func (m *memoryModerationLog) Add(_ context.Context, entry domain.ModerationLogEntry) error {
+	m.entries = append(m.entries, entry)
+
+	return nil
+}
+
+func (m *memoryModerationLog) LatestByItemID(
+	_ context.Context, itemID uuid.UUID,
+) (*domain.ModerationLogEntry, error) {
+	for i := len(m.entries) - 1; i >= 0; i-- {
+		if m.entries[i].ItemID == itemID {
+			return &m.entries[i], nil
+		}
+	}
+
+	return nil, nil //nolint:nilnil // absence of a moderation entry is a valid, expected state
 }
 
 type memoryReadModel struct {
@@ -134,7 +170,7 @@ func (nopStorage) Save(context.Context, uuid.UUID, io.Reader, string) (app.Store
 
 func (nopStorage) Delete(context.Context, uuid.UUID, string) error { return nil }
 
-func (nopStorage) URL(_ uuid.UUID, name string) string { return "/uploads/" + name }
+func (nopStorage) URL(itemDisplayID, name string) string { return "/uploads/" + itemDisplayID + "/" + name }
 
 type fixture struct {
 	router http.Handler
@@ -150,6 +186,7 @@ func newFixture(t *testing.T, actor *auth.Actor) *fixture {
 	items := newMemoryItems()
 	photos := newMemoryPhotos()
 	read := &memoryReadModel{}
+	moderationLog := &memoryModerationLog{}
 	bus := events.NopPublisher{}
 
 	authenticate := func(next http.Handler) http.Handler {
@@ -177,14 +214,15 @@ func newFixture(t *testing.T, actor *auth.Actor) *fixture {
 	}
 
 	handlers := api.NewHandlers(api.Deps{
+		Items:         items,
 		CreateItem:    app.NewCreateItemHandler(items, passthroughTx{}, fakeClock{}),
-		UpdateItem:    app.NewUpdateItemHandler(items, photos, passthroughTx{}, fakeClock{}, bus),
-		ChangeStatus:  app.NewChangeStatusHandler(items, photos, passthroughTx{}, fakeClock{}, bus),
-		GetItem:       app.NewGetItemHandler(items),
+		UpdateItem:    app.NewUpdateItemHandler(items, photos, passthroughTx{}, fakeClock{}, bus, nil),
+		ChangeStatus:  app.NewChangeStatusHandler(items, photos, passthroughTx{}, fakeClock{}, bus, nil),
+		GetItem:       app.NewGetItemHandler(items, moderationLog, nil),
 		ListItems:     app.NewListItemsHandler(read, nil),
-		AddPhoto:      app.NewAddPhotoHandler(items, photos, nopStorage{}, passthroughTx{}, fakeClock{}),
+		AddPhoto:      app.NewAddPhotoHandler(items, photos, nopStorage{}, passthroughTx{}, fakeClock{}, nil),
 		ListPhotos:    app.NewListPhotosHandler(photos),
-		DeletePhoto:   app.NewDeletePhotoHandler(items, photos, nopStorage{}, passthroughTx{}),
+		DeletePhoto:   app.NewDeletePhotoHandler(items, photos, nopStorage{}, passthroughTx{}, fakeClock{}, nil),
 		Validator:     validate.New(),
 		Authenticate:  authenticate,
 		OptionalAuth:  optional,
@@ -213,7 +251,7 @@ func (f *fixture) seedItem(t *testing.T, ownerID uuid.UUID, status domain.Status
 	t.Helper()
 
 	item := domain.RestoreItem(domain.RestoreItemParams{
-		ID: uuid.New(), OwnerID: ownerID, Title: "Bicycle", Description: "fast one",
+		ID: uuid.New(), DisplayID: domain.NewDisplayID(), OwnerID: ownerID, Title: "Bicycle", Description: "fast one",
 		Price: vo.MustMoney(150000), Status: status, Attributes: domain.NewAttributes(nil),
 		CreatedAt: fixedTime, UpdatedAt: fixedTime,
 	})

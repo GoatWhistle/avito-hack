@@ -22,13 +22,15 @@ type ItemChecker interface {
 }
 
 type FavoriteItem struct {
-	ItemID      uuid.UUID
-	OwnerID     uuid.UUID
-	Title       string
-	PriceKopeks int64
-	Status      string
-	PhotoURL    string
-	CreatedAt   time.Time
+	ItemID         uuid.UUID
+	ItemDisplayID  string
+	OwnerID        uuid.UUID
+	OwnerDisplayID string
+	Title          string
+	PriceKopeks   int64
+	Status        string
+	PhotoURL      string
+	CreatedAt     time.Time
 }
 
 type ListFilter struct {

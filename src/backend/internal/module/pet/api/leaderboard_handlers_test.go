@@ -14,6 +14,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/module/pet/api"
 	"github.com/avito-hack/backend/internal/module/pet/app"
+	"github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/pagination"
 )
@@ -106,7 +107,9 @@ func TestLeaderboardContract(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.Len(t, body.Items, 2)
 
-	assert.Equal(t, userID.String(), body.Items[0].UserID)
+	assert.Equal(t, domain.PublicToken(userID), body.Items[0].UserID)
+	assert.NotEqual(t, userID.String(), body.Items[0].UserID)
+	assert.NotEqual(t, body.Items[0].UserID, body.Items[1].UserID)
 	assert.Equal(t, "Alice", body.Items[0].Name)
 	assert.Equal(t, 9, body.Items[0].Level)
 	assert.Equal(t, 900, body.Items[0].XP)

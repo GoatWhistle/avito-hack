@@ -13,7 +13,9 @@ import (
 	"github.com/avito-hack/backend/internal/shared/postgres"
 )
 
-const itemColumns = `id, owner_id, title, description, price_kopeks, status, attributes, created_at, updated_at`
+const itemColumns = `
+	id, display_id, owner_id, title, description, price_kopeks, status, attributes, created_at, updated_at,
+	is_seed, ai_verified`
 
 type PgRepository struct {
 	pool *pgxpool.Pool
@@ -30,18 +32,23 @@ func (r *PgRepository) Save(ctx context.Context, item *domain.Item) error {
 	}
 
 	const query = `
-		INSERT INTO items (id, owner_id, title, description, price_kopeks, status, attributes, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO items (
+			id, display_id, owner_id, title, description, price_kopeks, status, attributes, created_at, updated_at,
+			is_seed, ai_verified
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		ON CONFLICT (id) DO UPDATE SET
 			title = EXCLUDED.title,
 			description = EXCLUDED.description,
 			price_kopeks = EXCLUDED.price_kopeks,
 			status = EXCLUDED.status,
 			attributes = EXCLUDED.attributes,
-			updated_at = EXCLUDED.updated_at`
+			updated_at = EXCLUDED.updated_at,
+			ai_verified = EXCLUDED.ai_verified`
 
 	_, err = postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query,
 		item.ID(),
+		item.DisplayID(),
 		item.OwnerID(),
 		item.Title(),
 		item.Description(),
@@ -50,6 +57,8 @@ func (r *PgRepository) Save(ctx context.Context, item *domain.Item) error {
 		attributes,
 		item.CreatedAt(),
 		item.UpdatedAt(),
+		item.IsSeed(),
+		item.AIVerified(),
 	)
 	if err != nil {
 		return fmt.Errorf("save item: %w", err)
@@ -68,6 +77,12 @@ func (r *PgRepository) ByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain
 	query := `SELECT ` + itemColumns + ` FROM items WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`
 
 	return r.queryOne(ctx, query, id)
+}
+
+func (r *PgRepository) ByDisplayID(ctx context.Context, displayID string) (*domain.Item, error) {
+	query := `SELECT ` + itemColumns + ` FROM items WHERE display_id = $1 AND deleted_at IS NULL`
+
+	return r.queryOne(ctx, query, displayID)
 }
 
 func (r *PgRepository) queryOne(ctx context.Context, query string, args ...any) (*domain.Item, error) {

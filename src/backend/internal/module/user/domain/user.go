@@ -9,11 +9,13 @@ import (
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/domainerr"
 	"github.com/avito-hack/backend/internal/shared/password"
+	"github.com/avito-hack/backend/internal/shared/publicid"
 	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
 type User struct {
 	id           uuid.UUID
+	displayID    string
 	email        vo.Email
 	passwordHash password.Hash
 	fullName     string
@@ -50,6 +52,7 @@ func NewUser(p NewUserParams) (*User, error) {
 
 	return &User{
 		id:           uuid.New(),
+		displayID:    publicid.New(),
 		email:        p.Email,
 		passwordHash: p.PasswordHash,
 		fullName:     name,
@@ -61,6 +64,7 @@ func NewUser(p NewUserParams) (*User, error) {
 
 type RestoreUserParams struct {
 	ID           uuid.UUID
+	DisplayID    string
 	Email        vo.Email
 	PasswordHash password.Hash
 	FullName     string
@@ -72,6 +76,7 @@ type RestoreUserParams struct {
 func RestoreUser(p RestoreUserParams) *User {
 	return &User{
 		id:           p.ID,
+		displayID:    p.DisplayID,
 		email:        p.Email,
 		passwordHash: p.PasswordHash,
 		fullName:     p.FullName,
@@ -82,6 +87,7 @@ func RestoreUser(p RestoreUserParams) *User {
 }
 
 func (u *User) ID() uuid.UUID                   { return u.id }
+func (u *User) DisplayID() string               { return u.displayID }
 func (u *User) Email() vo.Email                 { return u.email }
 func (u *User) PasswordHash() password.Hash     { return u.passwordHash }
 func (u *User) FullName() string                { return u.fullName }

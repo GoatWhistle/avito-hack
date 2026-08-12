@@ -27,6 +27,9 @@ const toQuery = (params: ListItemsParams) => {
   if (params.status) query.status = params.status
   if (params.owner_id) query.owner_id = params.owner_id
   if (params.search) query.search = params.search
+  if (params.category) query.category = params.category
+  if (params.condition) query.condition = params.condition
+  if (params.sort && params.sort !== 'newest') query.sort = params.sort
 
   return query
 }

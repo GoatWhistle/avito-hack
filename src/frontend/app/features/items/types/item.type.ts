@@ -8,9 +8,35 @@ export const itemStatuses = [
 
 export type ItemStatus = (typeof itemStatuses)[number]
 
+export const itemCategories = [
+  'electronics',
+  'appliances',
+  'furniture',
+  'clothes',
+  'kids',
+  'sport',
+  'hobby',
+  'music',
+  'books',
+  'auto',
+  'realty',
+  'beauty',
+  'animals',
+  'other',
+] as const
+
+export type ItemCategory = (typeof itemCategories)[number]
+
+export const itemConditions = ['new', 'used'] as const
+
+export type ItemCondition = (typeof itemConditions)[number]
+
+export const itemSorts = ['newest', 'price_asc', 'price_desc'] as const
+
+export type ItemSort = (typeof itemSorts)[number]
+
 export const itemStatusActions = [
   'submit',
-  'publish',
   'sell',
   'archive',
   'restore',
@@ -28,6 +54,9 @@ export interface Item {
   attributes: Record<string, string> | null
   created_at: string
   updated_at: string
+  moderation_reason?: string
+  is_seed: boolean
+  ai_verified: boolean
 }
 
 export interface ItemListEntry {
@@ -37,7 +66,11 @@ export interface ItemListEntry {
   title: string
   price: number
   status: ItemStatus
+  category?: string
+  condition?: string
   created_at: string
+  is_seed: boolean
+  ai_verified: boolean
 }
 
 export interface ItemPhoto {
@@ -69,6 +102,9 @@ export interface ListItemsParams {
   status?: ItemStatus | ''
   owner_id?: string
   search?: string
+  category?: ItemCategory | ''
+  condition?: ItemCondition | ''
+  sort?: ItemSort
 }
 
 export interface CreateItemRequest {

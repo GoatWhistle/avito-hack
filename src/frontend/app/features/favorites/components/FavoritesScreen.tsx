@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { translateApiError } from '#/api'
 import { useFavoritesQuery } from '#/features/favorites/hooks'
 import { flattenPages } from '#/features/items/hooks'
 import {
@@ -11,7 +12,7 @@ import {
 import { FavoriteCard } from './FavoriteCard'
 
 export function FavoritesScreen() {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
 
   const query = useFavoritesQuery()
   const entries = flattenPages(query.data?.pages)
@@ -32,9 +33,7 @@ export function FavoritesScreen() {
 
       {query.isError && (
         <ErrorState
-          message={
-            query.error instanceof Error ? query.error.message : undefined
-          }
+          message={translateApiError(query.error, t)}
           onRetry={() => void query.refetch()}
         />
       )}

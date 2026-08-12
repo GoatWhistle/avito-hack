@@ -22,7 +22,7 @@ func TestUpdateItemHandlerAppliesChanges(t *testing.T) {
 	repo := &stubRepository{item: item}
 	bus, collected := collectEvents(t, events.TypeItemUpdated)
 
-	handler := app.NewUpdateItemHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus)
+	handler := app.NewUpdateItemHandler(repo, &stubPhotos{count: 2}, passthroughTx{}, fakeClock{}, bus, nil)
 
 	title := "Updated title"
 	price := int64(777)
@@ -59,7 +59,7 @@ func TestUpdateItemHandlerRejectsNonOwner(t *testing.T) {
 	repo := &stubRepository{item: item}
 	bus, collected := collectEvents(t, events.TypeItemUpdated)
 
-	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, bus)
+	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, bus, nil)
 
 	title := "Hijacked"
 	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{
@@ -78,7 +78,7 @@ func TestUpdateItemHandlerValidatesPrice(t *testing.T) {
 	item := itemWithStatus(t, ownerID, domain.StatusDraft)
 	repo := &stubRepository{item: item}
 
-	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{})
+	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{}, nil)
 
 	price := int64(-1)
 	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{
@@ -99,7 +99,7 @@ func TestUpdateItemHandlerRejectsSoldItem(t *testing.T) {
 	repo := &stubRepository{item: item}
 	bus, collected := collectEvents(t, events.TypeItemUpdated)
 
-	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, bus)
+	handler := app.NewUpdateItemHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, bus, nil)
 
 	title := "Too late"
 	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{
@@ -115,7 +115,7 @@ func TestUpdateItemHandlerPropagatesLoadFailure(t *testing.T) {
 
 	sentinel := errors.New("row is locked")
 	handler := app.NewUpdateItemHandler(
-		&failingRepository{err: sentinel}, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{})
+		&failingRepository{err: sentinel}, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{ItemID: uuid.New(), ActorID: uuid.New()})
 
@@ -154,7 +154,7 @@ func TestChangeStatusFullFlow(t *testing.T) {
 			item := itemWithStatus(t, ownerID, tc.status)
 			repo := &stubRepository{item: item}
 			handler := app.NewChangeStatusHandler(
-				repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{})
+				repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{}, nil)
 
 			updated, err := handler.Handle(t.Context(), app.ChangeStatusCommand{
 				ItemID: item.ID(), Actor: actorOf(ownerID), Action: tc.action,
@@ -173,7 +173,8 @@ func TestChangeStatusRejectsUnknownAction(t *testing.T) {
 	item := itemWithStatus(t, ownerID, domain.StatusDraft)
 	repo := &stubRepository{item: item}
 
-	handler := app.NewChangeStatusHandler(repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{})
+	handler := app.NewChangeStatusHandler(
+		repo, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.ChangeStatusCommand{
 		ItemID: item.ID(), Actor: actorOf(ownerID), Action: app.StatusAction("delete"),
@@ -190,10 +191,10 @@ func TestChangeStatusPropagatesLoadFailure(t *testing.T) {
 
 	sentinel := errors.New("deadlock detected")
 	handler := app.NewChangeStatusHandler(
-		&failingRepository{err: sentinel}, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{})
+		&failingRepository{err: sentinel}, &stubPhotos{}, passthroughTx{}, fakeClock{}, events.NopPublisher{}, nil)
 
 	_, err := handler.Handle(t.Context(), app.ChangeStatusCommand{
-		ItemID: uuid.New(), Actor: actorOf(uuid.New()), Action: app.ActionPublish,
+		ItemID: uuid.New(), Actor: actorOf(uuid.New()), Action: app.ActionSubmit,
 	})
 
 	require.ErrorIs(t, err, sentinel)
@@ -203,16 +204,16 @@ func TestChangeStatusFailsOnPhotoCountFailure(t *testing.T) {
 	t.Parallel()
 
 	ownerID := uuid.New()
-	item := itemWithStatus(t, ownerID, domain.StatusDraft)
+	item := itemWithStatus(t, ownerID, domain.StatusPublished)
 	sentinel := errors.New("boom")
-	bus, collected := collectEvents(t, events.TypeItemPublished)
+	bus, collected := collectEvents(t, events.TypeItemSold)
 
 	handler := app.NewChangeStatusHandler(
 		&stubRepository{item: item}, &countingPhotos{countErr: sentinel},
-		passthroughTx{}, fakeClock{}, bus)
+		passthroughTx{}, fakeClock{}, bus, nil)
 
 	_, err := handler.Handle(t.Context(), app.ChangeStatusCommand{
-		ItemID: item.ID(), Actor: actorOf(ownerID), Action: app.ActionPublish,
+		ItemID: item.ID(), Actor: actorOf(ownerID), Action: app.ActionSell,
 	})
 
 	require.ErrorIs(t, err, sentinel)
@@ -230,7 +231,7 @@ func TestUpdateItemFailsOnPhotoCountFailure(t *testing.T) {
 
 	handler := app.NewUpdateItemHandler(
 		&stubRepository{item: item}, &countingPhotos{countErr: sentinel},
-		passthroughTx{}, fakeClock{}, bus)
+		passthroughTx{}, fakeClock{}, bus, nil)
 
 	_, err := handler.Handle(t.Context(), app.UpdateItemCommand{
 		ItemID: item.ID(), ActorID: ownerID, Title: &title,

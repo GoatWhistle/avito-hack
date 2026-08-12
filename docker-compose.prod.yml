@@ -82,6 +82,7 @@ services:
       LOG_FORMAT: json
       LOG_COLOR: never
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      RATE_LIMIT_TRUST_PROXY: "true"
     healthcheck:
       test: ["CMD", "/app/api", "healthcheck"]
       interval: 15s

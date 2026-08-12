@@ -62,17 +62,20 @@ func TestAddPhotoStoresUploadedImage(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.upload(t, "/items/"+item.ID().String()+"/photos", "photo", "cat.jpg", jpegBytes(64))
+	rec := f.upload(t, "/items/"+item.DisplayID()+"/photos", "photo", "cat.jpg", jpegBytes(64))
 
 	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
 
 	var body map[string]any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-	assert.Equal(t, "/uploads/photo.jpg", body["url"])
+	assert.Equal(t, "/uploads/"+item.DisplayID()+"/photo.jpg", body["url"])
+	assert.NotContains(t, body["url"], item.ID().String())
 
 	stored, err := f.photos.ByItemID(context.Background(), item.ID())
 	require.NoError(t, err)
 	assert.Len(t, stored, 1)
+	assert.Equal(t, stored[0].DisplayID(), body["id"])
+	assert.NotEqual(t, stored[0].ID().String(), body["id"])
 }
 
 func TestAddPhotoRequiresMultipartField(t *testing.T) {
@@ -82,7 +85,7 @@ func TestAddPhotoRequiresMultipartField(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.upload(t, "/items/"+item.ID().String()+"/photos", "attachment", "cat.jpg", jpegBytes(64))
+	rec := f.upload(t, "/items/"+item.DisplayID()+"/photos", "attachment", "cat.jpg", jpegBytes(64))
 
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Contains(t, rec.Body.String(), "multipart file field is required")
@@ -95,7 +98,7 @@ func TestAddPhotoRejectsNonMultipartBody(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/photos", `{"photo":"x"}`)
+	rec := f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/photos", `{"photo":"x"}`)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
@@ -109,7 +112,7 @@ func TestAddPhotoRejectsDisallowedMIME(t *testing.T) {
 
 	gif := append([]byte("GIF89a"), make([]byte, 64)...)
 
-	rec := f.upload(t, "/items/"+item.ID().String()+"/photos", "photo", "cat.gif", gif)
+	rec := f.upload(t, "/items/"+item.DisplayID()+"/photos", "photo", "cat.gif", gif)
 
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Contains(t, rec.Body.String(), "only jpeg, png and webp images are allowed")
@@ -122,13 +125,13 @@ func TestAddPhotoRejectsOversizedUpload(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 
-	rec := f.upload(t, "/items/"+item.ID().String()+"/photos", "photo", "huge.jpg", jpegBytes((1<<20)+1024))
+	rec := f.upload(t, "/items/"+item.DisplayID()+"/photos", "photo", "huge.jpg", jpegBytes((1<<20)+1024))
 
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Contains(t, rec.Body.String(), photoFieldName)
 }
 
-func TestAddPhotoRejectsBadItemID(t *testing.T) {
+func TestAddPhotoRejectsUnknownItemID(t *testing.T) {
 	t.Parallel()
 
 	actor := userActor()
@@ -136,7 +139,7 @@ func TestAddPhotoRejectsBadItemID(t *testing.T) {
 
 	rec := f.upload(t, "/items/not-a-uuid/photos", "photo", "cat.jpg", jpegBytes(64))
 
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
 func TestAddPhotoRequiresAuthentication(t *testing.T) {
@@ -156,7 +159,7 @@ func TestAddPhotoForbiddenForNonOwner(t *testing.T) {
 	f := newFixture(t, &actor)
 	item := f.seedItem(t, uuid.New(), domain.StatusDraft)
 
-	rec := f.upload(t, "/items/"+item.ID().String()+"/photos", "photo", "cat.jpg", jpegBytes(64))
+	rec := f.upload(t, "/items/"+item.DisplayID()+"/photos", "photo", "cat.jpg", jpegBytes(64))
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }

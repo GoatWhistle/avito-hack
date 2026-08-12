@@ -7,12 +7,36 @@
     "description": "Description",
     "price": "Price",
     "photos": "Photos",
-    "attributes": "Attributes"
+    "attributes": "Attributes",
+    "category": "Category",
+    "customCategory": "Custom category",
+    "condition": "Condition"
   },
   "placeholders": {
     "title": "For example, Stels bicycle",
     "description": "Describe the condition and details",
-    "price": "0"
+    "price": "0",
+    "customCategory": "For example, antiques"
+  },
+  "category": {
+    "electronics": "Electronics",
+    "appliances": "Appliances",
+    "furniture": "Furniture",
+    "clothes": "Clothing and shoes",
+    "kids": "Kids' goods",
+    "sport": "Sports and outdoors",
+    "hobby": "Hobbies",
+    "music": "Musical instruments",
+    "books": "Books",
+    "auto": "Auto and parts",
+    "realty": "Real estate",
+    "beauty": "Beauty and health",
+    "animals": "Pet supplies",
+    "other": "Other"
+  },
+  "condition": {
+    "new": "New",
+    "used": "Used"
   },
   "status": {
     "draft": "Draft",
@@ -21,10 +45,24 @@
     "sold": "Sold",
     "archived": "Archived"
   },
+  "moderation": {
+    "pending": "An AI moderator is reviewing this listing — this takes a few seconds",
+    "rejectedTitle": "This listing did not pass moderation",
+    "rejectedReason": "Reason: {{reason}}",
+    "rejectedHint": "Fix the listing and send it for review again"
+  },
+  "badge": {
+    "platform": "From the platform",
+    "platformHint": "This listing was posted by the platform and cannot be changed",
+    "aiVerified": "AI-verified",
+    "aiVerifiedHint": "Title, description and photos passed automatic moderation"
+  },
+  "seed": {
+    "locked": "This is a platform listing — it cannot be changed or unpublished"
+  },
   "actions": {
     "create": "Post a listing",
     "submit": "Send to moderation",
-    "publish": "Publish",
     "sell": "Mark as sold",
     "archive": "Archive",
     "restore": "Restore",
@@ -43,7 +81,17 @@
   "filters": {
     "searchPlaceholder": "Search by title",
     "status": "Filter by status",
-    "all": "All"
+    "all": "All",
+    "sort": "Sort",
+    "sortNewest": "Newest first",
+    "sortPriceAsc": "Cheapest first",
+    "sortPriceDesc": "Most expensive first",
+    "openFilters": "Filters",
+    "category": "Category",
+    "condition": "Condition",
+    "reset": "Reset",
+    "apply": "Apply",
+    "activeCount": "Filters selected: {{count}}"
   },
   "photo": {
     "alt": "{{title}} — photo {{index}}",

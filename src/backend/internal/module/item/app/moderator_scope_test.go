@@ -29,10 +29,6 @@ func TestChangeStatusHandler_ModeratorMayOnlyArchive(t *testing.T) {
 			action: app.ActionSubmit, wantErr: domainerr.ErrForbidden,
 		},
 		{
-			name: "publish is denied", item: newDraftItem,
-			action: app.ActionPublish, wantErr: domainerr.ErrForbidden,
-		},
-		{
 			name: "restore is denied", item: newArchivedItem,
 			action: app.ActionRestore, wantErr: domainerr.ErrForbidden,
 		},

@@ -25,7 +25,7 @@ func (p *PgOwnerProvider) ByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.
 		return map[uuid.UUID]app.OwnerView{}, nil
 	}
 
-	const query = `SELECT id, full_name FROM users WHERE id = ANY($1) AND deleted_at IS NULL`
+	const query = `SELECT id, display_id, full_name FROM users WHERE id = ANY($1) AND deleted_at IS NULL`
 
 	rows, err := postgres.QueryAll(ctx, postgres.QuerierFrom(ctx, p.pool), len(ids), scanOwner, query, ids)
 	if err != nil {
@@ -43,7 +43,7 @@ func (p *PgOwnerProvider) ByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.
 func scanOwner(row pgx.Row) (app.OwnerView, error) {
 	var owner app.OwnerView
 
-	if err := row.Scan(&owner.ID, &owner.DisplayName); err != nil {
+	if err := row.Scan(&owner.ID, &owner.DisplayID, &owner.DisplayName); err != nil {
 		return app.OwnerView{}, fmt.Errorf("scan owner: %w", err)
 	}
 

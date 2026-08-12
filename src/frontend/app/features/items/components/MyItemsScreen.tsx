@@ -2,18 +2,27 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { flattenPages, useMyItemsQuery } from '#/features/items/hooks'
 import { ItemFilters } from './ItemFilters'
 import { MyItemRow } from './MyItemRow'
 import { LoadMore } from './LoadMore'
 import { EmptyState, ErrorState, ItemsSkeleton } from './ListStates'
-import type { ItemStatus } from '#/features/items/types'
+import type {
+  ItemCategory,
+  ItemCondition,
+  ItemSort,
+  ItemStatus,
+} from '#/features/items/types'
 
 export function MyItemsScreen() {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
   const [status, setStatus] = useState<ItemStatus | ''>('')
+  const [category, setCategory] = useState<ItemCategory | ''>('')
+  const [condition, setCondition] = useState<ItemCondition | ''>('')
+  const [sort, setSort] = useState<ItemSort>('newest')
 
-  const query = useMyItemsQuery({ status })
+  const query = useMyItemsQuery({ status, category, condition, sort })
   const items = flattenPages(query.data?.pages)
 
   const loadMore = useCallback(() => {
@@ -29,7 +38,16 @@ export function MyItemsScreen() {
         <Button render={<Link to="/items/new" />}>{t('actions.create')}</Button>
       </header>
 
-      <ItemFilters status={status} onStatusChange={setStatus} />
+      <ItemFilters
+        status={status}
+        onStatusChange={setStatus}
+        category={category}
+        onCategoryChange={setCategory}
+        condition={condition}
+        onConditionChange={setCondition}
+        sort={sort}
+        onSortChange={setSort}
+      />
 
       {query.isPending && (
         <ItemsSkeleton count={3} className="sm:grid-cols-1" />
@@ -37,9 +55,7 @@ export function MyItemsScreen() {
 
       {query.isError && (
         <ErrorState
-          message={
-            query.error instanceof Error ? query.error.message : undefined
-          }
+          message={translateApiError(query.error, t)}
           onRetry={() => void query.refetch()}
         />
       )}

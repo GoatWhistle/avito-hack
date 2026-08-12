@@ -21,6 +21,7 @@ var mapperTime = time.Date(2023, 7, 1, 8, 0, 0, 0, time.UTC)
 func validRow(id uuid.UUID) userRow {
 	return userRow{
 		id:           id,
+		displayID:    "abcdef123456",
 		email:        "user@example.com",
 		passwordHash: "$2a$12$hash",
 		fullName:     "Full Name",
@@ -76,7 +77,7 @@ func TestScanUserReadsAllColumns(t *testing.T) {
 
 	id := uuid.New()
 	row := pgtest.Row{Values: []any{
-		id, "scan@example.com", "$2a$12$scan", "Scan User",
+		id, "scan12345678", "scan@example.com", "$2a$12$scan", "Scan User",
 		string(auth.RoleModerator), mapperTime, mapperTime,
 	}}
 
@@ -84,6 +85,7 @@ func TestScanUserReadsAllColumns(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, id, user.ID())
+	assert.Equal(t, "scan12345678", user.DisplayID())
 	assert.Equal(t, "scan@example.com", user.Email().String())
 	assert.Equal(t, auth.RoleModerator, user.Role())
 }
@@ -102,7 +104,7 @@ func TestScanUserPropagatesMappingError(t *testing.T) {
 	t.Parallel()
 
 	row := pgtest.Row{Values: []any{
-		uuid.New(), "broken", "$2a$12$scan", "Scan User",
+		uuid.New(), "scan12345678", "broken", "$2a$12$scan", "Scan User",
 		string(auth.RoleUser), mapperTime, mapperTime,
 	}}
 

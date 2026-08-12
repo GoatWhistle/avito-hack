@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Field, FieldError, FieldLabel, Input } from '#/components/ui'
-import { isApiError } from '#/api'
+import { translateApiError } from '#/api'
 import type { User } from '#/types'
 import { useUpdateProfile } from './useUpdateProfile'
 
@@ -18,12 +18,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const trimmed = value.trim()
   const invalid = trimmed.length === 0
 
-  const serverError = error
-    ? isApiError(error)
-      ? error.message ||
-        t(error.translationKey, { defaultValue: t('errors:unknown') })
-      : t('errors:unknown')
-    : null
+  const serverError = translateApiError(error, t) ?? null
 
   const cancel = () => {
     setValue(user.fullName)

@@ -139,16 +139,18 @@ func TestDayActivityTitlesErrors(t *testing.T) {
 func TestDayActivityListingIssues(t *testing.T) {
 	t.Parallel()
 
+	itemDisplayID := "abc123def456"
+
 	tx := &pgtest.Tx{QueryRows: []pgx.Rows{rowsOf(
-		[]any{itemA, "Bike", "no_photo", 3},
-		[]any{userB, "Chair", "stale", 30},
+		[]any{itemDisplayID, "Bike", "no_photo", 3},
+		[]any{"def456abc123", "Chair", "stale", 30},
 	)}}
 
 	issues, err := infra.NewPgDayActivity(nil).ListingIssues(ctxWith(tx), userA, 5)
 
 	require.NoError(t, err)
 	require.Len(t, issues, 2)
-	assert.Equal(t, itemA, issues[0].ItemID)
+	assert.Equal(t, itemDisplayID, issues[0].ItemID)
 	assert.Equal(t, domain.IssueNoPhoto, issues[0].Kind)
 	assert.Equal(t, 3, issues[0].StaleDays)
 	assert.Equal(t, domain.IssueStale, issues[1].Kind)

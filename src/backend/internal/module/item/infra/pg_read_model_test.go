@@ -18,11 +18,12 @@ func TestReadModelListReturnsItems(t *testing.T) {
 	t.Parallel()
 
 	first, second := uuid.New(), uuid.New()
+	firstDisplayID, secondDisplayID := domain.NewDisplayID(), domain.NewDisplayID()
 	ownerID := uuid.New()
 
 	rows := &pgtest.Rows{Records: [][]any{
-		{first, ownerID, "Bike", int64(1000), "published", fixedTime},
-		{second, ownerID, "Chair", int64(2000), "bogus", fixedTime},
+		{first, firstDisplayID, ownerID, "Bike", int64(1000), "published", fixedTime, false, true, "bikes", "used"},
+		{second, secondDisplayID, ownerID, "Chair", int64(2000), "bogus", fixedTime, true, false, "", ""},
 	}}
 	tx := &pgtest.Tx{QueryRows: []pgx.Rows{rows}}
 
@@ -31,11 +32,16 @@ func TestReadModelListReturnsItems(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, items, 2)
 	assert.Equal(t, first, items[0].ID)
+	assert.Equal(t, firstDisplayID, items[0].DisplayID)
 	assert.Equal(t, ownerID, items[0].OwnerID)
 	assert.Equal(t, "Bike", items[0].Title)
 	assert.Equal(t, domain.StatusPublished, items[0].Status)
 	assert.Equal(t, domain.StatusDraft, items[1].Status)
 	assert.Equal(t, int64(2000), items[1].PriceKopeks)
+	assert.False(t, items[0].IsSeed)
+	assert.True(t, items[0].AIVerified)
+	assert.True(t, items[1].IsSeed)
+	assert.False(t, items[1].AIVerified)
 	assert.True(t, rows.Closed)
 }
 

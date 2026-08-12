@@ -12,11 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	itemdomain "github.com/avito-hack/backend/internal/module/item/domain"
+
 	"github.com/avito-hack/backend/internal/module/favorite/api"
 	"github.com/avito-hack/backend/internal/module/favorite/app"
 	"github.com/avito-hack/backend/internal/module/favorite/domain"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/events"
+	"github.com/avito-hack/backend/internal/shared/vo"
 )
 
 var fixedTime = time.Date(2026, time.March, 3, 9, 0, 0, 0, time.UTC)
@@ -65,6 +68,46 @@ type stubItems struct{ exists bool }
 
 func (s stubItems) Exists(context.Context, uuid.UUID) (bool, error) { return s.exists, nil }
 
+type stubItemRepo struct {
+	items map[string]*itemdomain.Item
+}
+
+func newStubItemRepo() *stubItemRepo {
+	return &stubItemRepo{items: map[string]*itemdomain.Item{}}
+}
+
+func (s *stubItemRepo) seed(t *testing.T) *itemdomain.Item {
+	t.Helper()
+
+	item, err := itemdomain.NewItem(itemdomain.NewItemParams{
+		OwnerID: uuid.New(), Title: "Bicycle", Price: vo.MustMoney(1000), Now: fixedTime,
+	})
+	require.NoError(t, err)
+
+	s.items[item.DisplayID()] = item
+
+	return item
+}
+
+func (s *stubItemRepo) Save(context.Context, *itemdomain.Item) error { return nil }
+
+func (s *stubItemRepo) ByID(context.Context, uuid.UUID) (*itemdomain.Item, error) {
+	return nil, itemdomain.ErrItemNotFound
+}
+
+func (s *stubItemRepo) ByIDForUpdate(context.Context, uuid.UUID) (*itemdomain.Item, error) {
+	return nil, itemdomain.ErrItemNotFound
+}
+
+func (s *stubItemRepo) ByDisplayID(_ context.Context, displayID string) (*itemdomain.Item, error) {
+	item, ok := s.items[displayID]
+	if !ok {
+		return nil, itemdomain.ErrItemNotFound
+	}
+
+	return item, nil
+}
+
 type stubRead struct {
 	rows []app.FavoriteItem
 	err  error
@@ -85,6 +128,7 @@ func (s stubRead) List(_ context.Context, f app.ListFilter) ([]app.FavoriteItem,
 type routerOptions struct {
 	actor      *auth.Actor
 	itemExists bool
+	items      *stubItemRepo
 	read       stubRead
 }
 
@@ -92,7 +136,14 @@ func newRouter(t *testing.T, opts routerOptions) http.Handler {
 	t.Helper()
 
 	favorites := newMemoryFavorites()
+
+	items := opts.items
+	if items == nil {
+		items = newStubItemRepo()
+	}
+
 	handlers := api.NewHandlers(api.Deps{
+		Items: items,
 		AddFavorite: app.NewAddFavoriteHandler(
 			favorites, stubItems{exists: opts.itemExists}, passthroughTx{}, fixedClock{}, events.NopPublisher{}),
 		RemoveFavorite: app.NewRemoveFavoriteHandler(favorites, passthroughTx{}),
@@ -133,8 +184,10 @@ func TestAddFavoriteEndpoint(t *testing.T) {
 	t.Parallel()
 
 	current := actor()
-	router := newRouter(t, routerOptions{actor: &current, itemExists: true})
-	path := "/items/" + uuid.NewString() + "/favorite"
+	items := newStubItemRepo()
+	seeded := items.seed(t)
+	router := newRouter(t, routerOptions{actor: &current, itemExists: true, items: items})
+	path := "/items/" + seeded.DisplayID() + "/favorite"
 
 	require.Equal(t, http.StatusNoContent, do(t, router, http.MethodPost, path).Code)
 	assert.Equal(t, http.StatusNoContent, do(t, router, http.MethodPost, path).Code)
@@ -145,6 +198,9 @@ func TestAddFavoriteEndpointErrors(t *testing.T) {
 
 	current := actor()
 
+	existingItems := newStubItemRepo()
+	existing := existingItems.seed(t)
+
 	tests := []struct {
 		name       string
 		opts       routerOptions
@@ -153,20 +209,14 @@ func TestAddFavoriteEndpointErrors(t *testing.T) {
 	}{
 		{
 			name:       "unauthenticated",
-			opts:       routerOptions{itemExists: true},
-			path:       "/items/" + uuid.NewString() + "/favorite",
+			opts:       routerOptions{itemExists: true, items: existingItems},
+			path:       "/items/" + existing.DisplayID() + "/favorite",
 			wantStatus: http.StatusUnauthorized,
-		},
-		{
-			name:       "malformed item id",
-			opts:       routerOptions{actor: &current, itemExists: true},
-			path:       "/items/not-a-uuid/favorite",
-			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "unknown item",
 			opts:       routerOptions{actor: &current},
-			path:       "/items/" + uuid.NewString() + "/favorite",
+			path:       "/items/not-a-real-id/favorite",
 			wantStatus: http.StatusNotFound,
 		},
 	}
@@ -184,8 +234,10 @@ func TestRemoveFavoriteEndpoint(t *testing.T) {
 	t.Parallel()
 
 	current := actor()
-	router := newRouter(t, routerOptions{actor: &current, itemExists: true})
-	path := "/items/" + uuid.NewString() + "/favorite"
+	items := newStubItemRepo()
+	seeded := items.seed(t)
+	router := newRouter(t, routerOptions{actor: &current, itemExists: true, items: items})
+	path := "/items/" + seeded.DisplayID() + "/favorite"
 
 	require.Equal(t, http.StatusNoContent, do(t, router, http.MethodPost, path).Code)
 	assert.Equal(t, http.StatusNoContent, do(t, router, http.MethodDelete, path).Code)
@@ -195,8 +247,10 @@ func TestRemoveFavoriteEndpoint(t *testing.T) {
 func TestRemoveFavoriteEndpointRequiresAuth(t *testing.T) {
 	t.Parallel()
 
-	router := newRouter(t, routerOptions{itemExists: true})
-	path := "/items/" + uuid.NewString() + "/favorite"
+	items := newStubItemRepo()
+	seeded := items.seed(t)
+	router := newRouter(t, routerOptions{itemExists: true, items: items})
+	path := "/items/" + seeded.DisplayID() + "/favorite"
 
 	assert.Equal(t, http.StatusUnauthorized, do(t, router, http.MethodDelete, path).Code)
 }

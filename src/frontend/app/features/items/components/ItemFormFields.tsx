@@ -8,6 +8,8 @@ import {
 } from '#/components/ui'
 import { DESCRIPTION_MAX, TITLE_MAX } from '#/features/items/lib'
 import { useFieldErrors } from '#/features/items/forms'
+import { CUSTOM_CATEGORY_VALUE, CUSTOM_CATEGORY_MAX } from '#/features/items/schemas'
+import { itemCategories, itemConditions } from '#/features/items/types'
 import type { useItemForm } from '#/features/items/forms'
 
 interface ItemFormFieldsProps {
@@ -87,6 +89,105 @@ export function ItemFormFields({ form }: ItemFormFieldsProps) {
               }
             />
             <FieldError errors={toErrors(field.state.meta.errors, 'price')} />
+          </Field>
+        )}
+      />
+
+      <form.Field
+        name="category"
+        children={(field) => (
+          <Field data-invalid={field.state.meta.errors.length > 0}>
+            <FieldLabel htmlFor={field.name}>
+              {t('fields.category')}
+            </FieldLabel>
+            <select
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              aria-invalid={field.state.meta.errors.length > 0}
+              onBlur={field.handleBlur}
+              onChange={(event) =>
+                field.handleChange(
+                  event.target.value as (typeof itemCategories)[number],
+                )
+              }
+              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+            >
+              {itemCategories.map((category) => (
+                <option key={category} value={category}>
+                  {t(`category.${category}`)}
+                </option>
+              ))}
+            </select>
+            <FieldError
+              errors={toErrors(field.state.meta.errors, 'category')}
+            />
+          </Field>
+        )}
+      />
+
+      <form.Subscribe
+        selector={(state) => state.values.category}
+        children={(category) =>
+          category === CUSTOM_CATEGORY_VALUE && (
+            <form.Field
+              name="customCategory"
+              children={(field) => (
+                <Field data-invalid={field.state.meta.errors.length > 0}>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('fields.customCategory')}
+                  </FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    maxLength={CUSTOM_CATEGORY_MAX}
+                    value={field.state.value}
+                    placeholder={t('placeholders.customCategory')}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                    onBlur={field.handleBlur}
+                    onChange={(event) =>
+                      field.handleChange(event.target.value)
+                    }
+                  />
+                  <FieldError
+                    errors={toErrors(field.state.meta.errors, 'customCategory')}
+                  />
+                </Field>
+              )}
+            />
+          )
+        }
+      />
+
+      <form.Field
+        name="condition"
+        children={(field) => (
+          <Field data-invalid={field.state.meta.errors.length > 0}>
+            <FieldLabel htmlFor={field.name}>
+              {t('fields.condition')}
+            </FieldLabel>
+            <select
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              aria-invalid={field.state.meta.errors.length > 0}
+              onBlur={field.handleBlur}
+              onChange={(event) =>
+                field.handleChange(
+                  event.target.value as (typeof itemConditions)[number],
+                )
+              }
+              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+            >
+              {itemConditions.map((condition) => (
+                <option key={condition} value={condition}>
+                  {t(`condition.${condition}`)}
+                </option>
+              ))}
+            </select>
+            <FieldError
+              errors={toErrors(field.state.meta.errors, 'condition')}
+            />
           </Field>
         )}
       />

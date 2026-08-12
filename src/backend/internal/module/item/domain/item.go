@@ -10,6 +10,7 @@ import (
 
 type Item struct {
 	id          uuid.UUID
+	displayID   string
 	ownerID     uuid.UUID
 	title       string
 	description string
@@ -18,6 +19,8 @@ type Item struct {
 	attributes  Attributes
 	createdAt   time.Time
 	updatedAt   time.Time
+	isSeed      bool
+	aiVerified  bool
 }
 
 type NewItemParams struct {
@@ -46,6 +49,7 @@ func NewItem(p NewItemParams) (*Item, error) {
 
 	return &Item{
 		id:          uuid.New(),
+		displayID:   NewDisplayID(),
 		ownerID:     p.OwnerID,
 		title:       title,
 		description: description,
@@ -59,6 +63,7 @@ func NewItem(p NewItemParams) (*Item, error) {
 
 type RestoreItemParams struct {
 	ID          uuid.UUID
+	DisplayID   string
 	OwnerID     uuid.UUID
 	Title       string
 	Description string
@@ -67,11 +72,14 @@ type RestoreItemParams struct {
 	Attributes  Attributes
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	IsSeed      bool
+	AIVerified  bool
 }
 
 func RestoreItem(p RestoreItemParams) *Item {
 	return &Item{
 		id:          p.ID,
+		displayID:   p.DisplayID,
 		ownerID:     p.OwnerID,
 		title:       p.Title,
 		description: p.Description,
@@ -80,10 +88,13 @@ func RestoreItem(p RestoreItemParams) *Item {
 		attributes:  p.Attributes,
 		createdAt:   p.CreatedAt,
 		updatedAt:   p.UpdatedAt,
+		isSeed:      p.IsSeed,
+		aiVerified:  p.AIVerified,
 	}
 }
 
 func (i *Item) ID() uuid.UUID          { return i.id }
+func (i *Item) DisplayID() string      { return i.displayID }
 func (i *Item) OwnerID() uuid.UUID     { return i.ownerID }
 func (i *Item) Title() string          { return i.title }
 func (i *Item) Description() string    { return i.description }
@@ -92,7 +103,17 @@ func (i *Item) Status() Status         { return i.status }
 func (i *Item) Attributes() Attributes { return i.attributes.Clone() }
 func (i *Item) CreatedAt() time.Time   { return i.createdAt }
 func (i *Item) UpdatedAt() time.Time   { return i.updatedAt }
+func (i *Item) IsSeed() bool           { return i.isSeed }
+func (i *Item) AIVerified() bool       { return i.aiVerified }
 
 func (i *Item) IsOwnedBy(actorID uuid.UUID) bool {
 	return i.ownerID == actorID
+}
+
+func (i *Item) MarkAIVerified() {
+	i.aiVerified = true
+}
+
+func (i *Item) ClearAIVerification() {
+	i.aiVerified = false
 }

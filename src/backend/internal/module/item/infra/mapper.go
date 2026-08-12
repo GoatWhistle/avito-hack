@@ -14,6 +14,7 @@ import (
 
 type itemRow struct {
 	id          uuid.UUID
+	displayID   string
 	ownerID     uuid.UUID
 	title       string
 	description string
@@ -22,15 +23,17 @@ type itemRow struct {
 	attributes  []byte
 	createdAt   time.Time
 	updatedAt   time.Time
+	isSeed      bool
+	aiVerified  bool
 }
 
 func scanItem(row pgx.Row) (*domain.Item, error) {
 	var r itemRow
 
 	err := row.Scan(
-		&r.id, &r.ownerID, &r.title, &r.description,
+		&r.id, &r.displayID, &r.ownerID, &r.title, &r.description,
 		&r.priceKopeks, &r.status, &r.attributes,
-		&r.createdAt, &r.updatedAt,
+		&r.createdAt, &r.updatedAt, &r.isSeed, &r.aiVerified,
 	)
 	if err != nil {
 		return nil, err
@@ -52,6 +55,7 @@ func toDomain(r itemRow) (*domain.Item, error) {
 
 	return domain.RestoreItem(domain.RestoreItemParams{
 		ID:          r.id,
+		DisplayID:   r.displayID,
 		OwnerID:     r.ownerID,
 		Title:       r.title,
 		Description: r.description,
@@ -60,22 +64,25 @@ func toDomain(r itemRow) (*domain.Item, error) {
 		Attributes:  attributes,
 		CreatedAt:   r.createdAt,
 		UpdatedAt:   r.updatedAt,
+		IsSeed:      r.isSeed,
+		AIVerified:  r.aiVerified,
 	}), nil
 }
 
 func scanPhoto(row pgx.Row) (*domain.Photo, error) {
 	var (
 		id, itemID uuid.UUID
+		displayID  string
 		url        string
 		position   int
 		createdAt  time.Time
 	)
 
-	if err := row.Scan(&id, &itemID, &url, &position, &createdAt); err != nil {
+	if err := row.Scan(&id, &displayID, &itemID, &url, &position, &createdAt); err != nil {
 		return nil, fmt.Errorf("scan photo: %w", err)
 	}
 
-	return domain.RestorePhoto(id, itemID, url, position, createdAt), nil
+	return domain.RestorePhoto(id, displayID, itemID, url, position, createdAt), nil
 }
 
 func statusFrom(raw string) domain.Status {

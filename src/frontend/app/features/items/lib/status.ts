@@ -1,8 +1,8 @@
 import type { ItemStatus, ItemStatusAction } from '#/features/items/types'
 
 const transitions: Record<ItemStatus, ItemStatusAction[]> = {
-  draft: ['publish', 'submit', 'archive'],
-  moderation: ['publish', 'archive'],
+  draft: ['submit', 'archive'],
+  moderation: ['archive'],
   published: ['sell', 'archive'],
   sold: ['archive'],
   archived: ['restore'],

@@ -19,5 +19,5 @@ func Paginate[T any](rows []T, limit int, key func(T) CursorKey) (page []T, next
 	page = rows[:limit]
 	last := key(page[limit-1])
 
-	return page, Cursor(last).Encode()
+	return page, Cursor{CreatedAt: last.CreatedAt, ID: last.ID}.Encode()
 }

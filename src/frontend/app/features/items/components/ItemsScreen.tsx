@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { useFavoriteIds } from '#/features/favorites/hooks'
 import { useSession } from '#/features/auth/session'
 import { flattenPages, useItemsQuery } from '#/features/items/hooks'
@@ -10,19 +11,33 @@ import { ItemFilters } from './ItemFilters'
 import { ItemGrid } from './ItemGrid'
 import { PetHintBanner } from './PetHintBanner'
 import { EmptyState, ErrorState, ItemsSkeleton } from './ListStates'
-import type { ItemStatus } from '#/features/items/types'
+import type {
+  ItemCategory,
+  ItemCondition,
+  ItemSort,
+  ItemStatus,
+} from '#/features/items/types'
 
 const catalogStatuses: readonly ItemStatus[] = ['published', 'sold']
 
 export function ItemsScreen() {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
   const { isAuthenticated } = useSession()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<ItemStatus | ''>('')
+  const [category, setCategory] = useState<ItemCategory | ''>('')
+  const [condition, setCondition] = useState<ItemCondition | ''>('')
+  const [sort, setSort] = useState<ItemSort>('newest')
   const debouncedSearch = useDebouncedValue(search)
   const favoriteIds = useFavoriteIds()
 
-  const query = useItemsQuery({ status, search: debouncedSearch })
+  const query = useItemsQuery({
+    status,
+    search: debouncedSearch,
+    category,
+    condition,
+    sort,
+  })
   const items = flattenPages(query.data?.pages)
 
   const loadMore = useCallback(() => {
@@ -50,15 +65,19 @@ export function ItemsScreen() {
         status={status}
         onStatusChange={setStatus}
         statuses={catalogStatuses}
+        category={category}
+        onCategoryChange={setCategory}
+        condition={condition}
+        onConditionChange={setCondition}
+        sort={sort}
+        onSortChange={setSort}
       />
 
       {query.isPending && <ItemsSkeleton />}
 
       {query.isError && (
         <ErrorState
-          message={
-            query.error instanceof Error ? query.error.message : undefined
-          }
+          message={translateApiError(query.error, t)}
           onRetry={() => void query.refetch()}
         />
       )}

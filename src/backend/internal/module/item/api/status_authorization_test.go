@@ -25,17 +25,17 @@ func TestChangeStatusEndpointAuthorization(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusPublished)
 
 		assert.Equal(t, http.StatusOK,
-			f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"archive"}`).Code)
+			f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"archive"}`).Code)
 	})
 
-	t.Run("moderator may not publish", func(t *testing.T) {
+	t.Run("moderator may not submit someone else item", func(t *testing.T) {
 		t.Parallel()
 
 		f := newFixture(t, &moderator)
-		item := f.seedItem(t, owner.ID, domain.StatusModeration)
+		item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
 		assert.Equal(t, http.StatusForbidden,
-			f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"publish"}`).Code)
+			f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"submit"}`).Code)
 	})
 
 	t.Run("moderator may not restore", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestChangeStatusEndpointAuthorization(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusArchived)
 
 		assert.Equal(t, http.StatusForbidden,
-			f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"restore"}`).Code)
+			f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"restore"}`).Code)
 	})
 
 	t.Run("moderator may not sell", func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestChangeStatusEndpointAuthorization(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusPublished)
 
 		assert.Equal(t, http.StatusForbidden,
-			f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"sell"}`).Code)
+			f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"sell"}`).Code)
 	})
 
 	t.Run("stranger is forbidden", func(t *testing.T) {
@@ -65,6 +65,6 @@ func TestChangeStatusEndpointAuthorization(t *testing.T) {
 		item := f.seedItem(t, owner.ID, domain.StatusDraft)
 
 		assert.Equal(t, http.StatusForbidden,
-			f.do(t, http.MethodPost, "/items/"+item.ID().String()+"/status", `{"action":"publish"}`).Code)
+			f.do(t, http.MethodPost, "/items/"+item.DisplayID()+"/status", `{"action":"submit"}`).Code)
 	})
 }

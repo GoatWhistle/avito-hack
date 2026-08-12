@@ -18,6 +18,7 @@ type Clock interface {
 
 type OwnerView struct {
 	ID          uuid.UUID
+	DisplayID   string
 	DisplayName string
 }
 
@@ -33,6 +34,10 @@ type StoredFile struct {
 
 type PhotoStorage interface {
 	Save(ctx context.Context, itemID uuid.UUID, content io.Reader, contentType string) (StoredFile, error)
-	URL(itemID uuid.UUID, name string) string
+	URL(itemDisplayID, name string) string
 	Delete(ctx context.Context, itemID uuid.UUID, name string) error
+}
+
+type PhotoBytesLoader interface {
+	DataURL(ctx context.Context, itemID uuid.UUID, publicURL string) (string, error)
 }

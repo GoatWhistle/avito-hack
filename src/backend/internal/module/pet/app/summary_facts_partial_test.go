@@ -123,7 +123,7 @@ func TestCollectSkipsIssuesWhenReadModelFails(t *testing.T) {
 	t.Parallel()
 
 	activity := &partialActivity{
-		stubActivity: &stubActivity{issues: []domain.ListingIssue{{ItemID: uuid.New()}}},
+		stubActivity: &stubActivity{issues: []domain.ListingIssue{{ItemID: "abc123def456"}}},
 		issuesErr:    errors.New("listing index unavailable"),
 	}
 

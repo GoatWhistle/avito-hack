@@ -3,7 +3,10 @@ package api
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	itemdomain "github.com/avito-hack/backend/internal/module/item/domain"
 
 	"github.com/avito-hack/backend/internal/module/favorite/app"
 	"github.com/avito-hack/backend/internal/shared/apierr"
@@ -12,6 +15,7 @@ import (
 )
 
 type Deps struct {
+	Items          itemdomain.Repository
 	AddFavorite    *app.AddFavoriteHandler
 	RemoveFavorite *app.RemoveFavoriteHandler
 	ListFavorites  *app.ListFavoritesHandler
@@ -37,7 +41,7 @@ func NewHandlers(deps Deps) *Handlers {
 // @Description опыт не приносит.
 // @Tags Favorites
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Success 204 "Добавлено в избранное"
 // @Failure 400 {object} apierr.ErrorEnvelope
 // @Failure 401 {object} apierr.ErrorEnvelope
@@ -68,7 +72,7 @@ func (h *Handlers) Add(w http.ResponseWriter, r *http.Request) {
 // @Description Тело ответа пустое. Опыт за удаление не начисляется и не отнимается.
 // @Tags Favorites
 // @Produce json
-// @Param id path string true "Идентификатор объявления" format(uuid)
+// @Param id path string true "Публичный идентификатор объявления (display_id)"
 // @Success 204 "Убрано из избранного"
 // @Failure 400 {object} apierr.ErrorEnvelope
 // @Failure 401 {object} apierr.ErrorEnvelope
@@ -142,12 +146,14 @@ func (h *Handlers) actorAndItem(w http.ResponseWriter, r *http.Request) (auth.Ac
 		return auth.Actor{}, uuid.Nil, false
 	}
 
-	itemID, err := httpx.UUIDParam(r, "id")
+	displayID := chi.URLParam(r, "id")
+
+	item, err := h.deps.Items.ByDisplayID(r.Context(), displayID)
 	if err != nil {
 		apierr.Write(w, r, err)
 
 		return auth.Actor{}, uuid.Nil, false
 	}
 
-	return actor, itemID, true
+	return actor, item.ID(), true
 }

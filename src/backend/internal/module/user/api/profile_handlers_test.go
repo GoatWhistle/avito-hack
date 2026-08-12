@@ -25,7 +25,7 @@ func TestMeEndpoint(t *testing.T) {
 	rec := do(t, router, http.MethodGet, "/users/me", "")
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, registered.ID().String(), decodeBody(t, rec)["id"])
+	assert.Equal(t, registered.DisplayID(), decodeBody(t, rec)["id"])
 }
 
 func TestMeEndpointRequiresAuth(t *testing.T) {

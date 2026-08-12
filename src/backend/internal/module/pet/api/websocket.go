@@ -25,6 +25,12 @@ const (
 	messagePong     = "pong"
 	messageError    = "error"
 	readLimit       = 4096
+
+	messageRateLimit       = 5
+	messageRateBurst       = 10
+	messageRateLimitCloses = 3
+
+	maxConnectionsPerUser = 5
 )
 
 type tokenParser interface {
@@ -39,6 +45,7 @@ type petService interface {
 
 type connectionHub interface {
 	Register(userID uuid.UUID, sink ws.Sink) func()
+	CountFor(userID uuid.UUID) int
 }
 
 type WebSocketHandler struct {
@@ -61,6 +68,11 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	actor, err := h.authenticate(r)
 	if err != nil {
 		apierr.Write(w, r, err)
+		return
+	}
+
+	if h.hub != nil && h.hub.CountFor(actor.ID) >= maxConnectionsPerUser {
+		apierr.Write(w, r, domainerr.NewConflict("too many active connections"))
 		return
 	}
 
@@ -102,6 +114,8 @@ func (h *WebSocketHandler) authenticate(r *http.Request) (auth.Actor, error) {
 }
 
 func (h *WebSocketHandler) serve(ctx context.Context, client *connection, actor auth.Actor) {
+	limiter := newMessageLimiter(messageRateLimit, messageRateBurst)
+
 	for {
 		message, err := readMessage(ctx, client.conn)
 		if err != nil {
@@ -117,6 +131,20 @@ func (h *WebSocketHandler) serve(ctx context.Context, client *connection, actor 
 		case <-client.closed:
 			return
 		default:
+		}
+
+		if !limiter.Allow() {
+			if limiter.ExceededRepeatedly() {
+				//nolint:errcheck // closing an already-closing connection
+				_ = client.conn.Close(websocket.StatusPolicyViolation, "rate limit exceeded")
+
+				return
+			}
+
+			client.Reply(message.RequestID, messageError,
+				errorPayload{Code: "rate_limited", Message: "too many messages, slow down"})
+
+			continue
 		}
 
 		h.handle(ctx, client, actor, message)

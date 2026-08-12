@@ -21,11 +21,12 @@ type AddPhotoCommand struct {
 }
 
 type AddPhotoHandler struct {
-	items   domain.Repository
-	photos  domain.PhotoRepository
-	storage PhotoStorage
-	tx      TxManager
-	clock   Clock
+	items    domain.Repository
+	photos   domain.PhotoRepository
+	storage  PhotoStorage
+	tx       TxManager
+	clock    Clock
+	moderate *ModerateItemHandler
 }
 
 func NewAddPhotoHandler(
@@ -34,8 +35,9 @@ func NewAddPhotoHandler(
 	storage PhotoStorage,
 	tx TxManager,
 	clock Clock,
+	moderate *ModerateItemHandler,
 ) *AddPhotoHandler {
-	return &AddPhotoHandler{items: items, photos: photos, storage: storage, tx: tx, clock: clock}
+	return &AddPhotoHandler{items: items, photos: photos, storage: storage, tx: tx, clock: clock, moderate: moderate}
 }
 
 func (h *AddPhotoHandler) Handle(ctx context.Context, cmd AddPhotoCommand) (*domain.Photo, error) {
@@ -49,6 +51,10 @@ func (h *AddPhotoHandler) Handle(ctx context.Context, cmd AddPhotoCommand) (*dom
 		discardPhotoFile(ctx, h.storage, cmd.ItemID, stored.Name)
 
 		return nil, err
+	}
+
+	if h.moderate != nil {
+		h.moderate.HandleOrLog(ctx, cmd.ItemID, cmd.ActorID)
 	}
 
 	return photo, nil
@@ -78,7 +84,7 @@ func (h *AddPhotoHandler) persist(ctx context.Context, cmd AddPhotoCommand, name
 
 		created, err := domain.NewPhoto(domain.NewPhotoParams{
 			ItemID:   cmd.ItemID,
-			URL:      h.storage.URL(cmd.ItemID, name),
+			URL:      h.storage.URL(item.DisplayID(), name),
 			Position: count,
 			Now:      h.clock.Now(),
 		})
@@ -90,6 +96,14 @@ func (h *AddPhotoHandler) persist(ctx context.Context, cmd AddPhotoCommand, name
 			return err
 		}
 		photo = created
+
+		if err := item.RequireReverification(h.clock.Now()); err != nil {
+			return err
+		}
+
+		if err := h.items.Save(ctx, item); err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -132,16 +146,18 @@ func (h *ListPhotosHandler) Handle(ctx context.Context, itemID uuid.UUID) ([]*do
 }
 
 type DeletePhotoCommand struct {
-	ItemID  uuid.UUID
-	PhotoID uuid.UUID
-	ActorID uuid.UUID
+	ItemID         uuid.UUID
+	PhotoDisplayID string
+	ActorID        uuid.UUID
 }
 
 type DeletePhotoHandler struct {
-	items   domain.Repository
-	photos  domain.PhotoRepository
-	storage PhotoStorage
-	tx      TxManager
+	items    domain.Repository
+	photos   domain.PhotoRepository
+	storage  PhotoStorage
+	tx       TxManager
+	clock    Clock
+	moderate *ModerateItemHandler
 }
 
 func NewDeletePhotoHandler(
@@ -149,8 +165,10 @@ func NewDeletePhotoHandler(
 	photos domain.PhotoRepository,
 	storage PhotoStorage,
 	tx TxManager,
+	clock Clock,
+	moderate *ModerateItemHandler,
 ) *DeletePhotoHandler {
-	return &DeletePhotoHandler{items: items, photos: photos, storage: storage, tx: tx}
+	return &DeletePhotoHandler{items: items, photos: photos, storage: storage, tx: tx, clock: clock, moderate: moderate}
 }
 
 func (h *DeletePhotoHandler) Handle(ctx context.Context, cmd DeletePhotoCommand) error {
@@ -166,11 +184,19 @@ func (h *DeletePhotoHandler) Handle(ctx context.Context, cmd DeletePhotoCommand)
 			return domainerr.ErrForbidden
 		}
 
-		url, err := h.photos.DeleteByID(ctx, cmd.ItemID, cmd.PhotoID)
+		url, err := h.photos.DeleteByDisplayID(ctx, cmd.ItemID, cmd.PhotoDisplayID)
 		if err != nil {
 			return err
 		}
 		removed = url
+
+		if err := item.RequireReverification(h.clock.Now()); err != nil {
+			return err
+		}
+
+		if err := h.items.Save(ctx, item); err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -180,6 +206,10 @@ func (h *DeletePhotoHandler) Handle(ctx context.Context, cmd DeletePhotoCommand)
 
 	if removed != "" {
 		discardPhotoFile(ctx, h.storage, cmd.ItemID, path.Base(removed))
+	}
+
+	if h.moderate != nil {
+		h.moderate.HandleOrLog(ctx, cmd.ItemID, cmd.ActorID)
 	}
 
 	return nil

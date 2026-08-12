@@ -36,7 +36,7 @@ type Config struct {
 	RateLimitBurst      float64 `env:"RATE_LIMIT_BURST"       envDefault:"40"`
 	AuthRateLimitRPS    float64 `env:"AUTH_RATE_LIMIT_RPS"    envDefault:"5"`
 	AuthRateLimitBurst  float64 `env:"AUTH_RATE_LIMIT_BURST"  envDefault:"10"`
-	RateLimitTrustProxy bool    `env:"RATE_LIMIT_TRUST_PROXY" envDefault:"true"`
+	RateLimitTrustProxy bool    `env:"RATE_LIMIT_TRUST_PROXY" envDefault:"false"`
 
 	MaxBodyBytes  int64  `env:"MAX_BODY_BYTES"  envDefault:"1048576"`
 	MaxPhotoBytes int64  `env:"MAX_PHOTO_BYTES" envDefault:"5242880"`
@@ -58,6 +58,11 @@ type Config struct {
 
 	PetFlushInterval  time.Duration `env:"PET_FLUSH_INTERVAL"   envDefault:"15s"`
 	PetFlushBatchSize int64         `env:"PET_FLUSH_BATCH_SIZE" envDefault:"100"`
+
+	OpenRouterAPIKey string `env:"OPENROUTER_API_KEY"`
+	OpenRouterModel  string `env:"OPENROUTER_MODEL" envDefault:"google/gemini-2.0-flash-exp:free"`
+
+	MetricsToken string `env:"METRICS_TOKEN"`
 }
 
 func (c Config) KafkaEnabled() bool {

@@ -22,7 +22,7 @@ func summaryValues(facts, advice []byte) []any {
 func TestScanSummaryDecodesFactsAndAdvice(t *testing.T) {
 	t.Parallel()
 
-	itemID := uuid.New()
+	itemID := "abc123def456"
 	facts, err := json.Marshal(domain.DayFacts{
 		Date: scanTime, PetName: "Enot", TotalXP: 90,
 		Level: domain.LevelFacts{Current: 4, XP: 90},

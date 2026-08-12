@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { Button } from '#/components/ui'
+import { translateApiError } from '#/api'
 import { useSession } from '#/features/auth/session'
 import {
   useItemPhotosQuery,
@@ -20,7 +21,7 @@ interface ItemEditScreenProps {
 }
 
 export function ItemEditScreen({ itemId }: ItemEditScreenProps) {
-  const { t } = useTranslation('items')
+  const { t } = useTranslation(['items', 'errors'])
   const { t: tCommon } = useTranslation()
   const navigate = useNavigate()
   const { user } = useSession()
@@ -42,7 +43,7 @@ export function ItemEditScreen({ itemId }: ItemEditScreenProps) {
         await mutateAsync(payload)
         setSaved(true)
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : String(cause))
+        setError(translateApiError(cause, t) ?? null)
       }
     },
   })
@@ -60,6 +61,10 @@ export function ItemEditScreen({ itemId }: ItemEditScreenProps) {
 
   if (user && user.id !== item.owner_id) {
     return <ErrorState message={t('notFound')} />
+  }
+
+  if (item.is_seed) {
+    return <ErrorState message={t('seed.locked')} />
   }
 
   const photoCount = photosQuery.data?.length ?? 0

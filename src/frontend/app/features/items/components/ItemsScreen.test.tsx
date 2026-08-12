@@ -93,11 +93,61 @@ describe('ItemsScreen', () => {
     renderWithProviders(<ItemsScreen />)
     await screen.findByRole('link', { name: 'Велосипед Stels' })
 
+    await userEvent.click(screen.getByRole('button', { name: 'Фильтры' }))
     await userEvent.click(screen.getByRole('button', { name: 'Продано' }))
 
     await waitFor(() => {
       expect(list).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'sold' }),
+      )
+    })
+  })
+
+  it('filters by category and condition', async () => {
+    renderWithProviders(<ItemsScreen />)
+    await screen.findByRole('link', { name: 'Велосипед Stels' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Фильтры' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Новое' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Электроника' }))
+
+    await waitFor(() => {
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          condition: 'new',
+          category: 'electronics',
+        }),
+      )
+    })
+  })
+
+  it('sorts by price', async () => {
+    renderWithProviders(<ItemsScreen />)
+    await screen.findByRole('link', { name: 'Велосипед Stels' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Сортировка' }))
+    await userEvent.click(
+      screen.getByRole('menuitemradio', { name: 'Сначала дешёвые' }),
+    )
+
+    await waitFor(() => {
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({ sort: 'price_asc' }),
+      )
+    })
+  })
+
+  it('resets every filter', async () => {
+    renderWithProviders(<ItemsScreen />)
+    await screen.findByRole('link', { name: 'Велосипед Stels' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Фильтры' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Продано' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Сбросить' }))
+
+    await waitFor(() => {
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({ status: '', category: '', condition: '' }),
       )
     })
   })

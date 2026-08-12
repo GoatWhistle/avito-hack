@@ -39,7 +39,7 @@ const badgesEarnedQuery = `
 	ORDER BY ub.earned_at`
 
 const listingIssuesQuery = `
-	SELECT i.id, i.title,
+	SELECT i.display_id, i.title,
 		CASE
 			WHEN NOT EXISTS (SELECT 1 FROM item_photos p WHERE p.item_id = i.id) THEN 'no_photo'
 			WHEN i.price_kopeks = 0 THEN 'no_price'

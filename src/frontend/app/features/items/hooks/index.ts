@@ -7,5 +7,6 @@ export {
   useCreateItem,
   useUpdateItem,
 } from './useItemMutations'
+export { useDismissable } from './useDismissable'
 export { usePhotoUpload } from './usePhotoUpload'
 export type { UploadTask } from './usePhotoUpload'

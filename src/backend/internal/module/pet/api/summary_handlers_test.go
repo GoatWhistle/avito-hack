@@ -64,7 +64,7 @@ func summaryRouter(t *testing.T, svc *stubSummaryService, actor *auth.Actor) htt
 func testSummary(t *testing.T, userID uuid.UUID) *domain.DailySummary {
 	t.Helper()
 
-	itemID := uuid.New()
+	itemID := "abc123def456"
 
 	return domain.RestoreDailySummary(domain.RestoreSummaryParams{
 		ID:     uuid.New(),

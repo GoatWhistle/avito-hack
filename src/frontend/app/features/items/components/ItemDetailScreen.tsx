@@ -7,11 +7,23 @@ import { FavoriteButton } from '#/features/favorites/components'
 import { useFavoriteIds } from '#/features/favorites/hooks'
 import { useItemPhotosQuery, useItemQuery } from '#/features/items/hooks'
 import { formatDate, formatPrice, isFavoritable } from '#/features/items/lib'
+import { itemCategories, itemConditions } from '#/features/items/types'
+import { ItemSourceBadge } from './ItemSourceBadge'
 import { ItemStatusBadge } from './ItemStatusBadge'
 import { PhotoGallery } from './PhotoGallery'
 import { SoldCelebration } from './SoldCelebration'
 import { StatusActions } from './StatusActions'
 import { ErrorState, ItemsSkeleton } from './ListStates'
+
+const isKnownCategory = (
+  value: string,
+): value is (typeof itemCategories)[number] =>
+  (itemCategories as readonly string[]).includes(value)
+
+const isKnownCondition = (
+  value: string,
+): value is (typeof itemConditions)[number] =>
+  (itemConditions as readonly string[]).includes(value)
 
 interface ItemDetailScreenProps {
   itemId: string
@@ -41,6 +53,20 @@ export function ItemDetailScreen({ itemId }: ItemDetailScreenProps) {
 
   const item = itemQuery.data
   const isOwner = user?.id === item.owner_id
+  const rawCategory = item.attributes?.category ?? ''
+  const rawCondition = item.attributes?.condition ?? ''
+  const categoryLabel = rawCategory
+    ? isKnownCategory(rawCategory)
+      ? t(`category.${rawCategory}`)
+      : rawCategory
+    : null
+  const conditionLabel =
+    rawCondition && isKnownCondition(rawCondition)
+      ? t(`condition.${rawCondition}`)
+      : null
+  const otherAttributes = Object.entries(item.attributes ?? {}).filter(
+    ([key]) => key !== 'category' && key !== 'condition',
+  )
 
   return (
     <article className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
@@ -72,14 +98,49 @@ export function ItemDetailScreen({ itemId }: ItemDetailScreenProps) {
 
           <div className="flex flex-wrap items-center gap-2">
             <ItemStatusBadge status={item.status} />
+            <ItemSourceBadge
+              isSeed={item.is_seed}
+              aiVerified={item.ai_verified}
+            />
             <span className="text-xs text-muted-foreground">
               {formatDate(item.created_at, i18n.language)}
             </span>
           </div>
+
+          {(categoryLabel ?? conditionLabel) && (
+            <p className="text-sm text-muted-foreground">
+              {[categoryLabel, conditionLabel].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </header>
 
         {celebrating && (
           <SoldCelebration onDismiss={() => setCelebrating(false)} />
+        )}
+
+        {isOwner && item.status === 'moderation' && (
+          <div
+            role="status"
+            className="rounded-lg border border-border bg-muted px-3 py-2 text-sm"
+          >
+            {item.moderation_reason ? (
+              <>
+                <p className="font-medium text-destructive">
+                  {t('moderation.rejectedTitle')}
+                </p>
+                <p className="text-muted-foreground">
+                  {t('moderation.rejectedReason', {
+                    reason: item.moderation_reason,
+                  })}
+                </p>
+                <p className="text-muted-foreground">
+                  {t('moderation.rejectedHint')}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">{t('moderation.pending')}</p>
+            )}
+          </div>
         )}
 
         {actionError && (
@@ -97,11 +158,11 @@ export function ItemDetailScreen({ itemId }: ItemDetailScreenProps) {
           </section>
         )}
 
-        {item.attributes && Object.keys(item.attributes).length > 0 && (
+        {otherAttributes.length > 0 && (
           <section className="flex flex-col gap-1">
             <h2 className="text-sm font-medium">{t('fields.attributes')}</h2>
             <dl className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
-              {Object.entries(item.attributes).map(([key, value]) => (
+              {otherAttributes.map(([key, value]) => (
                 <div key={key} className="flex justify-between gap-2">
                   <dt className="text-muted-foreground">{key}</dt>
                   <dd className="text-right break-words">{value}</dd>
@@ -111,7 +172,13 @@ export function ItemDetailScreen({ itemId }: ItemDetailScreenProps) {
           </section>
         )}
 
-        {isOwner && (
+        {isOwner && item.is_seed && (
+          <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+            {t('seed.locked')}
+          </p>
+        )}
+
+        {isOwner && !item.is_seed && (
           <section className="flex flex-col gap-2 border-t border-border pt-4">
             <h2 className="text-sm font-medium">{t('ownerActions')}</h2>
             <div className="flex flex-wrap gap-2">

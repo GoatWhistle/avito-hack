@@ -55,6 +55,7 @@
     "remaining_one": "Осталось набрать {{count}} XP",
     "remaining_few": "Осталось набрать {{count}} XP",
     "remaining_many": "Осталось набрать {{count}} XP",
+    "remaining_other": "Осталось набрать {{count}} XP",
     "xpCounter": "{{xp}} / {{total}} XP",
     "xpTotal": "Всего {{xp}} XP",
     "maxTitle": "Максимальный уровень",

@@ -2,8 +2,6 @@ package domain
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type XPByAction struct {
@@ -50,7 +48,7 @@ const (
 )
 
 type ListingIssue struct {
-	ItemID    uuid.UUID        `json:"item_id"`
+	ItemID    string           `json:"item_id"`
 	Title     string           `json:"title"`
 	Kind      ListingIssueKind `json:"kind"`
 	StaleDays int              `json:"stale_days,omitempty"`

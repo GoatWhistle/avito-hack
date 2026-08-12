@@ -54,7 +54,10 @@ func newUser(t *testing.T) *domain.User {
 func userValues(t *testing.T, id uuid.UUID) []any {
 	t.Helper()
 
-	return []any{id, "owner@example.com", storedHash, "Owner Name", string(auth.RoleUser), fixedTime, fixedTime}
+	return []any{
+		id, "owner1234567", "owner@example.com", storedHash, "Owner Name",
+		string(auth.RoleUser), fixedTime, fixedTime,
+	}
 }
 
 func TestPgRepositorySaveInsertsUser(t *testing.T) {
@@ -70,7 +73,7 @@ func TestPgRepositorySaveInsertsUser(t *testing.T) {
 	assert.Contains(t, tx.ExecCalls[0].SQL, "INSERT INTO users")
 	assert.Contains(t, tx.ExecCalls[0].SQL, "ON CONFLICT (id) DO UPDATE")
 	assert.Equal(t, []any{
-		user.ID(), "owner@example.com", storedHash, "Owner Name",
+		user.ID(), user.DisplayID(), "owner@example.com", storedHash, "Owner Name",
 		string(auth.RoleUser), fixedTime, fixedTime,
 	}, tx.ExecCalls[0].Args)
 }

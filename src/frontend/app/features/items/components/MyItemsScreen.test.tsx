@@ -42,18 +42,20 @@ describe('MyItemsScreen', () => {
       '/items/item-1/edit',
     )
     expect(
-      screen.getByRole('button', { name: 'Опубликовать' }),
+      screen.getByRole('button', { name: 'Отправить на модерацию' }),
     ).toBeInTheDocument()
   })
 
-  it('publishes a draft from the list', async () => {
+  it('submits a draft for moderation from the list', async () => {
     renderWithProviders(<MyItemsScreen />)
     await screen.findByRole('link', { name: 'Велосипед Stels' })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Опубликовать' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Отправить на модерацию' }),
+    )
 
     await waitFor(() => {
-      expect(changeStatus).toHaveBeenCalledWith('item-1', 'publish')
+      expect(changeStatus).toHaveBeenCalledWith('item-1', 'submit')
     })
   })
 

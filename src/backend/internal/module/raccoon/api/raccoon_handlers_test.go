@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	petdomain "github.com/avito-hack/backend/internal/module/pet/domain"
 	"github.com/avito-hack/backend/internal/module/raccoon/api"
 	"github.com/avito-hack/backend/internal/module/raccoon/app"
 	"github.com/avito-hack/backend/internal/shared/auth"
@@ -35,7 +36,8 @@ func TestGetProfileEndpoint(t *testing.T) {
 	var body api.RaccoonProfileResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, "Enot", body.Name)
-	assert.Equal(t, userID.String(), body.UserID)
+	assert.Equal(t, petdomain.PublicToken(userID), body.UserID)
+	assert.NotEqual(t, userID.String(), body.UserID)
 	assert.Equal(t, 4, body.Level)
 	assert.Equal(t, 3, body.CurrentStreak)
 	require.Len(t, body.Badges, 1)

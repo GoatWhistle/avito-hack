@@ -19,6 +19,7 @@ const uniqueViolationCode = "23505"
 
 type userRow struct {
 	id           uuid.UUID
+	displayID    string
 	email        string
 	passwordHash string
 	fullName     string
@@ -30,7 +31,8 @@ type userRow struct {
 func scanUser(row pgx.Row) (*domain.User, error) {
 	var r userRow
 
-	err := row.Scan(&r.id, &r.email, &r.passwordHash, &r.fullName, &r.role, &r.createdAt, &r.updatedAt)
+	err := row.Scan(&r.id, &r.displayID, &r.email, &r.passwordHash, &r.fullName, &r.role,
+		&r.createdAt, &r.updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +53,7 @@ func toDomain(r userRow) (*domain.User, error) {
 
 	return domain.RestoreUser(domain.RestoreUserParams{
 		ID:           r.id,
+		DisplayID:    r.displayID,
 		Email:        email,
 		PasswordHash: hash,
 		FullName:     r.fullName,

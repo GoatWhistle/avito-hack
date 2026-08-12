@@ -31,6 +31,7 @@ func newItem(t *testing.T) *domain.Item {
 
 	return domain.RestoreItem(domain.RestoreItemParams{
 		ID:          uuid.New(),
+		DisplayID:   domain.NewDisplayID(),
 		OwnerID:     uuid.New(),
 		Title:       "Table",
 		Description: "Oak table",
@@ -46,8 +47,8 @@ func itemValues(t *testing.T, id, ownerID uuid.UUID) []any {
 	t.Helper()
 
 	return []any{
-		id, ownerID, "Table", "Oak table", int64(9900),
-		string(domain.StatusPublished), []byte(`{"material":"oak"}`), fixedTime, fixedTime,
+		id, domain.NewDisplayID(), ownerID, "Table", "Oak table", int64(9900),
+		string(domain.StatusPublished), []byte(`{"material":"oak"}`), fixedTime, fixedTime, false, false,
 	}
 }
 
@@ -65,18 +66,21 @@ func TestItemRepositorySaveInsertsRow(t *testing.T) {
 	assert.Contains(t, tx.ExecCalls[0].SQL, "ON CONFLICT (id) DO UPDATE")
 
 	args := tx.ExecCalls[0].Args
-	require.Len(t, args, 9)
+	require.Len(t, args, 12)
 	assert.Equal(t, item.ID(), args[0])
-	assert.Equal(t, item.OwnerID(), args[1])
-	assert.Equal(t, "Table", args[2])
-	assert.Equal(t, "Oak table", args[3])
-	assert.Equal(t, int64(9900), args[4])
-	assert.Equal(t, "published", args[5])
-	attributes, ok := args[6].([]byte)
+	assert.Equal(t, item.DisplayID(), args[1])
+	assert.Equal(t, item.OwnerID(), args[2])
+	assert.Equal(t, "Table", args[3])
+	assert.Equal(t, "Oak table", args[4])
+	assert.Equal(t, int64(9900), args[5])
+	assert.Equal(t, "published", args[6])
+	attributes, ok := args[7].([]byte)
 	require.True(t, ok)
 	assert.JSONEq(t, `{"material":"oak"}`, string(attributes))
-	assert.Equal(t, fixedTime, args[7])
 	assert.Equal(t, fixedTime, args[8])
+	assert.Equal(t, fixedTime, args[9])
+	assert.Equal(t, false, args[10])
+	assert.Equal(t, false, args[11])
 }
 
 func TestItemRepositorySaveWrapsError(t *testing.T) {
@@ -129,6 +133,35 @@ func TestItemRepositoryByIDWrapsError(t *testing.T) {
 	assert.Contains(t, err.Error(), "query item")
 }
 
+func TestItemRepositoryByDisplayIDReturnsItem(t *testing.T) {
+	t.Parallel()
+
+	id, ownerID := uuid.New(), uuid.New()
+	displayID := domain.NewDisplayID()
+	values := itemValues(t, id, ownerID)
+	values[1] = displayID
+	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Values: values}}}
+
+	item, err := infra.NewPgRepository(nil).ByDisplayID(ctxWith(tx), displayID)
+
+	require.NoError(t, err)
+	assert.Equal(t, id, item.ID())
+	assert.Equal(t, displayID, item.DisplayID())
+	require.Len(t, tx.QueryRowCalls, 1)
+	assert.Contains(t, tx.QueryRowCalls[0].SQL, "FROM items WHERE display_id = $1 AND deleted_at IS NULL")
+	assert.Equal(t, []any{displayID}, tx.QueryRowCalls[0].Args)
+}
+
+func TestItemRepositoryByDisplayIDReturnsNotFound(t *testing.T) {
+	t.Parallel()
+
+	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Err: pgx.ErrNoRows}}}
+
+	_, err := infra.NewPgRepository(nil).ByDisplayID(ctxWith(tx), "unknown12345")
+
+	require.ErrorIs(t, err, domain.ErrItemNotFound)
+}
+
 func TestItemRepositoryByIDForUpdateLocksRow(t *testing.T) {
 	t.Parallel()
 
@@ -157,7 +190,7 @@ func TestItemRepositoryByIDRejectsCorruptRow(t *testing.T) {
 
 	id := uuid.New()
 	values := itemValues(t, id, uuid.New())
-	values[4] = int64(-1)
+	values[5] = int64(-1)
 
 	tx := &pgtest.Tx{RowResults: []pgtest.Row{{Values: values}}}
 

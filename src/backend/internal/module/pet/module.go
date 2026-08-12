@@ -16,6 +16,7 @@ import (
 	"github.com/avito-hack/backend/internal/module/pet/infra"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/events"
+	"github.com/avito-hack/backend/internal/shared/pagination"
 	"github.com/avito-hack/backend/internal/shared/ws"
 )
 
@@ -61,6 +62,9 @@ func New(opts Options) (*Module, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build reward signer: %w", err)
 	}
+
+	domain.SetPublicTokenSecret(opts.RewardHMACSecret)
+	pagination.SetCursorSecret(opts.RewardHMACSecret)
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}

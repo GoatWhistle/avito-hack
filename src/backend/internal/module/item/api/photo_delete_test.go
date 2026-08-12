@@ -15,7 +15,7 @@ import (
 func (f *fixture) seedPhoto(t *testing.T, itemID uuid.UUID) *domain.Photo {
 	t.Helper()
 
-	photo := domain.RestorePhoto(uuid.New(), itemID, "/uploads/photo.jpg", 0, fixedTime)
+	photo := domain.RestorePhoto(uuid.New(), domain.NewDisplayID(), itemID, "/uploads/photo.jpg", 0, fixedTime)
 	require.NoError(t, f.photos.Add(context.Background(), photo))
 
 	return photo
@@ -29,7 +29,7 @@ func TestDeletePhotoRemovesIt(t *testing.T) {
 	item := f.seedItem(t, actor.ID, domain.StatusDraft)
 	photo := f.seedPhoto(t, item.ID())
 
-	path := "/items/" + item.ID().String() + "/photos/" + photo.ID().String()
+	path := "/items/" + item.DisplayID() + "/photos/" + photo.DisplayID()
 	rec := f.do(t, http.MethodDelete, path, "")
 
 	require.Equal(t, http.StatusNoContent, rec.Code, rec.Body.String())
@@ -59,7 +59,7 @@ func TestDeletePhotoForbiddenForNonOwner(t *testing.T) {
 	item := f.seedItem(t, uuid.New(), domain.StatusDraft)
 	photo := f.seedPhoto(t, item.ID())
 
-	path := "/items/" + item.ID().String() + "/photos/" + photo.ID().String()
+	path := "/items/" + item.DisplayID() + "/photos/" + photo.DisplayID()
 	rec := f.do(t, http.MethodDelete, path, "")
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
@@ -88,8 +88,8 @@ func TestDeletePhotoRejectsMalformedIDs(t *testing.T) {
 		name string
 		path string
 	}{
-		{name: "bad item id", path: "/items/nope/photos/" + uuid.New().String()},
-		{name: "bad photo id", path: "/items/" + item.ID().String() + "/photos/nope"},
+		{name: "bad photo id", path: "/items/" + item.DisplayID() + "/photos/nope"},
+		{name: "photo uuid is not accepted", path: "/items/" + item.DisplayID() + "/photos/" + uuid.New().String()},
 	}
 
 	for _, tc := range tests {
@@ -98,7 +98,18 @@ func TestDeletePhotoRejectsMalformedIDs(t *testing.T) {
 
 			rec := f.do(t, http.MethodDelete, tc.path, "")
 
-			assert.Equal(t, http.StatusBadRequest, rec.Code)
+			assert.Equal(t, http.StatusNotFound, rec.Code)
 		})
 	}
+}
+
+func TestDeletePhotoRejectsUnknownItemID(t *testing.T) {
+	t.Parallel()
+
+	actor := userActor()
+	f := newFixture(t, &actor)
+
+	rec := f.do(t, http.MethodDelete, "/items/nope/photos/"+uuid.New().String(), "")
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }

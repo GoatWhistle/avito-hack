@@ -16,7 +16,7 @@ func feedCooldownNow() time.Time {
 func TestFeedAvailableAtReturnsDeadlineWhileCooldownHolds(t *testing.T) {
 	t.Parallel()
 
-	client := startFakeRedis(t, map[string]string{"TTL": respInt(9000)})
+	client := startFakeRedis(t, map[string]string{"PTTL": respInt(9000000)})
 	now := feedCooldownNow()
 
 	available, err := NewRedisHotStateStore(client).
@@ -43,7 +43,7 @@ func TestFeedAvailableAtIsNilWhenCooldownExpired(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := startFakeRedis(t, map[string]string{"TTL": respInt(tt.ttl)})
+			client := startFakeRedis(t, map[string]string{"PTTL": respInt(tt.ttl)})
 
 			available, err := NewRedisHotStateStore(client).
 				FeedAvailableAt(context.Background(), hotTestUser, feedCooldownNow())
@@ -57,7 +57,7 @@ func TestFeedAvailableAtIsNilWhenCooldownExpired(t *testing.T) {
 func TestFeedAvailableAtPropagatesRedisError(t *testing.T) {
 	t.Parallel()
 
-	client := startFakeRedis(t, map[string]string{"TTL": "-ERR redis exploded\r\n"})
+	client := startFakeRedis(t, map[string]string{"PTTL": "-ERR redis exploded\r\n"})
 
 	available, err := NewRedisHotStateStore(client).
 		FeedAvailableAt(context.Background(), hotTestUser, feedCooldownNow())
@@ -70,7 +70,7 @@ func TestFeedAvailableAtCoversFullCooldown(t *testing.T) {
 	t.Parallel()
 
 	client := startFakeRedis(t, map[string]string{
-		"TTL": respInt(int64(feedCooldown.Seconds())),
+		"PTTL": respInt(feedCooldown.Milliseconds()),
 	})
 	now := feedCooldownNow()
 
