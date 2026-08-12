@@ -8,6 +8,7 @@ import (
 	"github.com/avito-hack/backend/internal/module/games/api"
 	"github.com/avito-hack/backend/internal/module/games/app"
 	"github.com/avito-hack/backend/internal/module/games/domain"
+	"github.com/avito-hack/backend/internal/module/games/domain/bukovki"
 	"github.com/avito-hack/backend/internal/module/games/domain/moreless"
 	"github.com/avito-hack/backend/internal/module/games/infra"
 )
@@ -32,6 +33,7 @@ func New(opts Options) *Module {
 
 	registry := domain.NewRegistry(
 		moreless.New(infra.NewPgItemPool(opts.Pool)),
+		bukovki.New(bukovki.NewMemoryWordPool()),
 	)
 
 	handlers := api.NewHandlers(api.Deps{

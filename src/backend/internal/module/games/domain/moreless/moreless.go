@@ -59,7 +59,7 @@ func (g *Game) TargetStreak() int { return targetStreak }
 func (g *Game) Start(ctx context.Context, r *domain.Round) (domain.View, error) {
 	var left, right Item
 
-	for attempt := 0; attempt < maxOpeningTries; attempt++ {
+	for range maxOpeningTries {
 		candidate, err := g.pool.Random(ctx, nil)
 		if err != nil {
 			return domain.View{}, err
