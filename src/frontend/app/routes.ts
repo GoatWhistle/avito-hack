@@ -18,6 +18,7 @@ export default [
       route('leaderboard', 'routes/pet.leaderboard.tsx'),
     ]),
   ]),
+  route('play/weekly-lottery', 'routes/play.weekly-lottery.tsx'),
   route('play/:gameSlug', 'routes/play.$gameSlug.tsx'),
   route('items', 'routes/items.tsx'),
   route('items/new', 'routes/items.new.tsx'),

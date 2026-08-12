@@ -11,6 +11,7 @@ import ruPet from './locales/ru/pet.json'
 import ruQuests from './locales/ru/quests.json'
 import ruRewards from './locales/ru/rewards.json'
 import ruValidation from './locales/ru/validation.json'
+import ruWeeklyLottery from './locales/ru/weeklyLottery.json'
 
 import enAuth from './locales/en/auth.json'
 import enCatalog from './locales/en/catalog.json'
@@ -25,6 +26,7 @@ import enPet from './locales/en/pet.json'
 import enQuests from './locales/en/quests.json'
 import enRewards from './locales/en/rewards.json'
 import enValidation from './locales/en/validation.json'
+import enWeeklyLottery from './locales/en/weeklyLottery.json'
 
 export const namespaces = [
   'common',
@@ -40,6 +42,7 @@ export const namespaces = [
   'onboarding',
   'errors',
   'validation',
+  'weeklyLottery',
 ] as const
 
 export type Namespace = (typeof namespaces)[number]
@@ -72,6 +75,7 @@ export const resources = {
     onboarding: ruOnboarding,
     errors: ruErrors,
     validation: ruValidation,
+    weeklyLottery: ruWeeklyLottery,
   },
   en: {
     common: enCommon,
@@ -87,6 +91,7 @@ export const resources = {
     onboarding: enOnboarding,
     errors: enErrors,
     validation: enValidation,
+    weeklyLottery: enWeeklyLottery,
   },
 } as const
 

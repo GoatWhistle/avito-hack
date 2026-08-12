@@ -8,5 +8,6 @@
 @import './styles/transitions.css';
 @import './styles/aurora.css';
 @import './styles/games.css';
+@import './styles/weekly-lottery.css';
 
 @custom-variant dark (&:is(.dark *));

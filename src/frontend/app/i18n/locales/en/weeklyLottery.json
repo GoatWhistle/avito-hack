@@ -1,0 +1,43 @@
+{
+  "title": "Weekly lottery",
+  "subtitle": "Open 9 slots and find three matching prizes",
+  "back": "Back to mini-games",
+  "loading": "Loading the lottery…",
+  "retry": "Retry",
+  "intro": {
+    "title": "Your 3 × 3 board is ready",
+    "hint": "A winning board contains only one set of three matching items. A new attempt becomes available next Monday.",
+    "start": "Open the board"
+  },
+  "board": {
+    "title": "Open the slots",
+    "label": "Lottery board with nine slots",
+    "progress": "{{count}} of 9 opened",
+    "closed": "Open slot {{position}}",
+    "opened": "Slot {{position}}: {{symbol}}"
+  },
+  "symbols": {
+    "bicycle": "Bicycle",
+    "smartphone": "Smartphone",
+    "sofa": "Furniture",
+    "sneakers": "Clothing",
+    "delivery": "Delivery",
+    "promotion": "Promotion"
+  },
+  "prizes": {
+    "title": "Available prizes"
+  },
+  "outcome": {
+    "won": "Three matches — you won!",
+    "lost": "No match this week",
+    "lostHint": "Every slot is open. A new board will arrive next week.",
+    "next": "Next lottery: {{date}}"
+  },
+  "card": {
+    "loading": "Checking your board…",
+    "available": "A new board is available",
+    "continue": "Continue opening slots",
+    "won": "Your prize and promo code are ready",
+    "finished": "Next board: {{date}}"
+  }
+}
