@@ -12,11 +12,13 @@ export default [
     layout('routes/pet.tsx', [
       index('routes/pet._index.tsx'),
       route('progress', 'routes/pet.progress.tsx'),
+      route('games', 'routes/pet.games.tsx'),
       route('rewards', 'routes/pet.rewards.tsx'),
       route('achievements', 'routes/pet.achievements.tsx'),
       route('leaderboard', 'routes/pet.leaderboard.tsx'),
     ]),
   ]),
+  route('play/:gameSlug', 'routes/play.$gameSlug.tsx'),
   route('items', 'routes/items.tsx'),
   route('items/new', 'routes/items.new.tsx'),
   route('items/mine', 'routes/items.mine.tsx'),

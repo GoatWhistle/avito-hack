@@ -152,7 +152,8 @@
       "rewards": "Rewards",
       "achievements": "Achievements",
       "leaderboard": "Leaderboard",
-      "progress": "Progress"
+      "progress": "Progress",
+      "games": "Mini-games"
     },
     "stageLevel": "{{stage}} · lvl {{level}}",
     "statsLabel": "Pet stats",

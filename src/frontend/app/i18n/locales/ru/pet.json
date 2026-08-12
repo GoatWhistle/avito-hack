@@ -162,7 +162,8 @@
       "rewards": "Награды",
       "achievements": "Достижения",
       "leaderboard": "Таблица лидеров",
-      "progress": "Прогресс"
+      "progress": "Прогресс",
+      "games": "Мини-игры"
     },
     "stageLevel": "{{stage}} · ур. {{level}}",
     "statsLabel": "Параметры питомца",

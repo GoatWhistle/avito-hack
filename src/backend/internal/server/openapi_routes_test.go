@@ -15,6 +15,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/config"
 	favoriteapi "github.com/avito-hack/backend/internal/module/favorite/api"
+	gamesapi "github.com/avito-hack/backend/internal/module/games/api"
 	itemapi "github.com/avito-hack/backend/internal/module/item/api"
 	petapi "github.com/avito-hack/backend/internal/module/pet/api"
 	raccoonapi "github.com/avito-hack/backend/internal/module/raccoon/api"
@@ -54,6 +55,7 @@ func newTestRouter(t *testing.T) http.Handler {
 			}),
 			favoriteapi.NewHandlers(favoriteapi.Deps{Authenticate: passthrough}),
 			raccoonapi.NewHandlers(raccoonapi.Deps{Authenticate: passthrough}),
+			gamesapi.NewHandlers(gamesapi.Deps{Authenticate: passthrough}),
 			petapi.NewLeaderboardHandlers(petapi.LeaderboardDeps{Authenticate: passthrough}),
 			petapi.NewPetHandlers(petapi.PetDeps{Authenticate: passthrough}),
 			petapi.NewRewardHandlers(petapi.RewardDeps{Authenticate: passthrough}),

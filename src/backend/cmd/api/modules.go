@@ -9,6 +9,7 @@ import (
 
 	"github.com/avito-hack/backend/internal/config"
 	"github.com/avito-hack/backend/internal/module/favorite"
+	"github.com/avito-hack/backend/internal/module/games"
 	"github.com/avito-hack/backend/internal/module/item"
 	"github.com/avito-hack/backend/internal/module/pet"
 	"github.com/avito-hack/backend/internal/module/raccoon"
@@ -157,12 +158,22 @@ func buildModules(
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 
+	gamesModule := games.New(games.Options{
+		Pool:         pool,
+		Tx:           tx,
+		Clock:        appClock,
+		Validator:    validator,
+		Authenticate: authenticate,
+		MaxBodyBytes: cfg.MaxBodyBytes,
+	})
+
 	return &builtModules{
 		registrars: []server.ModuleRegistrar{
 			userModule.Handlers,
 			itemModule.Handlers,
 			favoriteModule.Handlers,
 			raccoonModule.Handlers,
+			gamesModule.Handlers,
 			petModule.Leaderboard,
 			petModule.Pet,
 			petModule.RewardAPI,

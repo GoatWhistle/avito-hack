@@ -179,6 +179,12 @@ components:
                 xp_granted:
                     type: integer
             type: object
+        ClaimGameRewardResponse:
+            properties:
+                code:
+                    description: Промокод вида `PROMO-XXXXXXXX`.
+                    type: string
+            type: object
         ClaimRewardRequest:
             properties:
                 reward_id:
@@ -297,6 +303,104 @@ components:
                     uniqueItems: false
                 next_cursor:
                     type: string
+            type: object
+        GameActiveRound:
+            properties:
+                prompt:
+                    description: |-
+                        Вопрос текущего хода в формате конкретной игры. Скрытая правда
+                        сюда никогда не попадает.
+                    type: object
+                round_id:
+                    description: Публичный идентификатор раунда (display_id).
+                    type: string
+                streak:
+                    type: integer
+            type: object
+        GameDaily:
+            properties:
+                attempts:
+                    description: Завершённых попыток за день.
+                    type: integer
+                best_streak:
+                    type: integer
+            type: object
+        GameResponse:
+            properties:
+                daily_done:
+                    description: Дневной норматив выполнен — в этот день была хотя бы одна попытка.
+                    type: boolean
+                slug:
+                    type: string
+                streak:
+                    $ref: '#/components/schemas/GameStreak'
+                target_streak:
+                    description: Сколько верных ответов подряд завершают попытку.
+                    type: integer
+            type: object
+        GameRoundState:
+            enum:
+                - active
+                - won
+                - lost
+            type: string
+            x-enum-varnames:
+                - RoundStateActive
+                - RoundStateWon
+                - RoundStateLost
+        GameStateResponse:
+            properties:
+                active_round:
+                    $ref: '#/components/schemas/GameActiveRound'
+                daily:
+                    $ref: '#/components/schemas/GameDaily'
+                slug:
+                    type: string
+                streak:
+                    $ref: '#/components/schemas/GameStreak'
+                target_streak:
+                    type: integer
+            type: object
+        GameStreak:
+            properties:
+                best_days:
+                    type: integer
+                current_days:
+                    description: Дней подряд с завершённой попыткой.
+                    type: integer
+                reward_ready:
+                    description: Награду можно забрать — серия достигла семи дней.
+                    type: boolean
+            type: object
+        GuessRequest:
+            properties:
+                move:
+                    description: |-
+                        Ход в формате конкретной игры. Для `moreless` —
+                        `{"choice":"higher"}` или `{"choice":"lower"}`.
+                    type: object
+            required:
+                - move
+            type: object
+        GuessResponse:
+            properties:
+                attempt_completed:
+                    description: Раунд довели до целевой серии — попытка засчитана в дневной прогресс.
+                    type: boolean
+                correct:
+                    type: boolean
+                prompt:
+                    description: Вопрос следующего хода. Отсутствует, когда раунд завершён.
+                    type: object
+                reveal:
+                    description: Раскрытая правда за уже сыгранный ход. Для `moreless` — `{"right_price":640000}`.
+                    type: object
+                state:
+                    $ref: '#/components/schemas/GameRoundState'
+                streak:
+                    type: integer
+                streak_after:
+                    $ref: '#/components/schemas/GameStreak'
             type: object
         Item:
             properties:
@@ -1361,6 +1465,254 @@ paths:
             summary: Список избранного
             tags:
                 - Favorites
+    /api/v1/games:
+        get:
+            description: |-
+                Все зарегистрированные мини-игры с прогрессом текущего пользователя:
+                выполнен ли дневной норматив и на какой неделе серия. Новая игра
+                появляется здесь автоматически после регистрации в реестре.
+            operationId: listGames
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/GameResponse'
+                                type: array
+                    description: Мини-игры
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Список мини-игр
+            tags:
+                - Games
+    /api/v1/games/{slug}/reward/claim:
+        post:
+            description: |-
+                Выдаёт промокод, когда недельная серия достигла семи дней подряд.
+                После выдачи счётчик серии обнуляется и следующий цикл начинается заново,
+                поэтому повторный вызов до новой серии даёт 409.
+            operationId: claimGameReward
+            parameters:
+                - description: Идентификатор мини-игры
+                  example: moreless
+                  in: path
+                  name: slug
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ClaimGameRewardResponse'
+                    description: Промокод выдан
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Conflict
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Забрать награду за недельную серию
+            tags:
+                - Games
+    /api/v1/games/{slug}/rounds:
+        post:
+            description: |-
+                Создаёт серверный раунд и отдаёт первый вопрос. Незавершённый предыдущий
+                раунд той же игры автоматически засчитывается как проигранный, поэтому
+                активный раунд всегда ровно один. Ответы хранятся только на сервере.
+            operationId: startGameRound
+            parameters:
+                - description: Идентификатор мини-игры
+                  example: moreless
+                  in: path
+                  name: slug
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/StartRoundResponse'
+                    description: Раунд начат
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Начать раунд мини-игры
+            tags:
+                - Games
+    /api/v1/games/{slug}/rounds/{rid}/guess:
+        post:
+            description: |-
+                Применяет ход игрока. Формат поля `move` задаёт конкретная игра:
+                для `moreless` это `{"choice":"higher"}` или `{"choice":"lower"}`.
+
+                Чужой раунд отдаётся как 404, а не 403. Повторный ход в уже завершённом
+                раунде даёт 409, поэтому переигровка невозможна. Ответ содержит `reveal`
+                с раскрытой правдой только за уже сыгранный ход.
+            operationId: guessGameRound
+            parameters:
+                - description: Идентификатор мини-игры
+                  example: moreless
+                  in: path
+                  name: slug
+                  required: true
+                  schema:
+                    type: string
+                - description: Публичный идентификатор раунда (display_id)
+                  in: path
+                  name: rid
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GuessRequest'
+                description: Ход игрока
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GuessResponse'
+                    description: Ход учтён
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Conflict
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Сделать ход в раунде
+            tags:
+                - Games
+    /api/v1/games/{slug}/state:
+        get:
+            description: |-
+                Недельная серия, дневной прогресс и активный раунд, если он есть.
+                Активный раунд отдаётся вместе с текущим вопросом, поэтому клиент
+                может продолжить игру после перезагрузки страницы. Скрытая цена
+                в вопрос никогда не попадает.
+            operationId: getGameState
+            parameters:
+                - description: Идентификатор мини-игры
+                  example: moreless
+                  in: path
+                  name: slug
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GameStateResponse'
+                    description: Состояние игры
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Unauthorized
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Состояние мини-игры
+            tags:
+                - Games
     /api/v1/items:
         get:
             description: |-
@@ -3113,4 +3465,9 @@ tags:
       name: Summary
     - description: Альтернативное представление питомца (енот) — профиль, бейджи, получение промокода.
       name: Raccoon
+    - description: |
+        Мини-игры: серверные раунды, дневной прогресс и недельная серия.
+        Правильные ответы живут только на сервере и попадают в ответ лишь
+        после сделанного хода.
+      name: Games
     - name: System

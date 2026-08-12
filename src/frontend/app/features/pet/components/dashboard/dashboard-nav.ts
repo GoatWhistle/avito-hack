@@ -1,4 +1,5 @@
 import {
+  Gamepad2,
   Gift,
   Home,
   Medal,
@@ -8,7 +9,12 @@ import {
 } from 'lucide-react'
 
 export type DashboardNavKey =
-  'home' | 'progress' | 'rewards' | 'achievements' | 'leaderboard'
+  | 'home'
+  | 'progress'
+  | 'games'
+  | 'rewards'
+  | 'achievements'
+  | 'leaderboard'
 
 export interface DashboardNavItem {
   key: DashboardNavKey
@@ -20,6 +26,7 @@ export interface DashboardNavItem {
 export const dashboardNavItems: DashboardNavItem[] = [
   { key: 'home', icon: Home, path: '/pet', end: true },
   { key: 'progress', icon: TrendingUp, path: '/pet/progress', end: false },
+  { key: 'games', icon: Gamepad2, path: '/pet/games', end: false },
   { key: 'rewards', icon: Gift, path: '/pet/rewards', end: false },
   { key: 'achievements', icon: Medal, path: '/pet/achievements', end: false },
   { key: 'leaderboard', icon: Trophy, path: '/pet/leaderboard', end: false },

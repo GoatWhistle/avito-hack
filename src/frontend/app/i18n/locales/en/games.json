@@ -1,0 +1,55 @@
+{
+  "title": "Mini-games",
+  "subtitle": "Play every day and earn free promotions",
+  "play": "Play",
+  "playAgain": "Play again",
+  "continue": "Continue",
+  "loading": "Loading the game…",
+  "streak": {
+    "title": "Weekly streak",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "best": "Best: {{count}}",
+    "today": "Today is counted",
+    "todayHint": "Finish a run to count today",
+    "progress": "{{current}} of {{total}} days",
+    "rewardReady": "Reward ready",
+    "rewardHint": "Reach a 7-day streak to get a free promotion",
+    "claim": "Claim reward",
+    "claimed": "Reward claimed",
+    "promoCode": "Your promo code",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "round": {
+    "score": "Score",
+    "target": "to finish: {{count}}",
+    "correct": "Correct!",
+    "wrong": "Missed",
+    "won": "Run completed!",
+    "wonHint": "You guessed {{count}} times in a row",
+    "lost": "Game over",
+    "lostHint": "Your score: {{count}}",
+    "priceWas": "Price: {{price}}",
+    "next": "Next",
+    "openListing": "View listing",
+    "correctStreak": "{{count}} in a row"
+  },
+  "moreless": {
+    "name": "Higher or lower",
+    "description": "Guess which listing costs more",
+    "rules": "The left price is known. Guess whether the right listing is higher or lower.",
+    "higher": "Higher",
+    "lower": "Lower",
+    "thisItem": "This listing",
+    "vs": "vs"
+  },
+  "empty": {
+    "title": "No games yet",
+    "hint": "Mini-games are coming soon"
+  },
+  "notEnoughItems": {
+    "title": "Not enough listings",
+    "hint": "More listings with photos are needed to start the game"
+  }
+}

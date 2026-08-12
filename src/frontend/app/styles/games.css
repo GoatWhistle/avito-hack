@@ -1,0 +1,110 @@
+@layer components {
+  @keyframes game-glow-correct {
+    from {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent);
+    }
+
+    to {
+      box-shadow: 0 0 32px 6px
+        color-mix(in oklab, var(--primary) 25%, transparent);
+    }
+  }
+
+  @keyframes game-glow-wrong {
+    from {
+      box-shadow: 0 0 0 0
+        color-mix(in oklab, var(--destructive) 55%, transparent);
+    }
+
+    to {
+      box-shadow: 0 0 32px 6px
+        color-mix(in oklab, var(--destructive) 25%, transparent);
+    }
+  }
+
+  @keyframes game-price-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0) scale(0.92);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes game-card-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes game-shake {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+
+    25% {
+      transform: translate3d(-5px, 0, 0);
+    }
+
+    75% {
+      transform: translate3d(5px, 0, 0);
+    }
+  }
+
+  @keyframes game-pop {
+    0% {
+      transform: scale(1);
+    }
+
+    45% {
+      transform: scale(1.06);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .game-card-correct {
+    animation:
+      game-glow-correct 420ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1))
+        forwards,
+      game-pop 420ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .game-card-wrong {
+    animation:
+      game-glow-wrong 420ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1))
+        forwards,
+      game-shake 380ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .game-card-enter {
+    animation: game-card-enter var(--duration-normal, 220ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+
+  .game-price-reveal {
+    animation: game-price-reveal 340ms
+      var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card-correct,
+  .game-card-wrong,
+  .game-card-enter,
+  .game-price-reveal {
+    animation: none;
+  }
+}
