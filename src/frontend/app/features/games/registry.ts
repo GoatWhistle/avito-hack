@@ -1,7 +1,7 @@
 import { Coins, Rabbit, Type, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type ruGames from '#/i18n/locales/ru/games.json'
-import { DoodleJumpScreen } from '#/features/doodle-jump'
+import { RaccoonJumpScreen } from '#/features/raccoon-jump'
 import { BukovkiGame } from './components/bukovki/BukovkiGame'
 import { BukovkiHelp } from './components/bukovki/BukovkiHelp'
 import { MoreLessGame } from './components/moreless/MoreLessGame'
@@ -46,7 +46,7 @@ export const gameDefinitions: GameDefinition[] = [
     slug: 'raccoonjump',
     path: 'noti-jump',
     icon: Rabbit,
-    component: DoodleJumpScreen,
+    component: RaccoonJumpScreen,
     help: RaccoonJumpHelp,
   },
 ]

@@ -1,0 +1,184 @@
+import type {
+  TouchEvent as ReactTouchEvent,
+  TouchList as ReactTouchList,
+} from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useGameStateQuery } from '#/features/games/hooks'
+import { RaccoonJumpOverlays } from './RaccoonJumpOverlays'
+import { RaccoonJumpPlayer } from './RaccoonJumpPlayer'
+import { GAME_HEIGHT, GAME_WIDTH, type Game, type GameStatus } from './game'
+import { useGameKeyboard } from './useGameKeyboard'
+import { useGameLoop } from './useGameLoop'
+import { usePalette } from './usePalette'
+import { RACCOON_JUMP_SLUG, useRaccoonJumpRound } from './useRaccoonJumpRound'
+
+export function RaccoonJumpScreen() {
+  const { t } = useTranslation('games')
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const gameRef = useRef<Game | null>(null)
+  const lottieContainerRef = useRef<HTMLDivElement>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
+  const surfaceRef = useRef<HTMLDivElement>(null)
+  const disposedRef = useRef(false)
+  const paletteRef = usePalette()
+
+  const [status, setStatus] = useState<GameStatus>('idle')
+  const [finalScore, setFinalScore] = useState(0)
+  const [scale, setScale] = useState(1)
+
+  const round = useRaccoonJumpRound()
+  const stateQuery = useGameStateQuery(RACCOON_JUMP_SLUG)
+  const { adoptState, submitScore } = round
+  const serverBest = stateQuery.data?.best_score
+
+  useEffect(() => {
+    if (typeof serverBest === 'number') adoptState(serverBest)
+  }, [serverBest, adoptState])
+
+  const onGameOver = useCallback(
+    (score: number, collected: number[]) => {
+      setFinalScore(score)
+      void submitScore({ score, collected })
+    },
+    [submitScore],
+  )
+
+  const onGameOverRef = useRef(onGameOver)
+  useEffect(() => {
+    onGameOverRef.current = onGameOver
+  }, [onGameOver])
+
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return
+
+    const measure = () => {
+      const available = frame.clientWidth
+      if (!available) return
+      setScale(Math.min(1, available / GAME_WIDTH))
+    }
+
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [])
+
+  useGameLoop({
+    canvasRef,
+    gameRef,
+    lottieContainerRef,
+    disposedRef,
+    paletteRef,
+    onStatusChange: setStatus,
+    onGameOverRef,
+  })
+
+  const { isStarting, startRound } = round
+
+  const startGame = useCallback(async () => {
+    const game = gameRef.current
+    if (!game || isStarting) return
+
+    const prompt = await startRound()
+    if (!prompt || disposedRef.current) return
+
+    game.collectibleIndexes = (prompt.collectibles ?? []).map(
+      (item) => item.index,
+    )
+    game.reset(prompt.seed)
+  }, [isStarting, startRound])
+
+  const requestStart = useCallback(() => {
+    void startGame()
+  }, [startGame])
+
+  useGameKeyboard(gameRef, surfaceRef, requestStart)
+
+  const updateTouchInput = useCallback(
+    (touches: ReactTouchList, rect: DOMRect) => {
+      const game = gameRef.current
+      if (!game) return
+
+      game.input.left = false
+      game.input.right = false
+
+      const mid = rect.width / 2
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches.item(i)
+        if (!touch) continue
+        const x = touch.clientX - rect.left
+        if (x < mid) game.input.left = true
+        else game.input.right = true
+      }
+    },
+    [],
+  )
+
+  const onTouchStart = useCallback(
+    (e: ReactTouchEvent<HTMLDivElement>) => {
+      updateTouchInput(e.touches, e.currentTarget.getBoundingClientRect())
+    },
+    [updateTouchInput],
+  )
+
+  const onTouchEnd = useCallback(
+    (e: ReactTouchEvent<HTMLDivElement>) => {
+      updateTouchInput(e.touches, e.currentTarget.getBoundingClientRect())
+    },
+    [updateTouchInput],
+  )
+
+  return (
+    <div
+      ref={frameRef}
+      className="flex w-full items-start justify-center"
+      style={{ height: GAME_HEIGHT * scale }}
+    >
+      <div
+        ref={surfaceRef}
+        className="relative origin-top"
+        style={{
+          width: GAME_WIDTH,
+          height: GAME_HEIGHT,
+          transform: `scale(${scale})`,
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+      >
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-label={t('raccoonjump.name')}
+          className="absolute left-0 top-0 h-full w-full rounded-xl ring-1 ring-border"
+        >
+          {t('raccoonjump.description')}
+        </canvas>
+
+        <p role="status" aria-live="polite" className="sr-only">
+          {status === 'gameover' ? t('raccoonjump.score', { score: finalScore }) : ''}
+        </p>
+
+        <RaccoonJumpPlayer containerRef={lottieContainerRef} status={status} />
+
+        <RaccoonJumpOverlays
+          status={status}
+          finalScore={finalScore}
+          bestScore={round.bestScore}
+          reveal={round.reveal}
+          minStreakScore={round.minStreakScore}
+          isStarting={round.isStarting}
+          isSubmitting={round.isSubmitting}
+          startError={round.startError}
+          submitError={round.submitError}
+          onStart={requestStart}
+          onRetrySubmit={() => void round.retrySubmit()}
+        />
+      </div>
+    </div>
+  )
+}

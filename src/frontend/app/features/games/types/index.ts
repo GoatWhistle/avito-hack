@@ -19,4 +19,8 @@ export type {
   MoreLessItem,
   MoreLessPrompt,
   MoreLessReveal,
+  RaccoonJumpCollectible,
+  RaccoonJumpMove,
+  RaccoonJumpPrompt,
+  RaccoonJumpReveal,
 } from './game.type'

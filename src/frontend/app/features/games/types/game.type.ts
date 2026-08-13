@@ -31,6 +31,7 @@ export interface GameState {
   daily: GameDailyProgress
   active_round?: ActiveGameRound
   max_attempts?: number
+  best_score?: number
 }
 
 export interface ActiveGameRound {
@@ -64,6 +65,7 @@ export interface GameGuessResult {
   progress?: GameProgress
   attempts_used?: number
   max_attempts?: number
+  best_score?: number
 }
 
 export interface GameRewardCode {
@@ -115,5 +117,34 @@ export interface BukovkiReveal {
   game_over: boolean
   win: boolean
   secret?: string
+  listings?: BukovkiListing[]
+}
+
+export interface RaccoonJumpCollectible {
+  index: number
+  title: string
+  photo_url: string
+}
+
+export interface RaccoonJumpPrompt {
+  seed: number
+  max_score: number
+  min_streak_score: number
+  max_score_per_second: number
+  collectibles?: RaccoonJumpCollectible[]
+  best_score: number
+  started_at_unix_milli: number
+}
+
+export interface RaccoonJumpMove {
+  score: number
+  collected: number[]
+}
+
+export interface RaccoonJumpReveal {
+  score: number
+  best_score: number
+  new_best: boolean
+  counts_toward_streak: boolean
   listings?: BukovkiListing[]
 }

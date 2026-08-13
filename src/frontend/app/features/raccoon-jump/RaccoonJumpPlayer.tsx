@@ -2,15 +2,15 @@ import { useState, type RefObject } from 'react'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { type GameStatus, PLAYER_H, PLAYER_W } from './game'
 
-interface DoodleJumpPlayerProps {
+interface RaccoonJumpPlayerProps {
   containerRef: RefObject<HTMLDivElement | null>
   status: GameStatus
 }
 
-export function DoodleJumpPlayer({
+export function RaccoonJumpPlayer({
   containerRef,
   status,
-}: DoodleJumpPlayerProps) {
+}: RaccoonJumpPlayerProps) {
   const [failed, setFailed] = useState(false)
   const playing = status === 'playing'
 

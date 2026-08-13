@@ -50,6 +50,9 @@ export class Game {
   platforms: Platform[] = []
   input = { left: false, right: false }
 
+  collectibleIndexes: number[] = []
+  collected: number[] = []
+
   cameraY = 0
   seed = 0
   private highestY = 0
@@ -85,6 +88,7 @@ export class Game {
     this.cameraY = 0
     this.highestY = this.player.y
     this.score = 0
+    this.collected = []
     this.status = 'playing'
 
     let y = START_Y
@@ -124,6 +128,15 @@ export class Game {
         0,
         Math.floor((START_Y - PLAYER_H - this.highestY) / 10)
       )
+      this.collectPassed()
+    }
+  }
+
+  private collectPassed(): void {
+    for (const index of this.collectibleIndexes) {
+      if (index > this.score) continue
+      if (this.collected.includes(index)) continue
+      this.collected.push(index)
     }
   }
 

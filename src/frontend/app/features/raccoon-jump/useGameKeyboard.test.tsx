@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { act, render } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Game } from './game'
 import { useGameKeyboard } from './useGameKeyboard'
 
@@ -19,12 +19,13 @@ const press = (key: string, target: EventTarget = document.body) => {
 }
 
 let game: Game
+const onStart = vi.fn()
 
 function Harness() {
   const gameRef = useRef<Game | null>(game)
   const surfaceRef = useRef<HTMLDivElement>(null)
 
-  useGameKeyboard(gameRef, surfaceRef)
+  useGameKeyboard(gameRef, surfaceRef, onStart)
 
   return <div ref={surfaceRef} data-testid="surface" />
 }
@@ -32,6 +33,7 @@ function Harness() {
 describe('useGameKeyboard', () => {
   beforeEach(() => {
     game = new Game()
+    onStart.mockClear()
   })
 
   it('consumes arrow keys so the page does not scroll', () => {
@@ -44,11 +46,21 @@ describe('useGameKeyboard', () => {
     expect(game.input.right).toBe(true)
   })
 
-  it('starts a run on space when the game is not playing', () => {
+  it('requests a server-backed start on space when the game is not playing', () => {
     render(<Harness />)
 
     expect(press(' ').defaultPrevented).toBe(true)
-    expect(game.status).toBe('playing')
+    expect(onStart).toHaveBeenCalledTimes(1)
+    expect(game.status).toBe('idle')
+  })
+
+  it('does not request a start while a run is in progress', () => {
+    game.reset(1)
+    render(<Harness />)
+
+    press(' ')
+
+    expect(onStart).not.toHaveBeenCalled()
   })
 
   it('ignores keys aimed at a control outside the game surface', () => {
@@ -59,7 +71,7 @@ describe('useGameKeyboard', () => {
     button.focus()
 
     expect(press(' ', button).defaultPrevented).toBe(false)
-    expect(game.status).toBe('idle')
+    expect(onStart).not.toHaveBeenCalled()
 
     expect(press('ArrowLeft', button).defaultPrevented).toBe(false)
     expect(game.input.left).toBe(false)

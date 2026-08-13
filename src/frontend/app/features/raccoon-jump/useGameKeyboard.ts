@@ -10,6 +10,7 @@ const INTERACTIVE_SELECTOR =
 export const useGameKeyboard = (
   gameRef: RefObject<Game | null>,
   surfaceRef: RefObject<HTMLElement | null>,
+  onStart?: () => void,
 ): void => {
   useEffect(() => {
     const surface = surfaceRef.current
@@ -38,7 +39,7 @@ export const useGameKeyboard = (
 
       if (e.key === ' ') {
         e.preventDefault()
-        if (game.status !== 'playing') game.reset()
+        if (game.status !== 'playing') onStart?.()
       }
     }
 
@@ -65,5 +66,5 @@ export const useGameKeyboard = (
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
     }
-  }, [gameRef, surfaceRef])
+  }, [gameRef, surfaceRef, onStart])
 }
