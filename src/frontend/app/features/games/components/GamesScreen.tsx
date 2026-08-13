@@ -92,6 +92,33 @@ export function GamesScreen() {
             </li>
           )
         })}
+        <li>
+          <Link
+            to="/play/doodle-jump"
+            className="flex items-center gap-3 rounded-xl bg-card p-3 no-underline ring-1 ring-border transition-colors hover:bg-muted"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-subtle">
+              <Flame
+                className="size-5 text-primary-subtle-foreground"
+                aria-hidden="true"
+              />
+            </span>
+
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-medium">Doodle Jump</span>
+              <span className="truncate text-xs text-muted-foreground">
+                Прыгайте выше и выше!
+              </span>
+            </span>
+
+            <span className="flex shrink-0 items-center gap-2">
+              <ChevronRight
+                className="size-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+            </span>
+          </Link>
+        </li>
       </ul>
     </section>
   )

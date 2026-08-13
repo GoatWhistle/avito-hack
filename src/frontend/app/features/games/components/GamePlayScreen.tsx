@@ -3,10 +3,16 @@ import { Link, useParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '#/components/ui'
 import { findGameDefinition } from '#/features/games/registry'
+import { DoodleJumpScreen } from '#/features/doodle-jump'
 
 export function GamePlayScreen() {
   const { t } = useTranslation('games')
   const { gameSlug = '' } = useParams()
+
+  if (gameSlug === 'doodle-jump') {
+    return <DoodleJumpScreen />
+  }
+
   const definition = findGameDefinition(gameSlug)
 
   if (!definition) {
