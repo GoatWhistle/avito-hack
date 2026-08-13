@@ -1,0 +1,69 @@
+@layer components {
+  @keyframes lottery-symbol-reveal {
+    0% {
+      opacity: 0;
+      transform: rotateY(90deg) scale(0.75);
+    }
+
+    65% {
+      opacity: 1;
+      transform: rotateY(-8deg) scale(1.08);
+    }
+
+    100% {
+      opacity: 1;
+      transform: rotateY(0) scale(1);
+    }
+  }
+
+  @keyframes lottery-match-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0
+        color-mix(in oklab, var(--primary) 35%, transparent);
+    }
+
+    50% {
+      box-shadow: 0 0 28px 4px
+        color-mix(in oklab, var(--primary) 25%, transparent);
+    }
+  }
+
+  @keyframes lottery-outcome-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .lottery-slot {
+    perspective: 600px;
+  }
+
+  .lottery-slot-open .lottery-symbol {
+    animation: lottery-symbol-reveal 420ms
+      var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  }
+
+  .lottery-slot-match {
+    animation: lottery-match-pulse 900ms ease-in-out 2;
+  }
+
+  .lottery-outcome {
+    animation: lottery-outcome-enter var(--duration-slow, 320ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lottery-slot-open .lottery-symbol,
+  .lottery-slot-match,
+  .lottery-outcome {
+    animation: none;
+  }
+}

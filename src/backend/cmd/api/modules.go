@@ -14,6 +14,7 @@ import (
 	"github.com/avito-hack/backend/internal/module/pet"
 	"github.com/avito-hack/backend/internal/module/raccoon"
 	"github.com/avito-hack/backend/internal/module/user"
+	"github.com/avito-hack/backend/internal/module/weeklylottery"
 	"github.com/avito-hack/backend/internal/server"
 	"github.com/avito-hack/backend/internal/shared/auth"
 	"github.com/avito-hack/backend/internal/shared/clock"
@@ -167,6 +168,14 @@ func buildModules(
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 
+	weeklyLotteryModule := weeklylottery.New(weeklylottery.Options{
+		Pool:         pool,
+		Tx:           tx,
+		Clock:        appClock,
+		Signer:       petModule.Signer,
+		Authenticate: authenticate,
+	})
+
 	return &builtModules{
 		registrars: []server.ModuleRegistrar{
 			userModule.Handlers,
@@ -174,6 +183,7 @@ func buildModules(
 			favoriteModule.Handlers,
 			raccoonModule.Handlers,
 			gamesModule.Handlers,
+			weeklyLotteryModule.Handlers,
 			petModule.Leaderboard,
 			petModule.Pet,
 			petModule.RewardAPI,
