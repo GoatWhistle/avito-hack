@@ -25,6 +25,11 @@ type RoundRepository interface {
 	LockUserGame(ctx context.Context, userID uuid.UUID, gameSlug string) error
 }
 
+type ScoreRepository interface {
+	BestScore(ctx context.Context, userID uuid.UUID, gameSlug string) (int, error)
+	SaveBestScore(ctx context.Context, userID uuid.UUID, gameSlug string, score int) (int, error)
+}
+
 type ProgressRepository interface {
 	Daily(ctx context.Context, userID uuid.UUID, gameSlug string, day domain.Day) (domain.DailyProgress, error)
 	SaveDaily(
@@ -80,6 +85,7 @@ type StateView struct {
 	Streak       StreakView
 	Daily        DailyView
 	ActiveRound  *ActiveRoundView
+	BestScore    int
 }
 
 type StartRoundResult struct {
@@ -102,6 +108,7 @@ type GuessResult struct {
 	Prompt           []byte
 	AttemptCompleted bool
 	StreakAfter      *StreakView
+	BestScore        int
 }
 
 type ClaimRewardResult struct {

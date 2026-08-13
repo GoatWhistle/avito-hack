@@ -38,6 +38,17 @@ type AttemptLimited interface {
 	AttemptsUsed(r *Round) int
 }
 
+type Scored interface {
+	RoundScore(r *Round) int
+	CountsTowardStreak(score int) bool
+}
+
+func ScoredOf(game Game) (Scored, bool) {
+	scored, ok := game.(Scored)
+
+	return scored, ok
+}
+
 func MaxAttemptsOf(game Game) int {
 	limited, ok := game.(AttemptLimited)
 	if !ok {

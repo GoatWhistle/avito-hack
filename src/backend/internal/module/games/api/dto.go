@@ -45,6 +45,7 @@ type GameStateResponse struct {
 	Streak       StreakResponse       `json:"streak"`
 	Daily        DailyResponse        `json:"daily"`
 	ActiveRound  *ActiveRoundResponse `json:"active_round,omitempty"`
+	BestScore    int                  `json:"best_score,omitempty"`
 }
 
 type StartRoundResponse struct {
@@ -71,6 +72,7 @@ type GuessResponse struct {
 	Prompt           json.RawMessage `json:"prompt,omitempty"`
 	AttemptCompleted bool            `json:"attempt_completed"`
 	StreakAfter      *StreakResponse `json:"streak_after,omitempty"`
+	BestScore        int             `json:"best_score,omitempty"`
 }
 
 type ClaimGameRewardResponse struct {
@@ -111,6 +113,7 @@ func toStateResponse(view app.StateView) GameStateResponse {
 		MaxAttempts:  view.MaxAttempts,
 		Streak:       toStreakResponse(view.Streak),
 		Daily:        DailyResponse{Attempts: view.Daily.Attempts, BestStreak: view.Daily.BestStreak},
+		BestScore:    view.BestScore,
 	}
 
 	if view.ActiveRound != nil {
@@ -137,6 +140,7 @@ func toGuessResponse(result app.GuessResult) GuessResponse {
 		State:            result.State.String(),
 		Prompt:           result.Prompt,
 		AttemptCompleted: result.AttemptCompleted,
+		BestScore:        result.BestScore,
 	}
 
 	if result.StreakAfter != nil {

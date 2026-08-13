@@ -8,6 +8,7 @@ import { GAMES_PATH, GameScreenShell } from './GameScreenShell'
 export function GamePlayScreen() {
   const { t } = useTranslation('games')
   const { gameSlug = '' } = useParams()
+
   const definition = findGameDefinition(gameSlug)
 
   if (!definition) {

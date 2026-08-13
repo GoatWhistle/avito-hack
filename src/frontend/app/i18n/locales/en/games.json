@@ -90,5 +90,25 @@
     "notAWord": "That word is not in the dictionary",
     "alreadyTried": "You already tried that word",
     "tooShort": "Not enough letters"
+  },
+  "raccoonjump": {
+    "name": "Noti Jump",
+    "description": "Jump from platform to platform as high as you can",
+    "play": "Play",
+    "playAgain": "Again",
+    "gameOver": "Game over",
+    "score": "Score: {{score}}",
+    "best": "Best: {{score}}",
+    "help": {
+      "title": "How to play",
+      "intro": "Help Noti climb as high as possible — do not fall down.",
+      "keyboard": "Desktop: ← → or A / D",
+      "touch": "Mobile: tap the left or right side",
+      "platforms": "Springs launch you higher, fragile platforms break",
+      "outro": "The higher you climb, the more points — your best score is saved.",
+      "close": "Got it",
+      "hide": "Hide the hint",
+      "open": "How to play"
+    }
   }
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/avito-hack/backend/internal/module/games/domain"
 	"github.com/avito-hack/backend/internal/module/games/domain/bukovki"
 	"github.com/avito-hack/backend/internal/module/games/domain/moreless"
+	"github.com/avito-hack/backend/internal/module/games/domain/raccoonjump"
 	"github.com/avito-hack/backend/internal/module/games/infra"
 )
 
@@ -32,6 +33,7 @@ type Module struct {
 func New(opts Options) *Module {
 	rounds := infra.NewPgRoundRepository(opts.Pool)
 	progress := infra.NewPgProgressRepository(opts.Pool)
+	scores := infra.NewPgScoreRepository(opts.Pool)
 
 	words := infra.NewPgWordPool(opts.Pool)
 
@@ -40,13 +42,14 @@ func New(opts Options) *Module {
 	registry := domain.NewRegistry(
 		moreless.New(infra.NewPgItemPool(opts.Pool), signer),
 		bukovki.New(words, words),
+		raccoonjump.New(infra.NewPgListingPool(opts.Pool), opts.Clock),
 	)
 
 	handlers := api.NewHandlers(api.Deps{
 		ListGames:    app.NewListGamesHandler(registry, progress),
-		GetState:     app.NewGetStateHandler(registry, rounds, progress),
+		GetState:     app.NewGetStateHandler(registry, rounds, progress, scores),
 		StartRound:   app.NewStartRoundHandler(registry, rounds, opts.Tx, opts.Clock),
-		Guess:        app.NewGuessHandler(registry, rounds, progress, opts.Tx, opts.Clock),
+		Guess:        app.NewGuessHandler(registry, rounds, progress, scores, opts.Tx, opts.Clock),
 		ClaimReward:  app.NewClaimRewardHandler(progress, opts.Tx, opts.Clock),
 		HiddenPhoto:  app.NewHiddenPhotoHandler(rounds, signer),
 		Clock:        opts.Clock,

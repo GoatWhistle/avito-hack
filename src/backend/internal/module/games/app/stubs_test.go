@@ -79,6 +79,36 @@ func (r *stubRounds) ActiveByUser(_ context.Context, _ uuid.UUID, _ string) (*do
 	return r.active, nil
 }
 
+type scoreKey struct {
+	userID uuid.UUID
+	slug   string
+}
+
+type stubScores struct {
+	best  map[scoreKey]int
+	saves []int
+}
+
+func newStubScores() *stubScores {
+	return &stubScores{best: map[scoreKey]int{}}
+}
+
+func (s *stubScores) BestScore(_ context.Context, userID uuid.UUID, slug string) (int, error) {
+	return s.best[scoreKey{userID: userID, slug: slug}], nil
+}
+
+func (s *stubScores) SaveBestScore(_ context.Context, userID uuid.UUID, slug string, score int) (int, error) {
+	key := scoreKey{userID: userID, slug: slug}
+
+	s.saves = append(s.saves, score)
+
+	if score > s.best[key] {
+		s.best[key] = score
+	}
+
+	return s.best[key], nil
+}
+
 type progressKey struct {
 	userID uuid.UUID
 	slug   string

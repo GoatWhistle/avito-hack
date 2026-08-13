@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GamePlayScreen } from './GamePlayScreen'
@@ -29,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   window.localStorage.removeItem('avito-hack.bukovki.help-dismissed')
   window.localStorage.removeItem('avito-hack.moreless.help-dismissed')
+  window.localStorage.removeItem('avito-hack.raccoonjump.help-dismissed')
   state.mockResolvedValue(makeGameState())
 })
 
@@ -91,6 +92,59 @@ describe('GamePlayScreen', () => {
       screen.queryByRole('button', { name: 'Забрать награду' }),
     ).not.toBeInTheDocument()
     expect(claimReward).not.toHaveBeenCalled()
+  })
+
+  it('resolves the raccoon jump game from the registry by its path', async () => {
+    renderGame('noti-jump')
+
+    const heading = await screen.findByRole('heading', {
+      name: 'Прыжки Ноти',
+      level: 1,
+    })
+
+    expect(heading).toBeInTheDocument()
+    expect(
+      within(heading.closest('header') as HTMLElement).getByText(
+        'Прыгайте по платформам как можно выше',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('resolves the raccoon jump game from the registry by its slug', async () => {
+    renderGame('raccoonjump')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Прыжки Ноти', level: 1 }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders the raccoon jump help panel in the shared style', async () => {
+    renderGame('noti-jump')
+
+    expect(await screen.findByText('ПК: ← → или A / D')).toBeInTheDocument()
+    expect(
+      screen.getByText('Телефон: касайтесь левой или правой стороны'),
+    ).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Понятно' }))
+
+    expect(screen.queryByText('ПК: ← → или A / D')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Как играть' }),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the raccoon jump control hints only in the help panel', async () => {
+    window.localStorage.setItem('avito-hack.raccoonjump.help-dismissed', '1')
+
+    renderGame('noti-jump')
+
+    await screen.findByRole('button', { name: 'Как играть' })
+
+    expect(screen.queryByText('ПК: ← → или A / D')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Телефон: касайтесь левой или правой стороны'),
+    ).not.toBeInTheDocument()
   })
 
   it('falls back when the game is unknown', async () => {

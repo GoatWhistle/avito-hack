@@ -64,7 +64,7 @@ func TestStateReportsTheSameStreakWhicheverGameIsQueried(t *testing.T) {
 	winOnce(t, progress, userID, "a", testDay)
 
 	registry := domain.NewRegistry(&scriptedGame{slug: "a", target: 7}, &scriptedGame{slug: "b", target: 7})
-	handler := app.NewGetStateHandler(registry, newStubRounds(), progress)
+	handler := app.NewGetStateHandler(registry, newStubRounds(), progress, newStubScores())
 
 	first, err := handler.Handle(context.Background(), app.GetStateQuery{
 		UserID: userID, GameSlug: "a", ClientDay: testDay,

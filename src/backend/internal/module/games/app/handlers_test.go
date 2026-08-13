@@ -94,7 +94,7 @@ func TestGetStateWithoutActiveRound(t *testing.T) {
 	t.Parallel()
 
 	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
-	handler := app.NewGetStateHandler(registry, newStubRounds(), newStubProgress())
+	handler := app.NewGetStateHandler(registry, newStubRounds(), newStubProgress(), newStubScores())
 
 	view, err := handler.Handle(context.Background(), app.GetStateQuery{
 		UserID: uuid.New(), GameSlug: "g", ClientDay: testDay,
@@ -115,7 +115,7 @@ func TestGetStateResumesActiveRound(t *testing.T) {
 	rounds.active = round
 
 	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
-	handler := app.NewGetStateHandler(registry, rounds, newStubProgress())
+	handler := app.NewGetStateHandler(registry, rounds, newStubProgress(), newStubScores())
 
 	view, err := handler.Handle(context.Background(), app.GetStateQuery{
 		UserID: userID, GameSlug: "g", ClientDay: testDay,

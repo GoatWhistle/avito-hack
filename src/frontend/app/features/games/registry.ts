@@ -1,10 +1,12 @@
-import { Coins, Type, type LucideIcon } from 'lucide-react'
+import { Coins, Rabbit, Type, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type ruGames from '#/i18n/locales/ru/games.json'
+import { DoodleJumpScreen } from '#/features/doodle-jump'
 import { BukovkiGame } from './components/bukovki/BukovkiGame'
 import { BukovkiHelp } from './components/bukovki/BukovkiHelp'
 import { MoreLessGame } from './components/moreless/MoreLessGame'
 import { MoreLessHelp } from './components/moreless/MoreLessHelp'
+import { RaccoonJumpHelp } from './components/raccoonjump/RaccoonJumpHelp'
 
 type GameNamespace = typeof ruGames
 
@@ -39,6 +41,13 @@ export const gameDefinitions: GameDefinition[] = [
     icon: Type,
     component: BukovkiGame,
     help: BukovkiHelp,
+  },
+  {
+    slug: 'raccoonjump',
+    path: 'noti-jump',
+    icon: Rabbit,
+    component: DoodleJumpScreen,
+    help: RaccoonJumpHelp,
   },
 ]
 

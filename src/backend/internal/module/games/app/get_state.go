@@ -20,14 +20,16 @@ type GetStateHandler struct {
 	registry *domain.Registry
 	rounds   RoundRepository
 	progress ProgressRepository
+	scores   ScoreRepository
 }
 
 func NewGetStateHandler(
 	registry *domain.Registry,
 	rounds RoundRepository,
 	progress ProgressRepository,
+	scores ScoreRepository,
 ) *GetStateHandler {
-	return &GetStateHandler{registry: registry, rounds: rounds, progress: progress}
+	return &GetStateHandler{registry: registry, rounds: rounds, progress: progress, scores: scores}
 }
 
 func (h *GetStateHandler) Handle(ctx context.Context, q GetStateQuery) (StateView, error) {
@@ -52,6 +54,15 @@ func (h *GetStateHandler) Handle(ctx context.Context, q GetStateQuery) (StateVie
 		MaxAttempts:  domain.MaxAttemptsOf(game),
 		Streak:       toStreakView(streak),
 		Daily:        DailyView{Attempts: daily.Attempts, BestStreak: daily.BestStreak},
+	}
+
+	if _, isScored := domain.ScoredOf(game); isScored && h.scores != nil {
+		best, scoreErr := h.scores.BestScore(ctx, q.UserID, q.GameSlug)
+		if scoreErr != nil {
+			return StateView{}, scoreErr
+		}
+
+		view.BestScore = best
 	}
 
 	round, err := h.rounds.ActiveByUser(ctx, q.UserID, q.GameSlug)

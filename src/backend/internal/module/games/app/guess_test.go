@@ -27,7 +27,7 @@ func newGuessHandler(
 	progress *stubProgress,
 ) *app.GuessHandler {
 	return app.NewGuessHandler(
-		domain.NewRegistry(game), rounds, progress, &stubTx{}, stubClock{now: testNow},
+		domain.NewRegistry(game), rounds, progress, newStubScores(), &stubTx{}, stubClock{now: testNow},
 	)
 }
 

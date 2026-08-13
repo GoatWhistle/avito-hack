@@ -53,6 +53,17 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   }))
 }
 
+if (
+  typeof globalThis !== 'undefined' &&
+  typeof globalThis.ResizeObserver !== 'function'
+) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
 afterEach(() => {
   cleanup()
 })

@@ -22,6 +22,7 @@ type GuessHandler struct {
 	registry *domain.Registry
 	rounds   RoundRepository
 	progress ProgressRepository
+	scores   ScoreRepository
 	tx       TxManager
 	clock    Clock
 }
@@ -30,10 +31,18 @@ func NewGuessHandler(
 	registry *domain.Registry,
 	rounds RoundRepository,
 	progress ProgressRepository,
+	scores ScoreRepository,
 	tx TxManager,
 	clock Clock,
 ) *GuessHandler {
-	return &GuessHandler{registry: registry, rounds: rounds, progress: progress, tx: tx, clock: clock}
+	return &GuessHandler{
+		registry: registry,
+		rounds:   rounds,
+		progress: progress,
+		scores:   scores,
+		tx:       tx,
+		clock:    clock,
+	}
 }
 
 func (h *GuessHandler) Handle(ctx context.Context, cmd GuessCommand) (GuessResult, error) {
@@ -77,6 +86,22 @@ func (h *GuessHandler) Handle(ctx context.Context, cmd GuessCommand) (GuessResul
 
 		if round.State() != domain.StateWon {
 			return nil
+		}
+
+		scored, isScored := domain.ScoredOf(game)
+
+		if isScored {
+			best, scoreErr := h.persistScore(ctx, cmd, scored.RoundScore(round))
+			if scoreErr != nil {
+				return scoreErr
+			}
+
+			result.BestScore = best
+			result.Reveal = withPersistedBest(result.Reveal, scored.RoundScore(round), best)
+
+			if !scored.CountsTowardStreak(scored.RoundScore(round)) {
+				return nil
+			}
 		}
 
 		result.AttemptCompleted = true
@@ -138,6 +163,54 @@ func (h *GuessHandler) load(ctx context.Context, cmd GuessCommand, slug string) 
 	}
 
 	return round, nil
+}
+
+func withPersistedBest(reveal json.RawMessage, score, best int) json.RawMessage {
+	if len(reveal) == 0 {
+		return reveal
+	}
+
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal(reveal, &payload); err != nil {
+		return reveal
+	}
+
+	if _, ok := payload["best_score"]; !ok {
+		return reveal
+	}
+
+	bestJSON, err := json.Marshal(best)
+	if err != nil {
+		return reveal
+	}
+
+	newBestJSON, err := json.Marshal(score >= best && score > 0)
+	if err != nil {
+		return reveal
+	}
+
+	payload["best_score"] = bestJSON
+	payload["new_best"] = newBestJSON
+
+	patched, err := json.Marshal(payload)
+	if err != nil {
+		return reveal
+	}
+
+	return patched
+}
+
+func (h *GuessHandler) persistScore(ctx context.Context, cmd GuessCommand, score int) (int, error) {
+	if h.scores == nil {
+		return 0, nil
+	}
+
+	best, err := h.scores.SaveBestScore(ctx, cmd.UserID, cmd.GameSlug, score)
+	if err != nil {
+		return 0, err
+	}
+
+	return best, nil
 }
 
 func (h *GuessHandler) completeAttempt(
