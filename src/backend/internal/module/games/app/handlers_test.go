@@ -61,28 +61,33 @@ func TestStartRoundUnknownGameIsNotFound(t *testing.T) {
 	require.ErrorIs(t, err, domain.ErrGameNotFound)
 }
 
-func TestListGamesReportsDailyAndStreak(t *testing.T) {
+func TestListGamesReportsPerGameDailyAndOneGlobalStreak(t *testing.T) {
 	t.Parallel()
 
 	progress := newStubProgress()
 	userID := uuid.New()
 
-	require.NoError(t, progress.SaveDaily(context.Background(), userID, "g", testDay,
+	require.NoError(t, progress.SaveDaily(context.Background(), userID, "a", testDay,
 		domain.DailyProgress{Attempts: 2, BestStreak: 7}))
-	require.NoError(t, progress.SaveStreak(context.Background(), userID, "g",
+	require.NoError(t, progress.SaveDailyAny(context.Background(), userID, testDay,
+		domain.DailyProgress{Attempts: 2, BestStreak: 7}))
+	require.NoError(t, progress.SaveStreak(context.Background(), userID,
 		domain.Streak{CurrentDays: 7, BestDays: 9}))
 
-	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
+	registry := domain.NewRegistry(&scriptedGame{slug: "a", target: 7}, &scriptedGame{slug: "b", target: 7})
 	handler := app.NewListGamesHandler(registry, progress)
 
-	views, err := handler.Handle(context.Background(), app.ListGamesQuery{UserID: userID, ClientDay: testDay})
+	view, err := handler.Handle(context.Background(), app.ListGamesQuery{UserID: userID, ClientDay: testDay})
 
 	require.NoError(t, err)
-	require.Len(t, views, 1)
-	assert.Equal(t, "g", views[0].Slug)
-	assert.True(t, views[0].DailyDone)
-	assert.Equal(t, 7, views[0].Streak.CurrentDays)
-	assert.True(t, views[0].Streak.RewardReady)
+	require.Len(t, view.Games, 2)
+	assert.Equal(t, "a", view.Games[0].Slug)
+	assert.True(t, view.Games[0].DailyDone)
+	assert.False(t, view.Games[1].DailyDone, "the checkmark stays per game")
+	assert.True(t, view.DailyDone)
+	assert.Equal(t, 7, view.Streak.CurrentDays)
+	assert.Equal(t, 9, view.Streak.BestDays)
+	assert.True(t, view.Streak.RewardReady)
 }
 
 func TestGetStateWithoutActiveRound(t *testing.T) {
@@ -128,18 +133,17 @@ func TestClaimRewardIssuesCodeAndResetsCycle(t *testing.T) {
 
 	progress := newStubProgress()
 	userID := uuid.New()
-	require.NoError(t, progress.SaveStreak(context.Background(), userID, "g",
+	require.NoError(t, progress.SaveStreak(context.Background(), userID,
 		domain.Streak{CurrentDays: 7, BestDays: 7}))
 
-	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
-	handler := app.NewClaimRewardHandler(registry, progress, &stubTx{}, stubClock{now: testNow})
+	handler := app.NewClaimRewardHandler(progress, &stubTx{}, stubClock{now: testNow})
 
-	result, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID, GameSlug: "g"})
+	result, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID})
 
 	require.NoError(t, err)
 	assert.Regexp(t, `^PROMO-[0-9A-Z]{8}$`, result.Code)
 
-	streak, err := progress.Streak(context.Background(), userID, "g")
+	streak, err := progress.Streak(context.Background(), userID)
 	require.NoError(t, err)
 	assert.Equal(t, 0, streak.CurrentDays)
 	require.NotNil(t, streak.RewardClaimedAt)
@@ -151,12 +155,11 @@ func TestClaimRewardBeforeSevenDaysConflicts(t *testing.T) {
 
 	progress := newStubProgress()
 	userID := uuid.New()
-	require.NoError(t, progress.SaveStreak(context.Background(), userID, "g", domain.Streak{CurrentDays: 6}))
+	require.NoError(t, progress.SaveStreak(context.Background(), userID, domain.Streak{CurrentDays: 6}))
 
-	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
-	handler := app.NewClaimRewardHandler(registry, progress, &stubTx{}, stubClock{now: testNow})
+	handler := app.NewClaimRewardHandler(progress, &stubTx{}, stubClock{now: testNow})
 
-	_, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID, GameSlug: "g"})
+	_, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID})
 
 	require.ErrorIs(t, err, domainerr.ErrConflict)
 }
@@ -166,14 +169,13 @@ func TestClaimRewardTwiceConflicts(t *testing.T) {
 
 	progress := newStubProgress()
 	userID := uuid.New()
-	require.NoError(t, progress.SaveStreak(context.Background(), userID, "g", domain.Streak{CurrentDays: 7}))
+	require.NoError(t, progress.SaveStreak(context.Background(), userID, domain.Streak{CurrentDays: 7}))
 
-	registry := domain.NewRegistry(&scriptedGame{slug: "g", target: 7})
-	handler := app.NewClaimRewardHandler(registry, progress, &stubTx{}, stubClock{now: time.Now().UTC()})
+	handler := app.NewClaimRewardHandler(progress, &stubTx{}, stubClock{now: time.Now().UTC()})
 
-	_, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID, GameSlug: "g"})
+	_, err := handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID})
 	require.NoError(t, err)
 
-	_, err = handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID, GameSlug: "g"})
+	_, err = handler.Handle(context.Background(), app.ClaimRewardCommand{UserID: userID})
 	require.ErrorIs(t, err, domainerr.ErrConflict)
 }

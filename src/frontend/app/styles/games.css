@@ -98,13 +98,47 @@
     animation: game-price-reveal 340ms
       var(--ease-emphasized, cubic-bezier(0.22, 1, 0.36, 1)) both;
   }
+
+  .game-stagger {
+    animation: game-card-enter var(--duration-normal, 220ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+    animation-delay: calc(var(--game-stagger-index, 0) * 45ms);
+  }
+
+  .game-help-panel {
+    height: var(--collapsible-panel-height);
+    overflow: hidden;
+    transition:
+      height 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      opacity 180ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      transform 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .game-help-panel[data-starting-style],
+  .game-help-panel[data-ending-style] {
+    height: 0;
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.98);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .game-help-panel {
+    transition-duration: 1ms;
+  }
+
+  .game-help-panel[data-starting-style],
+  .game-help-panel[data-ending-style] {
+    height: 0;
+    opacity: 1;
+    transform: none;
+  }
+
   .game-card-correct,
   .game-card-wrong,
   .game-card-enter,
-  .game-price-reveal {
+  .game-price-reveal,
+  .game-stagger {
     animation: none;
   }
 }

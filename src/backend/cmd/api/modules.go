@@ -163,8 +163,10 @@ func buildModules(
 		Pool:         pool,
 		Tx:           tx,
 		Clock:        appClock,
+		PhotoSecret:  cfg.RewardHMACSecret,
 		Validator:    validator,
 		Authenticate: authenticate,
+		OptionalAuth: optionalAuth,
 		MaxBodyBytes: cfg.MaxBodyBytes,
 	})
 

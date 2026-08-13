@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 func TestSlugAndTargetStreak(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(poolOf(100, 200))
+	game := newGame(poolOf(100, 200))
 
 	assert.Equal(t, "moreless", game.Slug())
 	assert.Equal(t, 7, game.TargetStreak())
@@ -27,7 +28,7 @@ func TestSlugAndTargetStreak(t *testing.T) {
 func TestPromptNeverContainsHiddenRightPrice(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(poolOf(1320000, hiddenPrice, 4242424242))
+	game := newGame(poolOf(1320000, hiddenPrice, 4242424242))
 	round := newRound()
 
 	view, err := game.Start(context.Background(), round)
@@ -52,10 +53,95 @@ func TestPromptNeverContainsHiddenRightPrice(t *testing.T) {
 	assert.Equal(t, float64(1320000), left["price"])
 }
 
+func TestPromptNeverLeaksHiddenItemIdentity(t *testing.T) {
+	t.Parallel()
+
+	pool := poolOf(1320000, hiddenPrice, 4242424242)
+	game := newGame(pool)
+	round := newRound()
+
+	view, err := game.Start(context.Background(), round)
+	require.NoError(t, err)
+
+	hidden := pool.items[1]
+	marshalled := string(view.Prompt)
+
+	assert.NotContains(t, marshalled, hidden.DisplayID,
+		"the hidden item display_id must never reach the client: it makes GET /items/{id} a price oracle")
+	assert.NotContains(t, marshalled, hidden.Title,
+		"the hidden item title must never reach the client: it is searchable through the public catalogue")
+	assert.NotContains(t, marshalled, hidden.PhotoURL,
+		"the raw upload path embeds the display_id and would leak the identity just as well")
+
+	prompt := decodePrompt(t, view.Prompt)
+	right, ok := prompt["right"].(map[string]any)
+	require.True(t, ok)
+
+	assert.Equal(t, "", right["title"], "the hidden title stays blank until the guess is settled")
+	assert.Contains(t, right["photo_url"], "/api/v1/games/photo/",
+		"the hidden photo must be served through the round-scoped token endpoint")
+}
+
+func TestHiddenPhotoTokenResolvesOnlyForItsOwnRound(t *testing.T) {
+	t.Parallel()
+
+	pool := poolOf(1320000, hiddenPrice, 4242424242)
+	round := newRound()
+
+	view, err := newGame(pool).Start(context.Background(), round)
+	require.NoError(t, err)
+
+	prompt := decodePrompt(t, view.Prompt)
+	right, _ := prompt["right"].(map[string]any)
+	token, _ := right["photo_url"].(string)
+	token = strings.TrimPrefix(token, "/api/v1/games/photo/")
+
+	roundID, displayID, ok := testSigner().Verify(token)
+	require.True(t, ok, "a freshly minted token must verify")
+	assert.Equal(t, round.DisplayID(), roundID, "the token is bound to the round that issued it")
+	assert.Equal(t, pool.items[1].DisplayID, displayID)
+
+	url, ok := moreless.HiddenPhotoURL(round.Payload(), displayID)
+	require.True(t, ok)
+	assert.Equal(t, pool.items[1].PhotoURL, url)
+
+	_, _, forged := testSigner().Verify(token + "x")
+	assert.False(t, forged, "a tampered signature must be rejected")
+
+	_, _, wrongKey := moreless.NewPhotoSigner("another-secret").Verify(token)
+	assert.False(t, wrongKey, "a token signed with a different key must be rejected")
+}
+
+func TestPromptFailsClosedWithoutAPhotoSecret(t *testing.T) {
+	t.Parallel()
+
+	pool := poolOf(1320000, hiddenPrice, 4242424242)
+	round := newRound()
+
+	view, err := moreless.New(pool, moreless.NewPhotoSigner("")).Start(context.Background(), round)
+	require.NoError(t, err)
+
+	assert.NotContains(t, string(view.Prompt), pool.items[1].DisplayID,
+		"an unconfigured secret must hide the photo, never fall back to the raw display_id")
+}
+
+func TestHiddenPhotoURLRejectsForeignDisplayID(t *testing.T) {
+	t.Parallel()
+
+	pool := poolOf(1320000, hiddenPrice, 4242424242)
+	round := newRound()
+
+	_, err := newGame(pool).Start(context.Background(), round)
+	require.NoError(t, err)
+
+	_, ok := moreless.HiddenPhotoURL(round.Payload(), pool.items[0].DisplayID)
+	assert.False(t, ok, "a token must never resolve a photo outside its own round's hidden side")
+}
+
 func TestPayloadKeepsHiddenPriceServerSide(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(poolOf(100, hiddenPrice, 300))
+	game := newGame(poolOf(100, hiddenPrice, 300))
 	round := newRound()
 
 	view, err := game.Start(context.Background(), round)
@@ -71,7 +157,7 @@ func TestStartNeverRepeatsAnItem(t *testing.T) {
 	pool := poolOf(100, 200)
 	round := newRound()
 
-	_, err := moreless.New(pool).Start(context.Background(), round)
+	_, err := newGame(pool).Start(context.Background(), round)
 	require.NoError(t, err)
 
 	require.Len(t, pool.excludes, 1)
@@ -87,7 +173,7 @@ func TestGuessHigherCorrectAdvancesToFreshPair(t *testing.T) {
 	t.Parallel()
 
 	pool := poolOf(100, 500, 900)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -97,7 +183,9 @@ func TestGuessHigherCorrectAdvancesToFreshPair(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, outcome.Correct)
-	assert.JSONEq(t, `{"right_price":500}`, string(outcome.Reveal))
+	assert.JSONEq(t,
+		`{"right_price":500,"right_item_id":"item00000001","right_title":"item 1"}`,
+		string(outcome.Reveal))
 	require.NotNil(t, outcome.Next)
 
 	prompt := decodePrompt(t, outcome.Next.Prompt)
@@ -111,7 +199,7 @@ func TestGuessHigherCorrectAdvancesToFreshPair(t *testing.T) {
 func TestGuessWrongEndsWithoutNextView(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(poolOf(500, 100, 900))
+	game := newGame(poolOf(500, 100, 900))
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -122,7 +210,9 @@ func TestGuessWrongEndsWithoutNextView(t *testing.T) {
 
 	assert.False(t, outcome.Correct)
 	assert.Nil(t, outcome.Next)
-	assert.JSONEq(t, `{"right_price":100}`, string(outcome.Reveal))
+	assert.JSONEq(t,
+		`{"right_price":100,"right_item_id":"item00000001","right_title":"item 1"}`,
+		string(outcome.Reveal))
 }
 
 func TestEqualPricesCountAsCorrectForEitherChoice(t *testing.T) {
@@ -132,7 +222,7 @@ func TestEqualPricesCountAsCorrectForEitherChoice(t *testing.T) {
 		t.Run(choice, func(t *testing.T) {
 			t.Parallel()
 
-			game := moreless.New(poolOf(700, 700, 900))
+			game := newGame(poolOf(700, 700, 900))
 			round := newRound()
 
 			_, err := game.Start(context.Background(), round)
@@ -149,7 +239,7 @@ func TestEqualPricesCountAsCorrectForEitherChoice(t *testing.T) {
 func TestGuessAtTargetStreakReturnsNoNextView(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(poolOf(100, 200, 300))
+	game := newGame(poolOf(100, 200, 300))
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -180,7 +270,7 @@ func TestGuessRejectsMalformedMoves(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			game := moreless.New(poolOf(100, 200, 300))
+			game := newGame(poolOf(100, 200, 300))
 			round := newRound()
 
 			_, err := game.Start(context.Background(), round)
@@ -197,7 +287,7 @@ func TestGuessRejectsMalformedMoves(t *testing.T) {
 func TestStartPropagatesEmptyPool(t *testing.T) {
 	t.Parallel()
 
-	game := moreless.New(&fakePool{err: domain.ErrNoItemsInPool})
+	game := newGame(&fakePool{err: domain.ErrNoItemsInPool})
 
 	_, err := game.Start(context.Background(), newRound())
 
@@ -208,7 +298,7 @@ func TestSeenGrowsWithEveryDrawnItem(t *testing.T) {
 	t.Parallel()
 
 	pool := poolOf(100, 200, 300, 400)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -232,7 +322,7 @@ func TestAdvanceDrawsNearTheRevealedPrice(t *testing.T) {
 	t.Parallel()
 
 	pool := poolOf(100, 200, 300, 400)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -254,7 +344,7 @@ func TestEmptyBandFallsBackToUnrestrictedDraw(t *testing.T) {
 	pool := poolOf(100, 200, 300, 400, 500, 600, 700, 800)
 	pool.nearEmpty = true
 
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	view, err := game.Start(context.Background(), round)
@@ -277,7 +367,7 @@ func TestEmptyBandFallbackKeepsTheGameAdvancing(t *testing.T) {
 	pool := poolOf(100, 500, 900, 1300, 1700, 2100, 2500, 2900)
 	pool.nearEmpty = true
 
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -295,7 +385,7 @@ func TestBandsWidenUntilACandidateIsFound(t *testing.T) {
 	t.Parallel()
 
 	pool := bandedPoolOf(1000, 2500)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -310,7 +400,7 @@ func TestNearTieCandidateIsRedrawnWhenAnAlternativeExists(t *testing.T) {
 	t.Parallel()
 
 	pool := bandedPoolOf(100000, 100500, 150000)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)
@@ -331,7 +421,7 @@ func TestNearTieIsAcceptedWhenNothingElseIsAvailable(t *testing.T) {
 	t.Parallel()
 
 	pool := bandedPoolOf(100000, 100500)
-	game := moreless.New(pool)
+	game := newGame(pool)
 	round := newRound()
 
 	_, err := game.Start(context.Background(), round)

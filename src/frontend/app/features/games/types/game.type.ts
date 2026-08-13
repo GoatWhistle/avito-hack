@@ -15,7 +15,13 @@ export interface GameSummary {
   slug: string
   target_streak: number
   daily_done: boolean
+  max_attempts?: number
+}
+
+export interface GameList {
+  games: GameSummary[]
   streak: GameStreak
+  daily_done: boolean
 }
 
 export interface GameState {
@@ -24,12 +30,15 @@ export interface GameState {
   streak: GameStreak
   daily: GameDailyProgress
   active_round?: ActiveGameRound
+  max_attempts?: number
 }
 
 export interface ActiveGameRound {
   round_id: string
   streak: number
   prompt: unknown
+  attempts_used?: number
+  max_attempts?: number
 }
 
 export interface GameRound {
@@ -38,7 +47,11 @@ export interface GameRound {
   target_streak: number
   state?: GameRoundState
   prompt: unknown
+  attempts_used?: number
+  max_attempts?: number
 }
+
+export type GameProgress = 'continue' | 'advance' | 'win' | 'lose'
 
 export interface GameGuessResult {
   correct: boolean
@@ -48,6 +61,9 @@ export interface GameGuessResult {
   prompt?: unknown
   attempt_completed: boolean
   streak_after?: GameStreak
+  progress?: GameProgress
+  attempts_used?: number
+  max_attempts?: number
 }
 
 export interface GameRewardCode {
@@ -68,6 +84,36 @@ export interface MoreLessPrompt {
 
 export interface MoreLessReveal {
   right_price: number
+  right_item_id?: string
+  right_title?: string
 }
 
 export type MoreLessChoice = 'higher' | 'lower'
+
+export type BukovkiLetterStatus = 'correct' | 'present' | 'absent'
+
+export interface BukovkiLetter {
+  char: string
+  status: BukovkiLetterStatus
+}
+
+export interface BukovkiPrompt {
+  word_length: number
+  max_tries: number
+  history: BukovkiLetter[][]
+}
+
+export interface BukovkiListing {
+  display_id: string
+  title: string
+  price_kopeks: number
+  photo_url: string
+}
+
+export interface BukovkiReveal {
+  feedback: BukovkiLetter[]
+  game_over: boolean
+  win: boolean
+  secret?: string
+  listings?: BukovkiListing[]
+}

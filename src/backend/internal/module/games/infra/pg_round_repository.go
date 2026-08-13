@@ -53,6 +53,15 @@ func (r *PgRoundRepository) ByDisplayID(ctx context.Context, displayID string) (
 	return scanRound(postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, displayID))
 }
 
+func (r *PgRoundRepository) ByDisplayIDForUpdate(
+	ctx context.Context,
+	displayID string,
+) (*domain.Round, error) {
+	const query = `SELECT ` + roundColumns + ` FROM game_rounds WHERE display_id = $1 FOR UPDATE`
+
+	return scanRound(postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, displayID))
+}
+
 func (r *PgRoundRepository) ActiveByUser(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -65,6 +74,17 @@ func (r *PgRoundRepository) ActiveByUser(
 		LIMIT 1`
 
 	return scanRound(postgres.QuerierFrom(ctx, r.pool).QueryRow(ctx, query, userID, gameSlug))
+}
+
+func (r *PgRoundRepository) LockUserGame(ctx context.Context, userID uuid.UUID, gameSlug string) error {
+	const query = `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`
+
+	if _, err := postgres.QuerierFrom(ctx, r.pool).
+		Exec(ctx, query, userID.String()+"/"+gameSlug); err != nil {
+		return fmt.Errorf("lock user game: %w", err)
+	}
+
+	return nil
 }
 
 func scanRound(row pgx.Row) (*domain.Round, error) {

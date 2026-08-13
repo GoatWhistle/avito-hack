@@ -116,7 +116,7 @@ func TestItemBehaviorAllowedTransitions(t *testing.T) {
 		{
 			name:  "moderation to published",
 			from:  domain.StatusModeration,
-			apply: func(i *domain.Item) error { return i.Publish(later) },
+			apply: func(i *domain.Item) error { return i.Publish(later, domain.ModerationApproved) },
 			want:  domain.StatusPublished,
 		},
 		{
@@ -169,7 +169,7 @@ func TestItemBehaviorForbiddenTransitions(t *testing.T) {
 		apply func(*domain.Item) error
 	}{
 		{name: "sold cannot be published", from: domain.StatusSold, apply: func(i *domain.Item) error {
-			return i.Publish(later)
+			return i.Publish(later, domain.ModerationApproved)
 		}},
 		{name: "sold cannot be archived", from: domain.StatusSold, apply: func(i *domain.Item) error {
 			return i.Archive(later)
@@ -184,7 +184,7 @@ func TestItemBehaviorForbiddenTransitions(t *testing.T) {
 			return i.MarkSold(later)
 		}},
 		{name: "draft cannot be published directly", from: domain.StatusDraft, apply: func(i *domain.Item) error {
-			return i.Publish(later)
+			return i.Publish(later, domain.ModerationApproved)
 		}},
 		{name: "draft cannot be restored", from: domain.StatusDraft, apply: func(i *domain.Item) error {
 			return i.Restore(later)
@@ -196,10 +196,10 @@ func TestItemBehaviorForbiddenTransitions(t *testing.T) {
 			return i.SubmitForModeration(later)
 		}},
 		{name: "published cannot be republished", from: domain.StatusPublished, apply: func(i *domain.Item) error {
-			return i.Publish(later)
+			return i.Publish(later, domain.ModerationApproved)
 		}},
 		{name: "archived cannot be published", from: domain.StatusArchived, apply: func(i *domain.Item) error {
-			return i.Publish(later)
+			return i.Publish(later, domain.ModerationApproved)
 		}},
 		{name: "archived cannot be sold", from: domain.StatusArchived, apply: func(i *domain.Item) error {
 			return i.MarkSold(later)

@@ -19,6 +19,7 @@ type ModerationSubject struct {
 	ItemID      uuid.UUID
 	Title       string
 	Description string
+	Attributes  Attributes
 	PhotoURLs   []string
 }
 

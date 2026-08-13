@@ -20,7 +20,9 @@ type Clock interface {
 type RoundRepository interface {
 	Save(ctx context.Context, round *domain.Round) error
 	ByDisplayID(ctx context.Context, displayID string) (*domain.Round, error)
+	ByDisplayIDForUpdate(ctx context.Context, displayID string) (*domain.Round, error)
 	ActiveByUser(ctx context.Context, userID uuid.UUID, gameSlug string) (*domain.Round, error)
+	LockUserGame(ctx context.Context, userID uuid.UUID, gameSlug string) error
 }
 
 type ProgressRepository interface {
@@ -32,8 +34,11 @@ type ProgressRepository interface {
 		day domain.Day,
 		progress domain.DailyProgress,
 	) error
-	Streak(ctx context.Context, userID uuid.UUID, gameSlug string) (domain.Streak, error)
-	SaveStreak(ctx context.Context, userID uuid.UUID, gameSlug string, streak domain.Streak) error
+	DailyAny(ctx context.Context, userID uuid.UUID, day domain.Day) (domain.DailyProgress, error)
+	SaveDailyAny(ctx context.Context, userID uuid.UUID, day domain.Day, progress domain.DailyProgress) error
+	Streak(ctx context.Context, userID uuid.UUID) (domain.Streak, error)
+	StreakForUpdate(ctx context.Context, userID uuid.UUID) (domain.Streak, error)
+	SaveStreak(ctx context.Context, userID uuid.UUID, streak domain.Streak) error
 }
 
 type StreakView struct {
@@ -48,21 +53,30 @@ type DailyView struct {
 }
 
 type ActiveRoundView struct {
-	RoundID string
-	Streak  int
-	Prompt  []byte
+	RoundID      string
+	Streak       int
+	AttemptsUsed int
+	MaxAttempts  int
+	Prompt       []byte
 }
 
 type GameView struct {
 	Slug         string
 	TargetStreak int
+	MaxAttempts  int
 	DailyDone    bool
-	Streak       StreakView
+}
+
+type GameListView struct {
+	Games     []GameView
+	Streak    StreakView
+	DailyDone bool
 }
 
 type StateView struct {
 	Slug         string
 	TargetStreak int
+	MaxAttempts  int
 	Streak       StreakView
 	Daily        DailyView
 	ActiveRound  *ActiveRoundView
@@ -72,13 +86,18 @@ type StartRoundResult struct {
 	RoundID      string
 	Streak       int
 	TargetStreak int
+	AttemptsUsed int
+	MaxAttempts  int
 	Prompt       []byte
 }
 
 type GuessResult struct {
 	Correct          bool
+	Progress         domain.Progress
 	Reveal           []byte
 	Streak           int
+	AttemptsUsed     int
+	MaxAttempts      int
 	State            domain.State
 	Prompt           []byte
 	AttemptCompleted bool

@@ -18,9 +18,11 @@ type Deps struct {
 	StartRound   *app.StartRoundHandler
 	Guess        *app.GuessHandler
 	ClaimReward  *app.ClaimRewardHandler
+	HiddenPhoto  *app.HiddenPhotoHandler
 	Clock        app.Clock
 	Validator    httpx.Validator
 	Authenticate func(http.Handler) http.Handler
+	OptionalAuth func(http.Handler) http.Handler
 	MaxBodyBytes int64
 }
 

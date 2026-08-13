@@ -12,16 +12,16 @@ export const useGameStateQuery = (slug: string) =>
   useQuery({
     queryKey: gameKeys.state(slug),
     queryFn: () => gameRepository.state(slug),
+    enabled: slug !== '',
   })
 
-export const useClaimGameReward = (slug: string) => {
+export const useClaimGameReward = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => gameRepository.claimReward(slug),
+    mutationFn: () => gameRepository.claimReward(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: gameKeys.state(slug) })
-      void queryClient.invalidateQueries({ queryKey: gameKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: gameKeys.all })
     },
   })
 }

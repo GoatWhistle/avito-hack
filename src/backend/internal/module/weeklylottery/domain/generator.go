@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	BoardSize  = 9
-	lossWeight = 50
+	BoardSize      = 9
+	lossWeight     = 50
+	maxFillerCount = 2
 )
 
 type Random interface {
@@ -45,17 +46,24 @@ func (g *Generator) Generate() ([BoardSize]Symbol, *Prize, error) {
 		return board, nil, err
 	}
 
-	symbols := allSymbols()
+	filled := 0
+	limits := make(map[Symbol]int, len(prizes))
+	for _, symbol := range allSymbols() {
+		limits[symbol] = maxFillerCount
+	}
 	if prize != nil {
 		board[0], board[1], board[2] = prize.Symbol, prize.Symbol, prize.Symbol
-		symbols = without(symbols, prize.Symbol)
-		for index := 3; index < BoardSize; index++ {
-			board[index] = symbols[(index-3)/2]
+		filled = 3
+		delete(limits, prize.Symbol)
+	}
+
+	for index := filled; index < BoardSize; index++ {
+		symbol, err := g.drawFiller(limits)
+		if err != nil {
+			return board, nil, err
 		}
-	} else {
-		for index := range BoardSize {
-			board[index] = symbols[(index/2)%len(symbols)]
-		}
+		board[index] = symbol
+		limits[symbol]--
 	}
 
 	if err := g.shuffle(&board); err != nil {
@@ -114,13 +122,21 @@ func allSymbols() []Symbol {
 	return []Symbol{SymbolBicycle, SymbolSmartphone, SymbolSofa, SymbolSneakers, SymbolDelivery, SymbolPromotion}
 }
 
-func without(symbols []Symbol, excluded Symbol) []Symbol {
-	out := make([]Symbol, 0, len(symbols)-1)
-	for _, symbol := range symbols {
-		if symbol != excluded {
-			out = append(out, symbol)
+func (g *Generator) drawFiller(limits map[Symbol]int) (Symbol, error) {
+	candidates := make([]Symbol, 0, len(limits))
+	for _, symbol := range allSymbols() {
+		if limits[symbol] > 0 {
+			candidates = append(candidates, symbol)
 		}
 	}
+	if len(candidates) == 0 {
+		return "", fmt.Errorf("weekly lottery board has no filler symbol left")
+	}
 
-	return out
+	index, err := g.random.Intn(len(candidates))
+	if err != nil {
+		return "", err
+	}
+
+	return candidates[index], nil
 }

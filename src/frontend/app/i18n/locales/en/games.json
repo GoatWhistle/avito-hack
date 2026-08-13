@@ -1,20 +1,22 @@
 {
   "title": "Mini-games",
   "subtitle": "Play every day and earn free promotions",
+  "back": "Back to mini-games",
   "play": "Play",
   "playAgain": "Play again",
   "continue": "Continue",
   "loading": "Loading the game…",
   "streak": {
     "title": "Weekly streak",
+    "hint": "One streak for every mini-game: any finished run counts the day",
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "best": "Best: {{count}}",
     "today": "Today is counted",
-    "todayHint": "Finish a run to count today",
+    "todayHint": "Finish any mini-game to count today",
     "progress": "{{current}} of {{total}} days",
     "rewardReady": "Reward ready",
-    "rewardHint": "Reach a 7-day streak to get a free promotion",
+    "rewardHint": "Reach a 7-day streak in any mini-games to get a free promotion",
     "claim": "Claim reward",
     "claimed": "Reward claimed",
     "promoCode": "Your promo code",
@@ -28,8 +30,10 @@
     "wrong": "Missed",
     "won": "Run completed!",
     "wonHint": "You guessed {{count}} times in a row",
+    "wonHintAttempts": "Guessed on attempt {{count}} of {{total}}",
     "lost": "Game over",
     "lostHint": "Your score: {{count}}",
+    "lostHintAttempts": "Out of attempts: {{total}} of {{total}}",
     "priceWas": "Price: {{price}}",
     "next": "Next",
     "openListing": "View listing",
@@ -38,11 +42,21 @@
   "moreless": {
     "name": "Higher or lower",
     "description": "Guess which listing costs more",
-    "rules": "The left price is known. Guess whether the right listing is higher or lower.",
     "higher": "Higher",
     "lower": "Lower",
     "thisItem": "This listing",
-    "vs": "vs"
+    "vs": "vs",
+    "help": {
+      "title": "How to play",
+      "intro": "Compare two listings and guess which one costs more.",
+      "known": "The left price is already known",
+      "hidden": "The right price stays hidden until you answer",
+      "choose": "Pick “Higher” or “Lower” for the right listing",
+      "outro": "After your answer we reveal both prices — and both listings open.",
+      "close": "Got it",
+      "hide": "Hide the hint",
+      "open": "How to play"
+    }
   },
   "empty": {
     "title": "No games yet",
@@ -51,5 +65,30 @@
   "notEnoughItems": {
     "title": "Not enough listings",
     "hint": "More listings with photos are needed to start the game"
+  },
+  "bukovki": {
+    "name": "Bukovki",
+    "description": "Guess the word from a listing title",
+    "submit": "Check",
+    "attempts": "Try {{used}} of {{total}}",
+    "secretWas": "The word was: {{word}}",
+    "listingsTitle": "Listings with this word",
+    "listingsEmpty": "No matching listings are available right now",
+    "listingsBrowseAll": "Browse all listings",
+    "backspace": "Backspace",
+    "help": {
+      "title": "How to play",
+      "intro": "Guess the word taken from a real listing title.",
+      "correct": "Letter is in the right spot",
+      "present": "Letter is in the word, elsewhere",
+      "absent": "Letter is not in the word",
+      "outro": "After the round we show listings with this word.",
+      "close": "Got it",
+      "hide": "Hide the hint",
+      "open": "How to play"
+    },
+    "notAWord": "That word is not in the dictionary",
+    "alreadyTried": "You already tried that word",
+    "tooShort": "Not enough letters"
   }
 }

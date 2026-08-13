@@ -9,18 +9,16 @@ import type { GameStreak } from '#/features/games/types'
 const WEEK_LENGTH = 7
 
 interface GameStreakCardProps {
-  slug: string
   streak: GameStreak
   countedToday?: boolean
 }
 
 export function GameStreakCard({
-  slug,
   streak,
   countedToday = false,
 }: GameStreakCardProps) {
   const { t } = useTranslation('games')
-  const claim = useClaimGameReward(slug)
+  const claim = useClaimGameReward()
   const [copied, setCopied] = useState(false)
 
   const code = claim.data?.code
@@ -37,7 +35,10 @@ export function GameStreakCard({
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Flame className="size-4 text-primary" aria-hidden="true" />
-          <h3 className="text-sm font-semibold">{t('streak.title')}</h3>
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-sm font-semibold">{t('streak.title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('streak.hint')}</p>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
           {t('streak.best', { count: streak.best_days })}

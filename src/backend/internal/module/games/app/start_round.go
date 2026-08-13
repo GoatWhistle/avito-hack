@@ -38,6 +38,10 @@ func (h *StartRoundHandler) Handle(ctx context.Context, cmd StartRoundCommand) (
 	var result StartRoundResult
 
 	err = h.tx.WithTx(ctx, func(ctx context.Context) error {
+		if lockErr := h.rounds.LockUserGame(ctx, cmd.UserID, cmd.GameSlug); lockErr != nil {
+			return lockErr
+		}
+
 		if active, activeErr := h.rounds.ActiveByUser(ctx, cmd.UserID, cmd.GameSlug); activeErr == nil {
 			active.Lose(h.clock.Now())
 
@@ -61,6 +65,8 @@ func (h *StartRoundHandler) Handle(ctx context.Context, cmd StartRoundCommand) (
 			RoundID:      round.DisplayID(),
 			Streak:       round.Streak(),
 			TargetStreak: game.TargetStreak(),
+			AttemptsUsed: domain.AttemptsUsedOf(game, round),
+			MaxAttempts:  domain.MaxAttemptsOf(game),
 			Prompt:       view.Prompt,
 		}
 

@@ -1,13 +1,23 @@
 {
   "title": "Weekly lottery",
-  "subtitle": "Open 9 slots and find three matching prizes",
+  "subtitle": "A prize draw once a week",
   "back": "Back to mini-games",
   "loading": "Loading the lottery…",
   "retry": "Retry",
   "intro": {
     "title": "Your 3 × 3 board is ready",
-    "hint": "A winning board contains only one set of three matching items. A new attempt becomes available next Monday.",
+    "hint": "A winning board contains only one set of three matching items.",
     "start": "Open the board"
+  },
+  "help": {
+    "title": "How to play",
+    "intro": "Open the slots on the 3 × 3 board and collect three matching symbols.",
+    "open": "Open the slots one by one — there are nine",
+    "match": "Three matching symbols win you the prize",
+    "weekly": "One attempt per week, a new board every Monday",
+    "close": "Got it",
+    "hide": "Hide the hint",
+    "openLabel": "How to play"
   },
   "board": {
     "title": "Open the slots",

@@ -26,6 +26,7 @@ vi.mock('#/features/games/repository', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  window.localStorage.removeItem('avito-hack.moreless.help-dismissed')
   state.mockResolvedValue(makeGameState())
   startRound.mockResolvedValue({
     round_id: 'round1234567',
@@ -40,7 +41,6 @@ describe('MoreLessGame', () => {
   it('starts a round and shows both listings', async () => {
     renderWithProviders(<MoreLessGame />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
 
     expect(await screen.findByText('Велосипед Stels')).toBeInTheDocument()
     expect(screen.getByText('Диван угловой')).toBeInTheDocument()
@@ -49,7 +49,6 @@ describe('MoreLessGame', () => {
   it('never renders the hidden price before a guess', async () => {
     renderWithProviders(<MoreLessGame />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
     await screen.findByText('Диван угловой')
 
     expect(screen.getByText(/12 500/)).toBeInTheDocument()
@@ -67,7 +66,6 @@ describe('MoreLessGame', () => {
     })
 
     renderWithProviders(<MoreLessGame />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Дороже' }))
 
     await waitFor(() => {
@@ -88,7 +86,6 @@ describe('MoreLessGame', () => {
     })
 
     renderWithProviders(<MoreLessGame />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
     await userEvent.click(
       await screen.findByRole('button', { name: 'Дешевле' }),
     )
@@ -104,7 +101,6 @@ describe('MoreLessGame', () => {
     )
 
     renderWithProviders(<MoreLessGame />)
-    await screen.findByRole('button', { name: 'Играть' })
 
     expect(screen.queryByText('Недельный стрик')).not.toBeInTheDocument()
     expect(
@@ -123,7 +119,6 @@ describe('MoreLessGame', () => {
     })
 
     renderWithProviders(<MoreLessGame />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Дороже' }))
 
     const links = await screen.findAllByRole('link', {
@@ -138,6 +133,19 @@ describe('MoreLessGame', () => {
     ).toBeInTheDocument()
   })
 
+  it('does not repeat the rules inside the board', async () => {
+    renderWithProviders(<MoreLessGame />)
+
+    await screen.findByText('Диван угловой')
+
+    expect(
+      screen.queryByText(
+        'Слева цена известна. Угадайте, дороже или дешевле объявление справа.',
+      ),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Слева цена уже известна')).not.toBeInTheDocument()
+  })
+
   it('shows the price when the round is lost', async () => {
     guess.mockResolvedValue({
       correct: false,
@@ -148,7 +156,6 @@ describe('MoreLessGame', () => {
     })
 
     renderWithProviders(<MoreLessGame />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Играть' }))
     await userEvent.click(
       await screen.findByRole('button', { name: 'Дешевле' }),
     )

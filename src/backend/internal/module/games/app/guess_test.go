@@ -203,13 +203,129 @@ func TestSecondAttemptSameDayDoesNotAdvanceWeeklyStreak(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	streak, err := progress.Streak(context.Background(), userID, "g")
+	streak, err := progress.Streak(context.Background(), userID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, streak.CurrentDays, "a second attempt on the same day must not double count")
 
 	daily, err := progress.Daily(context.Background(), userID, "g", testDay)
 	require.NoError(t, err)
 	assert.Equal(t, 2, daily.Attempts)
+}
+
+func TestGuessContinueKeepsRoundActiveAndStreakUnchanged(t *testing.T) {
+	t.Parallel()
+
+	rounds := newStubRounds()
+	progress := newStubProgress()
+	userID := uuid.New()
+	round := seedRound(t, rounds, userID, "g")
+
+	game := &attemptGame{
+		scriptedGame: scriptedGame{slug: "g", progress: domain.ProgressContinue, next: true},
+		maxAttempts:  6,
+		attemptsUsed: 1,
+	}
+
+	result, err := newGuessHandler(game, rounds, progress).Handle(context.Background(), app.GuessCommand{
+		UserID: userID, GameSlug: "g", RoundID: round.DisplayID(), Move: move, ClientDay: testDay,
+	})
+
+	require.NoError(t, err)
+	assert.False(t, result.Correct)
+	assert.Equal(t, domain.ProgressContinue, result.Progress)
+	assert.Equal(t, domain.StateActive, result.State)
+	assert.Equal(t, 0, result.Streak, "a continue must never move the streak")
+	assert.Equal(t, 0, round.BestStreak())
+	assert.False(t, result.AttemptCompleted)
+	assert.Nil(t, result.StreakAfter)
+	assert.JSONEq(t, `{"question":"next"}`, string(result.Prompt))
+	assert.Equal(t, 1, result.AttemptsUsed)
+	assert.Equal(t, 6, result.MaxAttempts)
+}
+
+func TestGuessWinCompletesAttemptWithoutTargetStreak(t *testing.T) {
+	t.Parallel()
+
+	rounds := newStubRounds()
+	progress := newStubProgress()
+	userID := uuid.New()
+	round := seedRound(t, rounds, userID, "g")
+
+	game := &attemptGame{
+		scriptedGame: scriptedGame{slug: "g", correct: true, progress: domain.ProgressWin},
+		maxAttempts:  6,
+		attemptsUsed: 3,
+	}
+
+	result, err := newGuessHandler(game, rounds, progress).Handle(context.Background(), app.GuessCommand{
+		UserID: userID, GameSlug: "g", RoundID: round.DisplayID(), Move: move, ClientDay: testDay,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, domain.ProgressWin, result.Progress)
+	assert.Equal(t, domain.StateWon, result.State)
+	assert.True(t, result.AttemptCompleted)
+	assert.Equal(t, 0, result.Streak, "winning without a streak target must leave the streak alone")
+	assert.Equal(t, 3, result.AttemptsUsed)
+	assert.Empty(t, result.Prompt, "a won round must not hand out another question")
+
+	require.NotNil(t, result.StreakAfter)
+	assert.Equal(t, 1, result.StreakAfter.CurrentDays)
+
+	daily, err := progress.Daily(context.Background(), userID, "g", testDay)
+	require.NoError(t, err)
+	assert.Equal(t, 1, daily.Attempts)
+}
+
+func TestGuessLoseDoesNotCompleteAttempt(t *testing.T) {
+	t.Parallel()
+
+	rounds := newStubRounds()
+	progress := newStubProgress()
+	userID := uuid.New()
+	round := seedRound(t, rounds, userID, "g")
+
+	game := &attemptGame{
+		scriptedGame: scriptedGame{slug: "g", progress: domain.ProgressLose},
+		maxAttempts:  6,
+		attemptsUsed: 6,
+	}
+
+	result, err := newGuessHandler(game, rounds, progress).Handle(context.Background(), app.GuessCommand{
+		UserID: userID, GameSlug: "g", RoundID: round.DisplayID(), Move: move, ClientDay: testDay,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, domain.ProgressLose, result.Progress)
+	assert.Equal(t, domain.StateLost, result.State)
+	assert.False(t, result.AttemptCompleted)
+	assert.Equal(t, 6, result.AttemptsUsed)
+
+	daily, err := progress.Daily(context.Background(), userID, "g", testDay)
+	require.NoError(t, err)
+	assert.Equal(t, 0, daily.Attempts)
+}
+
+func TestGuessAttemptFieldsAreZeroForStreakGames(t *testing.T) {
+	t.Parallel()
+
+	rounds := newStubRounds()
+	userID := uuid.New()
+	round := seedRound(t, rounds, userID, "g")
+
+	handler := newGuessHandler(
+		&scriptedGame{slug: "g", target: 7, correct: true, progress: domain.ProgressAdvance},
+		rounds, newStubProgress(),
+	)
+
+	result, err := handler.Handle(context.Background(), app.GuessCommand{
+		UserID: userID, GameSlug: "g", RoundID: round.DisplayID(), Move: move, ClientDay: testDay,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, result.Streak)
+	assert.Equal(t, 0, result.AttemptsUsed)
+	assert.Equal(t, 0, result.MaxAttempts)
 }
 
 func TestGuessUnknownGameIsNotFound(t *testing.T) {

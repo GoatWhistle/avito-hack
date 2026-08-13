@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '#/components/ui'
@@ -30,6 +30,7 @@ export function MoreLessGame() {
       state: 'active',
       prompt: active.prompt,
     },
+    stateQuery.isSuccess,
   )
   const [frozen, setFrozen] = useState<MoreLessPrompt | null>(null)
 
@@ -48,6 +49,10 @@ export function MoreLessGame() {
     dismissFeedback()
   }
 
+  useEffect(() => {
+    setFrozen(null)
+  }, [round.round?.round_id])
+
   return (
     <GameRoundShell
       state={stateQuery.data}
@@ -55,7 +60,7 @@ export function MoreLessGame() {
       isLoading={stateQuery.isPending}
     >
       {view && (
-        <div className="flex flex-col gap-4">
+        <div className="relative flex flex-col gap-4">
           <div className="relative grid gap-3 sm:grid-cols-2 sm:gap-4">
             <MoreLessCard
               key={`left-${view.left.item_id}`}
@@ -72,7 +77,11 @@ export function MoreLessGame() {
 
             <MoreLessCard
               key={`right-${view.right.item_id}`}
-              item={view.right}
+              item={{
+                ...view.right,
+                item_id: lastResult?.reveal.right_item_id ?? view.right.item_id,
+                title: lastResult?.reveal.right_title ?? view.right.title,
+              }}
               revealedPrice={revealed}
               hint={t('moreless.thisItem')}
               highlight={
@@ -90,32 +99,27 @@ export function MoreLessGame() {
               </Button>
             )
           ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-center text-xs text-muted-foreground">
-                {t('moreless.rules')}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  disabled={round.isGuessing}
-                  onClick={() => void submit('higher')}
-                >
-                  <ChevronUp className="size-4" aria-hidden="true" />
-                  {t('moreless.higher')}
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  disabled={round.isGuessing}
-                  onClick={() => void submit('lower')}
-                >
-                  <ChevronDown className="size-4" aria-hidden="true" />
-                  {t('moreless.lower')}
-                </Button>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                disabled={round.isGuessing}
+                onClick={() => void submit('higher')}
+              >
+                <ChevronUp className="size-4" aria-hidden="true" />
+                {t('moreless.higher')}
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                disabled={round.isGuessing}
+                onClick={() => void submit('lower')}
+              >
+                <ChevronDown className="size-4" aria-hidden="true" />
+                {t('moreless.lower')}
+              </Button>
             </div>
           )}
         </div>

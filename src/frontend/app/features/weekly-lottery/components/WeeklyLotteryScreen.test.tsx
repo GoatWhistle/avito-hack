@@ -25,6 +25,7 @@ vi.mock('#/features/weekly-lottery/repository', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  window.localStorage.removeItem('avito-hack.weekly-lottery.help-dismissed')
   state.mockResolvedValue(makeState())
   prizes.mockResolvedValue(makePrizes())
   start.mockResolvedValue(makeRun())
@@ -80,6 +81,38 @@ describe('WeeklyLotteryScreen', () => {
     expect(
       await screen.findByRole('button', { name: 'Ячейка 5: Велосипед' }),
     ).toBeDisabled()
+  })
+
+  it('explains the rules once through the dismissible help panel', async () => {
+    renderLottery(<WeeklyLotteryScreen />)
+
+    expect(
+      await screen.findByText('Три одинаковых символа — приз ваш'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Одна попытка в неделю, новое поле в понедельник'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/Новая попытка появится в следующий понедельник/),
+    ).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Понятно' }))
+
+    expect(
+      screen.queryByText('Три одинаковых символа — приз ваш'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Как играть' }),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the prize legend alongside the help panel', async () => {
+    renderLottery(<WeeklyLotteryScreen />)
+
+    expect(await screen.findByText('Что можно выиграть')).toBeInTheDocument()
+    expect(
+      screen.getByText('Скидка 5% на спорт и отдых'),
+    ).toBeInTheDocument()
   })
 
   it('shows the persisted promo code after a win', async () => {

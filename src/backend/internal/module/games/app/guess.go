@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -54,23 +55,20 @@ func (h *GuessHandler) Handle(ctx context.Context, cmd GuessCommand) (GuessResul
 			return guessErr
 		}
 
-		now := h.clock.Now()
-
-		if !outcome.Correct {
-			round.Lose(now)
-		} else {
-			round.Advance(game.TargetStreak(), now)
-		}
+		applyProgress(round, outcome, game.TargetStreak(), h.clock.Now())
 
 		if saveErr := h.rounds.Save(ctx, round); saveErr != nil {
 			return saveErr
 		}
 
 		result = GuessResult{
-			Correct: outcome.Correct,
-			Reveal:  outcome.Reveal,
-			Streak:  round.Streak(),
-			State:   round.State(),
+			Correct:      outcome.Correct,
+			Progress:     progressOf(outcome),
+			Reveal:       outcome.Reveal,
+			Streak:       round.Streak(),
+			AttemptsUsed: domain.AttemptsUsedOf(game, round),
+			MaxAttempts:  domain.MaxAttemptsOf(game),
+			State:        round.State(),
 		}
 
 		if outcome.Next != nil && round.IsActive() {
@@ -100,8 +98,33 @@ func (h *GuessHandler) Handle(ctx context.Context, cmd GuessCommand) (GuessResul
 	return result, nil
 }
 
+func applyProgress(round *domain.Round, outcome domain.GuessOutcome, targetStreak int, now time.Time) {
+	switch progressOf(outcome) {
+	case domain.ProgressContinue:
+		round.Touch(now)
+	case domain.ProgressAdvance:
+		round.Advance(targetStreak, now)
+	case domain.ProgressWin:
+		round.Win(now)
+	case domain.ProgressLose:
+		round.Lose(now)
+	}
+}
+
+func progressOf(outcome domain.GuessOutcome) domain.Progress {
+	if outcome.Progress != "" {
+		return outcome.Progress
+	}
+
+	if outcome.Correct {
+		return domain.ProgressAdvance
+	}
+
+	return domain.ProgressLose
+}
+
 func (h *GuessHandler) load(ctx context.Context, cmd GuessCommand, slug string) (*domain.Round, error) {
-	round, err := h.rounds.ByDisplayID(ctx, cmd.RoundID)
+	round, err := h.rounds.ByDisplayIDForUpdate(ctx, cmd.RoundID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,15 +152,26 @@ func (h *GuessHandler) completeAttempt(
 		return domain.Streak{}, err
 	}
 
-	firstOfDay := domain.IsFirstAttemptOfDay(daily)
-
 	if err := h.progress.SaveDaily(
 		ctx, cmd.UserID, cmd.GameSlug, today, domain.AdvanceDaily(daily, round.BestStreak()),
 	); err != nil {
 		return domain.Streak{}, err
 	}
 
-	streak, err := h.progress.Streak(ctx, cmd.UserID, cmd.GameSlug)
+	anyDaily, err := h.progress.DailyAny(ctx, cmd.UserID, today)
+	if err != nil {
+		return domain.Streak{}, err
+	}
+
+	firstOfDay := domain.IsFirstAttemptOfDay(anyDaily)
+
+	if err := h.progress.SaveDailyAny(
+		ctx, cmd.UserID, today, domain.AdvanceDaily(anyDaily, round.BestStreak()),
+	); err != nil {
+		return domain.Streak{}, err
+	}
+
+	streak, err := h.progress.StreakForUpdate(ctx, cmd.UserID)
 	if err != nil {
 		return domain.Streak{}, err
 	}
@@ -148,7 +182,7 @@ func (h *GuessHandler) completeAttempt(
 
 	streak = domain.AdvanceStreak(streak, today)
 
-	if err := h.progress.SaveStreak(ctx, cmd.UserID, cmd.GameSlug, streak); err != nil {
+	if err := h.progress.SaveStreak(ctx, cmd.UserID, streak); err != nil {
 		return domain.Streak{}, err
 	}
 

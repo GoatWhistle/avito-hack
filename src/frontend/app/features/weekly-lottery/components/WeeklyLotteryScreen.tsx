@@ -1,8 +1,8 @@
-import { ArrowLeft, Gift, LoaderCircle, Play } from 'lucide-react'
+import { Gift, LoaderCircle, Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { translateApiError } from '#/api'
+import { GameScreenShell } from '#/features/games/components'
 import {
   useRevealWeeklyLotterySlot,
   useStartWeeklyLottery,
@@ -12,6 +12,7 @@ import {
 import { LotteryBoard } from './LotteryBoard'
 import { LotteryOutcome } from './LotteryOutcome'
 import { LotteryPrizeLegend } from './LotteryPrizeLegend'
+import { WeeklyLotteryHelp } from './WeeklyLotteryHelp'
 
 export function WeeklyLotteryScreen() {
   const { t } = useTranslation(['weeklyLottery', 'errors'])
@@ -30,26 +31,12 @@ export function WeeklyLotteryScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-3 py-4 sm:px-6">
-      <header className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('weeklyLottery:back')}
-          render={<Link to="/pet/games" />}
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-        </Button>
-        <div className="flex min-w-0 flex-col">
-          <h1 className="truncate text-xl font-semibold">
-            {t('weeklyLottery:title')}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {t('weeklyLottery:subtitle')}
-          </p>
-        </div>
-      </header>
-
+    <GameScreenShell
+      title={t('weeklyLottery:title')}
+      subtitle={t('weeklyLottery:subtitle')}
+      backLabel={t('weeklyLottery:back')}
+      help={<WeeklyLotteryHelp />}
+    >
       {stateQuery.isPending ? (
         <div
           role="status"
@@ -59,7 +46,7 @@ export function WeeklyLotteryScreen() {
           {t('weeklyLottery:loading')}
         </div>
       ) : (
-        <>
+        <div className="flex flex-col gap-4">
           {!run && (
             <section className="flex flex-col items-center gap-4 rounded-2xl bg-card px-5 py-8 text-center ring-1 ring-border">
               <span className="flex size-14 items-center justify-center rounded-full bg-primary-subtle text-primary">
@@ -140,8 +127,8 @@ export function WeeklyLotteryScreen() {
           {prizesQuery.data && (
             <LotteryPrizeLegend prizes={prizesQuery.data} />
           )}
-        </>
+        </div>
       )}
-    </div>
+    </GameScreenShell>
   )
 }

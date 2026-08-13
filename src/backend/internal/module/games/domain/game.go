@@ -9,10 +9,20 @@ type View struct {
 	Prompt json.RawMessage
 }
 
+type Progress string
+
+const (
+	ProgressContinue Progress = "continue"
+	ProgressAdvance  Progress = "advance"
+	ProgressWin      Progress = "win"
+	ProgressLose     Progress = "lose"
+)
+
 type GuessOutcome struct {
-	Correct bool
-	Reveal  json.RawMessage
-	Next    *View
+	Correct  bool
+	Progress Progress
+	Reveal   json.RawMessage
+	Next     *View
 }
 
 type Game interface {
@@ -21,6 +31,29 @@ type Game interface {
 	Start(ctx context.Context, r *Round) (View, error)
 	Guess(ctx context.Context, r *Round, move json.RawMessage) (GuessOutcome, error)
 	Resume(ctx context.Context, r *Round) (View, error)
+}
+
+type AttemptLimited interface {
+	MaxAttempts() int
+	AttemptsUsed(r *Round) int
+}
+
+func MaxAttemptsOf(game Game) int {
+	limited, ok := game.(AttemptLimited)
+	if !ok {
+		return 0
+	}
+
+	return limited.MaxAttempts()
+}
+
+func AttemptsUsedOf(game Game, r *Round) int {
+	limited, ok := game.(AttemptLimited)
+	if !ok || r == nil {
+		return 0
+	}
+
+	return limited.AttemptsUsed(r)
 }
 
 type Registry struct {

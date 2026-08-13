@@ -36,7 +36,7 @@ func (h *GetStateHandler) Handle(ctx context.Context, q GetStateQuery) (StateVie
 		return StateView{}, err
 	}
 
-	streak, err := h.progress.Streak(ctx, q.UserID, q.GameSlug)
+	streak, err := h.progress.Streak(ctx, q.UserID)
 	if err != nil {
 		return StateView{}, err
 	}
@@ -49,6 +49,7 @@ func (h *GetStateHandler) Handle(ctx context.Context, q GetStateQuery) (StateVie
 	view := StateView{
 		Slug:         game.Slug(),
 		TargetStreak: game.TargetStreak(),
+		MaxAttempts:  domain.MaxAttemptsOf(game),
 		Streak:       toStreakView(streak),
 		Daily:        DailyView{Attempts: daily.Attempts, BestStreak: daily.BestStreak},
 	}
@@ -68,9 +69,11 @@ func (h *GetStateHandler) Handle(ctx context.Context, q GetStateQuery) (StateVie
 	}
 
 	view.ActiveRound = &ActiveRoundView{
-		RoundID: round.DisplayID(),
-		Streak:  round.Streak(),
-		Prompt:  resumed.Prompt,
+		RoundID:      round.DisplayID(),
+		Streak:       round.Streak(),
+		AttemptsUsed: domain.AttemptsUsedOf(game, round),
+		MaxAttempts:  domain.MaxAttemptsOf(game),
+		Prompt:       resumed.Prompt,
 	}
 
 	return view, nil

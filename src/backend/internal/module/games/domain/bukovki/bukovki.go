@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/avito-hack/backend/internal/module/games/domain"
 )
@@ -12,33 +11,47 @@ import (
 const Slug = "bukovki"
 
 const maxTries = 6
-const wordLength = 5
-
-type WordPool interface {
-	RandomWord(ctx context.Context, n int) (string, error)
-	IsValidWord(ctx context.Context, word string) bool
-}
+const maxRevealListings = 4
 
 type Game struct {
-	pool WordPool
+	pool     WordPool
+	listings ListingPool
 }
 
-func New(pool WordPool) *Game {
-	return &Game{pool: pool}
+func New(pool WordPool, listings ListingPool) *Game {
+	return &Game{pool: pool, listings: listings}
 }
 
 func (g *Game) Slug() string { return Slug }
 
-func (g *Game) TargetStreak() int { return maxTries }
+func (g *Game) TargetStreak() int { return 0 }
+
+func (g *Game) MaxAttempts() int { return maxTries }
+
+func (g *Game) AttemptsUsed(r *domain.Round) int {
+	s, err := decodeState(r.Payload())
+	if err != nil {
+		return 0
+	}
+
+	return len(s.Guesses)
+}
 
 func (g *Game) Start(ctx context.Context, r *domain.Round) (domain.View, error) {
-	secretWord, err := g.pool.RandomWord(ctx, wordLength)
+	secretWord, err := g.pool.RandomWord(ctx, minWordLength, maxWordLength)
 	if err != nil {
 		return domain.View{}, err
 	}
 
+	secret := NormalizeWord(secretWord)
+
+	length := RuneLen(secret)
+	if length < minWordLength || length > maxWordLength || !IsCyrillicWord(secret) {
+		return domain.View{}, ErrNoWordsInPool
+	}
+
 	state := state{
-		Secret:   secretWord,
+		Secret:   secret,
 		Guesses:  make([]string, 0),
 		MaxTries: maxTries,
 	}
@@ -60,19 +73,28 @@ func (g *Game) Resume(ctx context.Context, r *domain.Round) (domain.View, error)
 }
 
 func (g *Game) Guess(ctx context.Context, r *domain.Round, move json.RawMessage) (domain.GuessOutcome, error) {
-
 	wordGuess, err := parseMove(move)
 	if err != nil {
 		return domain.GuessOutcome{}, err
 	}
 
-	if !g.pool.IsValidWord(ctx, wordGuess) {
-		return domain.GuessOutcome{}, domain.ErrInvalidMove("word is not valid")
-	}
-
 	s, err := decodeState(r.Payload())
 	if err != nil {
 		return domain.GuessOutcome{}, domain.ErrInvalidMove("failed to decode state")
+	}
+
+	secretLength := RuneLen(s.Secret)
+
+	if RuneLen(wordGuess) != secretLength {
+		return domain.GuessOutcome{}, domain.ErrInvalidMove("guess must match the word length")
+	}
+
+	if alreadyGuessed(s.Guesses, wordGuess) {
+		return domain.GuessOutcome{}, domain.ErrInvalidMove("word was already guessed")
+	}
+
+	if !g.pool.IsValidWord(ctx, wordGuess, secretLength) {
+		return domain.GuessOutcome{}, domain.ErrInvalidMove("word is not valid")
 	}
 
 	s.Guesses = append(s.Guesses, wordGuess)
@@ -88,6 +110,7 @@ func (g *Game) Guess(ctx context.Context, r *domain.Round, move json.RawMessage)
 	}
 	if gameOver {
 		reveal.Secret = &s.Secret
+		reveal.Listings = toListingPayloads(g.matchingListings(ctx, s.Secret))
 	}
 
 	revealJSON, err := json.Marshal(reveal)
@@ -96,21 +119,47 @@ func (g *Game) Guess(ctx context.Context, r *domain.Round, move json.RawMessage)
 	}
 
 	if win {
-		for r.Streak() < g.TargetStreak()-1 {
-			r.Advance(g.TargetStreak(), time.Now())
+		if _, err := g.commit(r, s); err != nil {
+			return domain.GuessOutcome{}, err
 		}
-		return domain.GuessOutcome{Correct: true, Reveal: revealJSON, Next: nil}, nil
+		return domain.GuessOutcome{Correct: true, Progress: domain.ProgressWin, Reveal: revealJSON}, nil
 	}
 
 	if gameOver {
-		return domain.GuessOutcome{Correct: false, Reveal: revealJSON, Next: nil}, nil
+		if _, err := g.commit(r, s); err != nil {
+			return domain.GuessOutcome{}, err
+		}
+		return domain.GuessOutcome{Correct: false, Progress: domain.ProgressLose, Reveal: revealJSON}, nil
 	}
 
 	view, err := g.commit(r, s)
 	if err != nil {
 		return domain.GuessOutcome{}, err
 	}
-	return domain.GuessOutcome{Correct: true, Reveal: revealJSON, Next: &view}, nil
+	return domain.GuessOutcome{Correct: false, Progress: domain.ProgressContinue, Reveal: revealJSON, Next: &view}, nil
+}
+
+func alreadyGuessed(guesses []string, word string) bool {
+	for _, guess := range guesses {
+		if guess == word {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (g *Game) matchingListings(ctx context.Context, secret string) []Listing {
+	if g.listings == nil {
+		return nil
+	}
+
+	listings, err := g.listings.ListingsByWord(ctx, secret, maxRevealListings)
+	if err != nil {
+		return nil
+	}
+
+	return listings
 }
 
 func isCorrect(feedback []LetterFeedback) bool {
@@ -148,28 +197,42 @@ func parseMove(raw json.RawMessage) (string, error) {
 		return "", domain.ErrInvalidMove("move must be an object with a guess field")
 	}
 
-	if move.Guess == "" {
+	guess := NormalizeWord(move.Guess)
+
+	if guess == "" {
 		return "", domain.ErrInvalidMove("guess is required")
 	}
 
-	return move.Guess, nil
+	if RuneLen(guess) > maxWordLength {
+		return "", domain.ErrInvalidMove("guess is too long")
+	}
+
+	if !IsCyrillicWord(guess) {
+		return "", domain.ErrInvalidMove("guess must contain cyrillic letters only")
+	}
+
+	return guess, nil
 }
 
 func evaluateGuess(guess, secret string) []LetterFeedback {
-	secretCounts := make(map[rune]int)
-	feedback := make([]LetterFeedback, len(guess))
+	guessRunes := []rune(guess)
+	secretRunes := []rune(secret)
 
-	for _, r := range secret {
+	secretCounts := make(map[rune]int)
+	feedback := make([]LetterFeedback, len(guessRunes))
+
+	for _, r := range secretRunes {
 		secretCounts[r]++
 	}
-	for i, r := range guess {
-		if r == rune(secret[i]) {
+
+	for i, r := range guessRunes {
+		if i < len(secretRunes) && r == secretRunes[i] {
 			feedback[i] = LetterFeedback{Char: string(r), Status: StatusCorrect}
 			secretCounts[r]--
 		}
 	}
 
-	for i, r := range guess {
+	for i, r := range guessRunes {
 		if feedback[i].Status == StatusCorrect {
 			continue
 		}

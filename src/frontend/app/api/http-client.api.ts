@@ -7,7 +7,7 @@ import { ApiError, apiErrorFromEnvelope } from './api-error'
 import { isAuthPath, SessionRefresher } from './session-refresh'
 import { clearToken, getToken } from './token-store'
 
-const rawBase = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/'
+const rawBase = import.meta.env.VITE_API_URL || ''
 
 export const apiBaseUrl = `${rawBase.replace(/\/+$/, '')}/api/v1`
 

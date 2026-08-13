@@ -40,11 +40,34 @@ type promptPayload struct {
 	History    [][]LetterFeedback `json:"history"`
 }
 
+type listingPayload struct {
+	DisplayID   string `json:"display_id"`
+	Title       string `json:"title"`
+	PriceKopeks int64  `json:"price_kopeks"`
+	PhotoURL    string `json:"photo_url"`
+}
+
 type revealPayload struct {
 	Feedback []LetterFeedback `json:"feedback"`
 	GameOver bool             `json:"game_over"`
 	Win      bool             `json:"win"`
 	Secret   *string          `json:"secret,omitempty"`
+	Listings []listingPayload `json:"listings,omitempty"`
+}
+
+func toListingPayloads(listings []Listing) []listingPayload {
+	out := make([]listingPayload, 0, len(listings))
+
+	for _, listing := range listings {
+		out = append(out, listingPayload{
+			DisplayID:   listing.DisplayID,
+			Title:       listing.Title,
+			PriceKopeks: listing.PriceKopeks,
+			PhotoURL:    listing.PhotoURL,
+		})
+	}
+
+	return out
 }
 
 func decodeState(raw json.RawMessage) (state, error) {
@@ -67,7 +90,7 @@ func (s state) prompt() (json.RawMessage, error) {
 	}
 
 	payload := promptPayload{
-		WordLength: len(s.Secret),
+		WordLength: len([]rune(s.Secret)),
 		MaxTries:   s.MaxTries,
 		History:    history,
 	}

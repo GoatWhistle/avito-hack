@@ -28,12 +28,17 @@ func (i *Item) SubmitForModeration(now time.Time) error {
 	return nil
 }
 
-func (i *Item) Publish(now time.Time) error {
+func (i *Item) Publish(now time.Time, verdict ModerationVerdict) error {
 	if !i.status.CanTransitionTo(StatusPublished) {
 		return errTransition(i.status, StatusPublished)
 	}
 
+	if verdict != ModerationApproved {
+		return errNotApproved()
+	}
+
 	i.status = StatusPublished
+	i.aiVerified = true
 	i.updatedAt = now
 
 	return nil
@@ -145,6 +150,9 @@ func (i *Item) Update(p UpdateItemParams) error {
 	}
 
 	if p.Attributes != nil {
+		if !i.attributes.Equal(*p.Attributes) {
+			contentChanged = true
+		}
 		i.attributes = p.Attributes.Clone()
 	}
 

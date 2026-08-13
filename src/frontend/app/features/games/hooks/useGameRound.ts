@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { gameRepository } from '#/features/games/repository'
 import { gameKeys } from './query-keys'
@@ -13,6 +13,8 @@ export interface GameRoundApi<TPrompt, TMove, TReveal> {
   prompt: TPrompt | null
   streak: number
   targetStreak: number
+  attemptsUsed: number
+  maxAttempts: number
   state: GameRoundState | null
   lastResult: GuessFeedback<TReveal> | null
   isStarting: boolean
@@ -32,6 +34,7 @@ export interface GuessFeedback<TReveal> {
 export const useGameRound = <TPrompt, TMove, TReveal>(
   slug: string,
   initialRound?: GameRound,
+  autoStart = false,
 ): GameRoundApi<TPrompt, TMove, TReveal> => {
   const queryClient = useQueryClient()
   const [round, setRound] = useState<GameRound | null>(initialRound ?? null)
@@ -45,7 +48,15 @@ export const useGameRound = <TPrompt, TMove, TReveal>(
   const [isGuessing, setIsGuessing] = useState(false)
   const [error, setError] = useState<unknown>(null)
 
-  if (initialRound && initialRound.round_id !== adopted && !round) {
+  const startedLocally = useRef(false)
+
+  if (
+    initialRound &&
+    !startedLocally.current &&
+    !round &&
+    initialRound.round_id !== adopted &&
+    (initialRound.state ?? 'active') === 'active'
+  ) {
     setAdopted(initialRound.round_id)
     setRound(initialRound)
   }
@@ -57,6 +68,7 @@ export const useGameRound = <TPrompt, TMove, TReveal>(
 
     try {
       const started = await gameRepository.startRound(slug)
+      startedLocally.current = true
       setAdopted(started.round_id)
       setRound({ ...started, state: started.state ?? 'active' })
     } catch (cause) {
@@ -65,6 +77,12 @@ export const useGameRound = <TPrompt, TMove, TReveal>(
       setIsStarting(false)
     }
   }, [slug])
+
+  useEffect(() => {
+    if (!autoStart || round || isStarting || error) return
+
+    void start()
+  }, [autoStart, round, isStarting, error, start])
 
   const guess = useCallback(
     async (move: TMove) => {
@@ -92,6 +110,8 @@ export const useGameRound = <TPrompt, TMove, TReveal>(
           target_streak: round.target_streak,
           state: result.state,
           prompt: result.prompt ?? round.prompt,
+          attempts_used: result.attempts_used ?? round.attempts_used,
+          max_attempts: result.max_attempts ?? round.max_attempts,
         })
 
         if (result.state !== 'active') {
@@ -114,6 +134,8 @@ export const useGameRound = <TPrompt, TMove, TReveal>(
     prompt: (round?.prompt ?? null) as TPrompt | null,
     streak: round?.streak ?? 0,
     targetStreak: round?.target_streak ?? 0,
+    attemptsUsed: round?.attempts_used ?? 0,
+    maxAttempts: round?.max_attempts ?? 0,
     state: round?.state ?? null,
     lastResult,
     isStarting,

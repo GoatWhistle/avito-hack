@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Check, Play, RotateCcw, Sparkles, X } from 'lucide-react'
+import { Check, RotateCcw, Sparkles, X } from 'lucide-react'
 import { Button } from '#/components/ui'
 import { translateApiError } from '#/api'
 import { cn } from '#/lib/utils'
@@ -14,6 +14,8 @@ interface GameRoundShellProps {
     | 'round'
     | 'streak'
     | 'targetStreak'
+    | 'attemptsUsed'
+    | 'maxAttempts'
     | 'state'
     | 'lastResult'
     | 'isStarting'
@@ -21,6 +23,8 @@ interface GameRoundShellProps {
     | 'start'
   >
   isLoading: boolean
+  hideError?: boolean
+  showGuessFeedback?: boolean
   children: ReactNode
 }
 
@@ -28,6 +32,8 @@ export function GameRoundShell({
   state,
   round,
   isLoading,
+  hideError = false,
+  showGuessFeedback = true,
   children,
 }: GameRoundShellProps) {
   const { t } = useTranslation(['games', 'errors'])
@@ -41,23 +47,30 @@ export function GameRoundShell({
   }
 
   const target = round.targetStreak || state?.target_streak || 0
+  const attemptBased = target === 0 && round.maxAttempts > 0
+  const filled = attemptBased ? round.attemptsUsed : round.streak
+  const total = attemptBased ? round.maxAttempts : target
   const started = Boolean(round.round)
   const finished = round.state === 'won' || round.state === 'lost'
   const feedback = round.lastResult
 
   return (
     <div className="flex flex-col gap-4">
-      {started && (
+      {started && total > 0 && (
         <div className="flex items-center justify-between gap-3">
-          <ScoreDots streak={round.streak} target={target} />
+          <ScoreDots
+            streak={filled}
+            target={total}
+            tone={attemptBased ? 'attempts' : 'streak'}
+          />
           <p className="shrink-0 text-sm font-semibold tabular-nums">
-            {round.streak}
-            <span className="text-muted-foreground"> / {target}</span>
+            {filled}
+            <span className="text-muted-foreground"> / {total}</span>
           </p>
         </div>
       )}
 
-      {feedback && !finished && (
+      {feedback && showGuessFeedback && !finished && (
         <p
           role="status"
           className={cn(
@@ -80,7 +93,14 @@ export function GameRoundShell({
         <GameOutcome
           tone="win"
           title={t('games:round.won')}
-          hint={t('games:round.wonHint', { count: round.streak })}
+          hint={
+            attemptBased
+              ? t('games:round.wonHintAttempts', {
+                  count: round.attemptsUsed,
+                  total: round.maxAttempts,
+                })
+              : t('games:round.wonHint', { count: round.streak })
+          }
         />
       )}
 
@@ -88,28 +108,26 @@ export function GameRoundShell({
         <GameOutcome
           tone="lose"
           title={t('games:round.lost')}
-          hint={t('games:round.lostHint', { count: round.streak })}
+          hint={
+            attemptBased
+              ? t('games:round.lostHintAttempts', { total: round.maxAttempts })
+              : t('games:round.lostHint', { count: round.streak })
+          }
         />
       )}
 
       {started && children}
 
-      {Boolean(round.error) && (
+      {Boolean(round.error) && !hideError && (
         <p role="alert" className="text-sm text-destructive">
           {translateApiError(round.error, t)}
         </p>
       )}
 
       {!round.round && (
-        <Button
-          type="button"
-          size="lg"
-          disabled={round.isStarting}
-          onClick={() => void round.start()}
-        >
-          <Play className="size-4" aria-hidden="true" />
-          {t('games:play')}
-        </Button>
+        <p className="py-16 text-center text-sm text-muted-foreground">
+          {t('games:loading')}
+        </p>
       )}
 
       {finished && (
@@ -130,9 +148,10 @@ export function GameRoundShell({
 interface ScoreDotsProps {
   streak: number
   target: number
+  tone?: 'streak' | 'attempts'
 }
 
-function ScoreDots({ streak, target }: ScoreDotsProps) {
+function ScoreDots({ streak, target, tone = 'streak' }: ScoreDotsProps) {
   if (target <= 0) return null
 
   return (
@@ -142,7 +161,13 @@ function ScoreDots({ streak, target }: ScoreDotsProps) {
           key={index}
           className={cn(
             'h-1.5 flex-1 rounded-full transition-colors duration-300',
-            index < streak ? 'bg-primary' : 'bg-muted',
+            index < streak
+              ? tone === 'attempts'
+                ? 'bg-muted-foreground/50'
+                : 'bg-primary'
+              : tone === 'attempts'
+                ? 'bg-primary/70'
+                : 'bg-muted',
           )}
         />
       ))}

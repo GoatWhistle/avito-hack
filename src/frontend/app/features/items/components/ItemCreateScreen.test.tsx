@@ -36,6 +36,94 @@ describe('ItemCreateScreen', () => {
     expect(screen.getByText('Как улучшить объявление')).toBeInTheDocument()
   })
 
+  it('renders the category and condition selects with the default labels', () => {
+    renderWithProviders(<ItemCreateScreen />)
+
+    expect(
+      screen.getByRole('combobox', { name: 'Категория' }),
+    ).toHaveTextContent('Электроника')
+    expect(
+      screen.getByRole('combobox', { name: 'Состояние' }),
+    ).toHaveTextContent('Б/у')
+  })
+
+  it('opens the category dropdown and lists the options', async () => {
+    renderWithProviders(<ItemCreateScreen />)
+
+    const trigger = screen.getByRole('combobox', { name: 'Категория' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(trigger)
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      await screen.findByRole('option', { name: 'Мебель' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Электроника' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+
+    await userEvent.keyboard('{Escape}')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: 'Мебель' })).toBeNull()
+    })
+    expect(trigger).toHaveFocus()
+  })
+
+  it('sends the category picked with the keyboard to the form', async () => {
+    renderWithProviders(<ItemCreateScreen />)
+
+    await fill('Велосипед Stels', 'Отличное состояние', '12500')
+
+    const trigger = screen.getByRole('combobox', { name: 'Категория' })
+    trigger.focus()
+    await userEvent.keyboard('{Enter}')
+
+    await screen.findByRole('listbox')
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+
+    await waitFor(() => {
+      expect(trigger).toHaveTextContent('Мебель')
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
+
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attributes: { category: 'furniture', condition: 'used' },
+        }),
+      )
+    })
+  })
+
+  it('sends the condition picked with the pointer to the form', async () => {
+    renderWithProviders(<ItemCreateScreen />)
+
+    await fill('Велосипед Stels', 'Отличное состояние', '12500')
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Состояние' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Новое' }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('combobox', { name: 'Состояние' }),
+      ).toHaveTextContent('Новое')
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
+
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attributes: { category: 'electronics', condition: 'new' },
+        }),
+      )
+    })
+  })
+
   it('creates an item and converts the price to kopeks', async () => {
     renderWithProviders(<ItemCreateScreen />)
 

@@ -306,6 +306,16 @@ components:
             type: object
         GameActiveRound:
             properties:
+                attempts_used:
+                    description: |-
+                        Сколько попыток уже потрачено в раунде. Только для игр с лимитом
+                        попыток (`bukovki`); у игр на серию поле отсутствует.
+                    type: integer
+                max_attempts:
+                    description: |-
+                        Лимит попыток в раунде. Только для игр с лимитом попыток;
+                        у игр на серию поле отсутствует.
+                    type: integer
                 prompt:
                     description: |-
                         Вопрос текущего хода в формате конкретной игры. Скрытая правда
@@ -325,17 +335,38 @@ components:
                 best_streak:
                     type: integer
             type: object
+        GameListResponse:
+            properties:
+                daily_done:
+                    description: |-
+                        Сегодня уже была завершённая попытка хотя бы в одной мини-игре —
+                        то есть день засчитан в общую серию.
+                    type: boolean
+                games:
+                    items:
+                        $ref: '#/components/schemas/GameResponse'
+                    type: array
+                streak:
+                    $ref: '#/components/schemas/GameStreak'
+            type: object
         GameResponse:
             properties:
                 daily_done:
-                    description: Дневной норматив выполнен — в этот день была хотя бы одна попытка.
+                    description: |-
+                        Дневной норматив этой игры выполнен — в неё сегодня была хотя бы
+                        одна завершённая попытка. На общую серию влияет любая игра.
                     type: boolean
+                max_attempts:
+                    description: |-
+                        Лимит попыток в раунде для игр, не основанных на серии
+                        (`bukovki`). У игр на серию поле отсутствует.
+                    type: integer
                 slug:
                     type: string
-                streak:
-                    $ref: '#/components/schemas/GameStreak'
                 target_streak:
-                    description: Сколько верных ответов подряд завершают попытку.
+                    description: |-
+                        Сколько верных ответов подряд завершают попытку. `0` — игра не
+                        основана на серии, ориентируйтесь на `max_attempts`.
                     type: integer
             type: object
         GameRoundState:
@@ -354,19 +385,31 @@ components:
                     $ref: '#/components/schemas/GameActiveRound'
                 daily:
                     $ref: '#/components/schemas/GameDaily'
+                max_attempts:
+                    description: |-
+                        Лимит попыток в раунде для игр, не основанных на серии
+                        (`bukovki`). У игр на серию поле отсутствует.
+                    type: integer
                 slug:
                     type: string
                 streak:
                     $ref: '#/components/schemas/GameStreak'
                 target_streak:
+                    description: |-
+                        `0` — игра не основана на серии, ориентируйтесь на `max_attempts`.
                     type: integer
             type: object
         GameStreak:
+            description: |-
+                Недельная серия. Она одна на пользователя и общая для всех мини-игр:
+                день засчитывается, если завершена попытка в любой из них.
             properties:
                 best_days:
                     type: integer
                 current_days:
-                    description: Дней подряд с завершённой попыткой.
+                    description: |-
+                        Дней подряд с завершённой попыткой хотя бы в одной мини-игре.
+                        Две разные игры за один день дают один день серии, а не два.
                     type: integer
                 reward_ready:
                     description: Награду можно забрать — серия достигла семи дней.
@@ -385,10 +428,25 @@ components:
         GuessResponse:
             properties:
                 attempt_completed:
-                    description: Раунд довели до целевой серии — попытка засчитана в дневной прогресс.
+                    description: |-
+                        Раунд выигран — попытка засчитана в дневной прогресс и недельную
+                        серию. Соответствует `state: won`.
                     type: boolean
+                attempts_used:
+                    description: |-
+                        Сколько попыток потрачено в раунде, включая текущий ход. Только
+                        для игр с лимитом попыток (`bukovki`).
+                    type: integer
                 correct:
+                    description: |-
+                        Был ли верен именно этот ход. Чисто визуальная обратная связь,
+                        не связанная с прогрессом раунда — смотрите `progress`.
                     type: boolean
+                max_attempts:
+                    description: Лимит попыток в раунде. Только для игр с лимитом попыток.
+                    type: integer
+                progress:
+                    $ref: '#/components/schemas/GuessProgress'
                 prompt:
                     description: Вопрос следующего хода. Отсутствует, когда раунд завершён.
                     type: object
@@ -402,6 +460,22 @@ components:
                 streak_after:
                     $ref: '#/components/schemas/GameStreak'
             type: object
+        GuessProgress:
+            description: |-
+                Что ход сделал с раундом. `continue` — ход потрачен, раунд продолжается,
+                серия не изменилась; `advance` — серия +1, раунд продолжается;
+                `win` — раунд выигран; `lose` — раунд проигран.
+            enum:
+                - continue
+                - advance
+                - win
+                - lose
+            type: string
+            x-enum-varnames:
+                - GuessProgressContinue
+                - GuessProgressAdvance
+                - GuessProgressWin
+                - GuessProgressLose
         Item:
             properties:
                 attributes:
@@ -1468,18 +1542,17 @@ paths:
     /api/v1/games:
         get:
             description: |-
-                Все зарегистрированные мини-игры с прогрессом текущего пользователя:
-                выполнен ли дневной норматив и на какой неделе серия. Новая игра
-                появляется здесь автоматически после регистрации в реестре.
+                Все зарегистрированные мини-игры с прогрессом текущего пользователя.
+                Недельная серия одна на все мини-игры и лежит в корне ответа, а у каждой
+                игры остаётся только признак `daily_done` — играли ли в неё сегодня.
+                Новая игра появляется здесь автоматически после регистрации в реестре.
             operationId: listGames
             responses:
                 "200":
                     content:
                         application/json:
                             schema:
-                                items:
-                                    $ref: '#/components/schemas/GameResponse'
-                                type: array
+                                $ref: '#/components/schemas/GameListResponse'
                     description: Мини-игры
                 "401":
                     content:
@@ -1498,21 +1571,44 @@ paths:
             summary: Список мини-игр
             tags:
                 - Games
-    /api/v1/games/{slug}/reward/claim:
-        post:
+    /api/v1/games/photo/{token}:
+        get:
             description: |-
-                Выдаёт промокод, когда недельная серия достигла семи дней подряд.
-                После выдачи счётчик серии обнуляется и следующий цикл начинается заново,
-                поэтому повторный вызов до новой серии даёт 409.
-            operationId: claimGameReward
+                Отдаёт фотографию правого объявления по одноразовому подписанному токену
+                из вопроса. Публичный идентификатор скрытого объявления клиенту не
+                раскрывается, поэтому его цену нельзя подсмотреть через каталог.
+            operationId: getGameHiddenPhoto
             parameters:
-                - description: Идентификатор мини-игры
-                  example: moreless
+                - description: Подписанный токен фото из поля prompt.right.photo_token
                   in: path
-                  name: slug
+                  name: token
                   required: true
                   schema:
                     type: string
+            responses:
+                "302":
+                    description: Редирект на файл фотографии
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorEnvelope'
+                    description: Not Found
+            security:
+                - bearerAuth: []
+                - {}
+            summary: Фото скрытой стороны раунда
+            tags:
+                - Games
+    /api/v1/games/reward/claim:
+        post:
+            description: |-
+                Выдаёт промокод, когда общая для всех мини-игр недельная серия достигла
+                семи дней подряд. Серия одна на пользователя, поэтому награда выдаётся
+                один раз за цикл независимо от того, в какие игры он играл.
+                После выдачи счётчик серии обнуляется и следующий цикл начинается заново,
+                поэтому повторный вызов до новой серии даёт 409.
+            operationId: claimGameReward
             responses:
                 "200":
                     content:
@@ -1526,12 +1622,6 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorEnvelope'
                     description: Unauthorized
-                "404":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorEnvelope'
-                    description: Not Found
                 "409":
                     content:
                         application/json:
@@ -1546,7 +1636,7 @@ paths:
                     description: Internal Server Error
             security:
                 - bearerAuth: []
-            summary: Забрать награду за недельную серию
+            summary: Забрать награду за общую недельную серию
             tags:
                 - Games
     /api/v1/games/{slug}/rounds:
@@ -1670,7 +1760,7 @@ paths:
     /api/v1/games/{slug}/state:
         get:
             description: |-
-                Недельная серия, дневной прогресс и активный раунд, если он есть.
+                Общая недельная серия, дневной прогресс этой игры и активный раунд, если он есть.
                 Активный раунд отдаётся вместе с текущим вопросом, поэтому клиент
                 может продолжить игру после перезагрузки страницы. Скрытая цена
                 в вопрос никогда не попадает.

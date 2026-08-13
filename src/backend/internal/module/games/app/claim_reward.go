@@ -9,35 +9,28 @@ import (
 )
 
 type ClaimRewardCommand struct {
-	UserID   uuid.UUID
-	GameSlug string
+	UserID uuid.UUID
 }
 
 type ClaimRewardHandler struct {
-	registry *domain.Registry
 	progress ProgressRepository
 	tx       TxManager
 	clock    Clock
 }
 
 func NewClaimRewardHandler(
-	registry *domain.Registry,
 	progress ProgressRepository,
 	tx TxManager,
 	clock Clock,
 ) *ClaimRewardHandler {
-	return &ClaimRewardHandler{registry: registry, progress: progress, tx: tx, clock: clock}
+	return &ClaimRewardHandler{progress: progress, tx: tx, clock: clock}
 }
 
 func (h *ClaimRewardHandler) Handle(ctx context.Context, cmd ClaimRewardCommand) (ClaimRewardResult, error) {
-	if _, err := h.registry.Get(cmd.GameSlug); err != nil {
-		return ClaimRewardResult{}, err
-	}
-
 	var result ClaimRewardResult
 
 	err := h.tx.WithTx(ctx, func(ctx context.Context) error {
-		streak, err := h.progress.Streak(ctx, cmd.UserID, cmd.GameSlug)
+		streak, err := h.progress.StreakForUpdate(ctx, cmd.UserID)
 		if err != nil {
 			return err
 		}
@@ -47,7 +40,7 @@ func (h *ClaimRewardHandler) Handle(ctx context.Context, cmd ClaimRewardCommand)
 			return domain.ErrRewardNotReady()
 		}
 
-		if err := h.progress.SaveStreak(ctx, cmd.UserID, cmd.GameSlug, claimed); err != nil {
+		if err := h.progress.SaveStreak(ctx, cmd.UserID, claimed); err != nil {
 			return err
 		}
 

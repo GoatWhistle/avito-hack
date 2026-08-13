@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -70,66 +69,44 @@ func (r *PgProgressRepository) SaveDaily(
 	return nil
 }
 
-func (r *PgProgressRepository) Streak(
+func (r *PgProgressRepository) DailyAny(
 	ctx context.Context,
 	userID uuid.UUID,
-	gameSlug string,
-) (domain.Streak, error) {
+	day domain.Day,
+) (domain.DailyProgress, error) {
 	const query = `
-		SELECT current_days, best_days, last_day, reward_claimed_at FROM game_streaks
-		WHERE user_id = $1 AND game_slug = $2`
+		SELECT attempts FROM game_daily_days
+		WHERE user_id = $1 AND day = $2`
 
-	var (
-		streak    domain.Streak
-		lastDay   *time.Time
-		claimedAt *time.Time
-	)
+	var progress domain.DailyProgress
 
 	err := postgres.QuerierFrom(ctx, r.pool).
-		QueryRow(ctx, query, userID, gameSlug).
-		Scan(&streak.CurrentDays, &streak.BestDays, &lastDay, &claimedAt)
+		QueryRow(ctx, query, userID, day.Time()).
+		Scan(&progress.Attempts)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Streak{}, nil
+		return domain.DailyProgress{}, nil
 	}
 	if err != nil {
-		return domain.Streak{}, fmt.Errorf("load game streak: %w", err)
+		return domain.DailyProgress{}, fmt.Errorf("load global daily progress: %w", err)
 	}
 
-	if lastDay != nil {
-		day := domain.DayOf(*lastDay)
-		streak.LastDay = &day
-	}
-
-	streak.RewardClaimedAt = claimedAt
-
-	return streak, nil
+	return progress, nil
 }
 
-func (r *PgProgressRepository) SaveStreak(
+func (r *PgProgressRepository) SaveDailyAny(
 	ctx context.Context,
 	userID uuid.UUID,
-	gameSlug string,
-	streak domain.Streak,
+	day domain.Day,
+	progress domain.DailyProgress,
 ) error {
 	const query = `
-		INSERT INTO game_streaks (user_id, game_slug, current_days, best_days, last_day, reward_claimed_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (user_id, game_slug) DO UPDATE SET
-			current_days = EXCLUDED.current_days,
-			best_days = EXCLUDED.best_days,
-			last_day = EXCLUDED.last_day,
-			reward_claimed_at = EXCLUDED.reward_claimed_at`
+		INSERT INTO game_daily_days (user_id, day, attempts)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, day) DO UPDATE SET attempts = EXCLUDED.attempts`
 
-	var lastDay *time.Time
-	if streak.LastDay != nil {
-		day := streak.LastDay.Time()
-		lastDay = &day
-	}
-
-	_, err := postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query,
-		userID, gameSlug, streak.CurrentDays, streak.BestDays, lastDay, streak.RewardClaimedAt)
+	_, err := postgres.QuerierFrom(ctx, r.pool).Exec(ctx, query, userID, day.Time(), progress.Attempts)
 	if err != nil {
-		return fmt.Errorf("save game streak: %w", err)
+		return fmt.Errorf("save global daily progress: %w", err)
 	}
 
 	return nil

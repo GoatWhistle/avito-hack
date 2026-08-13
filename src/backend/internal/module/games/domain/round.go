@@ -108,16 +108,25 @@ func (r *Round) SetPayload(payload json.RawMessage) {
 }
 
 func (r *Round) Advance(targetStreak int, now time.Time) {
-	r.streak++
-	if r.streak > r.bestStreak {
-		r.bestStreak = r.streak
-	}
+	r.bump()
 
 	if targetStreak > 0 && r.streak >= targetStreak {
 		r.state = StateWon
 	}
 
 	r.updatedAt = now
+}
+
+func (r *Round) Win(now time.Time) {
+	r.state = StateWon
+	r.updatedAt = now
+}
+
+func (r *Round) bump() {
+	r.streak++
+	if r.streak > r.bestStreak {
+		r.bestStreak = r.streak
+	}
 }
 
 func (r *Round) Lose(now time.Time) {

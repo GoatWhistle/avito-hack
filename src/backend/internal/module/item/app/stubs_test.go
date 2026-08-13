@@ -176,7 +176,7 @@ func newPublishedItem(t *testing.T, ownerID uuid.UUID) *domain.Item {
 
 	item := newDraftItem(t, ownerID)
 	require.NoError(t, item.SubmitForModeration(fixedTime))
-	require.NoError(t, item.Publish(fixedTime))
+	require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 
 	return item
 }

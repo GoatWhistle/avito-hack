@@ -103,6 +103,7 @@ func (h *ModerateItemHandler) buildSubject(ctx context.Context, item *domain.Ite
 		ItemID:      item.ID(),
 		Title:       item.Title(),
 		Description: item.Description(),
+		Attributes:  item.Attributes(),
 		PhotoURLs:   urls,
 	}, nil
 }
@@ -127,10 +128,9 @@ func (h *ModerateItemHandler) apply(
 		}
 
 		if result.Verdict == domain.ModerationApproved {
-			if err := locked.Publish(h.clock.Now()); err != nil {
+			if err := locked.Publish(h.clock.Now(), result.Verdict); err != nil {
 				return err
 			}
-			locked.MarkAIVerified()
 			published = true
 		}
 

@@ -31,6 +31,10 @@ func ErrTooManyPhotos() error {
 	return domainerr.NewConflict(fmt.Sprintf("item cannot have more than %d photos", MaxPhotosPerItem))
 }
 
+func errNotApproved() error {
+	return domainerr.NewConflict("item cannot be published without an approved moderation verdict")
+}
+
 func normalizeTitle(raw string) (string, error) {
 	title := strings.TrimSpace(raw)
 

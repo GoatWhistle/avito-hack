@@ -18,7 +18,9 @@ type movePayload struct {
 }
 
 type revealPayload struct {
-	RightPrice int64 `json:"right_price"`
+	RightPrice  int64  `json:"right_price"`
+	RightItemID string `json:"right_item_id"`
+	RightTitle  string `json:"right_title"`
 }
 
 type knownSide struct {
@@ -52,7 +54,30 @@ func decodeState(raw json.RawMessage) (state, error) {
 	return s, nil
 }
 
-func (s state) prompt() (json.RawMessage, error) {
+func HiddenPhotoURL(payload json.RawMessage, displayID string) (string, bool) {
+	current, err := decodeState(payload)
+	if err != nil {
+		return "", false
+	}
+
+	if current.Right.DisplayID != displayID || current.Right.PhotoURL == "" {
+		return "", false
+	}
+
+	return current.Right.PhotoURL, true
+}
+
+func hiddenPhotoURL(token, original string) string {
+	if original == "" {
+		return ""
+	}
+
+	return "/api/v1/games/photo/" + token
+}
+
+func (s state) prompt(roundID string, signer PhotoSigner) (json.RawMessage, error) {
+	token := signer.Sign(roundID, s.Right.DisplayID)
+
 	payload := promptPayload{
 		Left: knownSide{
 			ItemID:      s.Left.DisplayID,
@@ -61,9 +86,9 @@ func (s state) prompt() (json.RawMessage, error) {
 			PriceKopeks: s.Left.PriceKopeks,
 		},
 		Right: hiddenSide{
-			ItemID:   s.Right.DisplayID,
-			Title:    s.Right.Title,
-			PhotoURL: s.Right.PhotoURL,
+			ItemID:   token,
+			Title:    "",
+			PhotoURL: hiddenPhotoURL(token, s.Right.PhotoURL),
 		},
 	}
 

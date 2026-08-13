@@ -77,7 +77,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		item := newItem(t)
 
-		require.Error(t, item.Publish(fixedTime))
+		require.Error(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.Equal(t, domain.StatusDraft, item.Status())
 	})
 
@@ -89,7 +89,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 		require.NoError(t, item.SubmitForModeration(fixedTime))
 		require.Equal(t, domain.StatusModeration, item.Status())
 
-		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.Equal(t, domain.StatusPublished, item.Status())
 
 		require.NoError(t, item.Archive(fixedTime))
@@ -102,7 +102,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 		item := newItem(t)
 
 		require.NoError(t, item.SubmitForModeration(fixedTime))
-		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.NoError(t, item.MarkSold(fixedTime))
 		require.Equal(t, domain.StatusSold, item.Status())
 	})
@@ -121,13 +121,13 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		item := newItem(t)
 		require.NoError(t, item.SubmitForModeration(fixedTime))
-		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.NoError(t, item.MarkSold(fixedTime))
 
 		require.True(t, domain.StatusSold.IsTerminal())
 		require.Error(t, item.Archive(fixedTime))
 		require.Error(t, item.Restore(fixedTime))
-		require.Error(t, item.Publish(fixedTime))
+		require.Error(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.Equal(t, domain.StatusSold, item.Status())
 	})
 
@@ -136,7 +136,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		item := newItem(t)
 		require.NoError(t, item.SubmitForModeration(fixedTime))
-		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.NoError(t, item.MarkSold(fixedTime))
 
 		newTitle := "Another title"
@@ -148,7 +148,7 @@ func TestItem_StatusTransitions(t *testing.T) {
 
 		item := newItem(t)
 		require.NoError(t, item.SubmitForModeration(fixedTime))
-		require.NoError(t, item.Publish(fixedTime))
+		require.NoError(t, item.Publish(fixedTime, domain.ModerationApproved))
 		require.NoError(t, item.Archive(fixedTime))
 
 		newTitle := "Another title"

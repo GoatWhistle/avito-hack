@@ -55,7 +55,10 @@ func newTestRouter(t *testing.T) http.Handler {
 			}),
 			favoriteapi.NewHandlers(favoriteapi.Deps{Authenticate: passthrough}),
 			raccoonapi.NewHandlers(raccoonapi.Deps{Authenticate: passthrough}),
-			gamesapi.NewHandlers(gamesapi.Deps{Authenticate: passthrough}),
+			gamesapi.NewHandlers(gamesapi.Deps{
+				Authenticate: passthrough,
+				OptionalAuth: passthrough,
+			}),
 			petapi.NewLeaderboardHandlers(petapi.LeaderboardDeps{Authenticate: passthrough}),
 			petapi.NewPetHandlers(petapi.PetDeps{Authenticate: passthrough}),
 			petapi.NewRewardHandlers(petapi.RewardDeps{Authenticate: passthrough}),

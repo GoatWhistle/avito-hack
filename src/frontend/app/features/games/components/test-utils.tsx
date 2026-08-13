@@ -6,6 +6,7 @@ import { render, type RenderResult } from '@testing-library/react'
 import { initI18n } from '#/i18n'
 import { SessionContext, type SessionValue } from '#/features/auth/session'
 import type {
+  GameList,
   GameState,
   GameStreak,
   GameSummary,
@@ -29,7 +30,13 @@ export const makeSummary = (
   slug: 'moreless',
   target_streak: 7,
   daily_done: false,
+  ...overrides,
+})
+
+export const makeGameList = (overrides: Partial<GameList> = {}): GameList => ({
+  games: [makeSummary()],
   streak: makeStreak(),
+  daily_done: false,
   ...overrides,
 })
 

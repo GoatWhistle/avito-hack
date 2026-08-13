@@ -13,6 +13,8 @@ export {
   FieldSet,
   FieldTitle,
 } from './field'
+export { Select } from './select'
+export type { SelectOption, SelectProps } from './select'
 export { Separator } from './separator'
 export {
   Tabs,

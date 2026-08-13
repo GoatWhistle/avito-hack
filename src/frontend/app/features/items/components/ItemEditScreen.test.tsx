@@ -61,6 +61,49 @@ describe('ItemEditScreen', () => {
     expect(await screen.findByText('Сохранено')).toBeInTheDocument()
   })
 
+  it('prefills the selects from the item attributes', async () => {
+    getById.mockResolvedValue(
+      makeItem({
+        status: 'draft',
+        attributes: { category: 'books', condition: 'new' },
+      }),
+    )
+    renderWithProviders(<ItemEditScreen itemId="item-1" />)
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Категория' }),
+    ).toHaveTextContent('Книги')
+    expect(
+      screen.getByRole('combobox', { name: 'Состояние' }),
+    ).toHaveTextContent('Новое')
+  })
+
+  it('saves a category chosen from the dropdown', async () => {
+    renderWithProviders(<ItemEditScreen itemId="item-1" />)
+
+    await userEvent.click(
+      await screen.findByRole('combobox', { name: 'Категория' }),
+    )
+    await userEvent.click(await screen.findByRole('option', { name: 'Книги' }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('combobox', { name: 'Категория' }),
+      ).toHaveTextContent('Книги')
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
+
+    await waitFor(() => {
+      expect(update).toHaveBeenCalledWith(
+        'item-1',
+        expect.objectContaining({
+          attributes: { category: 'books', condition: 'used' },
+        }),
+      )
+    })
+  })
+
   it('reports a failed save', async () => {
     update.mockRejectedValue(new Error('raw backend failure'))
     renderWithProviders(<ItemEditScreen itemId="item-1" />)

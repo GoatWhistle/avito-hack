@@ -47,6 +47,8 @@ func (h *Handlers) StartRound(w http.ResponseWriter, r *http.Request) {
 		RoundID:      result.RoundID,
 		Streak:       result.Streak,
 		TargetStreak: result.TargetStreak,
+		AttemptsUsed: result.AttemptsUsed,
+		MaxAttempts:  result.MaxAttempts,
 		Prompt:       result.Prompt,
 	})
 }
@@ -108,20 +110,20 @@ func (h *Handlers) Guess(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Id claimGameReward
-// @Summary Забрать награду за недельную серию
-// @Description Выдаёт промокод, когда недельная серия достигла семи дней подряд.
+// @Summary Забрать награду за общую недельную серию
+// @Description Выдаёт промокод, когда общая для всех мини-игр недельная серия достигла
+// @Description семи дней подряд. Серия одна на пользователя, поэтому награда выдаётся
+// @Description один раз за цикл независимо от того, в какие игры он играл.
 // @Description После выдачи счётчик серии обнуляется и следующий цикл начинается заново,
 // @Description поэтому повторный вызов до новой серии даёт 409.
 // @Tags Games
 // @Produce json
-// @Param slug path string true "Идентификатор мини-игры" example(moreless)
 // @Success 200 {object} ClaimGameRewardResponse "Промокод выдан"
 // @Failure 401 {object} apierr.ErrorEnvelope
-// @Failure 404 {object} apierr.ErrorEnvelope
 // @Failure 409 {object} apierr.ErrorEnvelope
 // @Failure 500 {object} apierr.ErrorEnvelope
 // @Security bearerAuth
-// @Router /api/v1/games/{slug}/reward/claim [post]
+// @Router /api/v1/games/reward/claim [post]
 func (h *Handlers) ClaimReward(w http.ResponseWriter, r *http.Request) {
 	actor, err := auth.ActorFrom(r.Context())
 	if err != nil {
@@ -130,10 +132,7 @@ func (h *Handlers) ClaimReward(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.deps.ClaimReward.Handle(r.Context(), app.ClaimRewardCommand{
-		UserID:   actor.ID,
-		GameSlug: chi.URLParam(r, "slug"),
-	})
+	result, err := h.deps.ClaimReward.Handle(r.Context(), app.ClaimRewardCommand{UserID: actor.ID})
 	if err != nil {
 		apierr.Write(w, r, err)
 

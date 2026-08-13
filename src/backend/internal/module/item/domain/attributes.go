@@ -29,3 +29,7 @@ func (a Attributes) Get(key string) (string, bool) {
 func (a Attributes) Len() int {
 	return len(a)
 }
+
+func (a Attributes) Equal(other Attributes) bool {
+	return maps.Equal(a, other)
+}

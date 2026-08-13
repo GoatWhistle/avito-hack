@@ -135,6 +135,16 @@ func bandedPoolOf(prices ...int64) *fakePool {
 	return pool
 }
 
+const testPhotoSecret = "moreless-test-photo-secret"
+
+func testSigner() moreless.PhotoSigner {
+	return moreless.NewPhotoSigner(testPhotoSecret)
+}
+
+func newGame(pool moreless.ItemPool) *moreless.Game {
+	return moreless.New(pool, testSigner())
+}
+
 func newRound() *domain.Round {
 	return domain.NewRound(uuid.New(), moreless.Slug, time.Date(2026, time.March, 14, 12, 0, 0, 0, time.UTC))
 }

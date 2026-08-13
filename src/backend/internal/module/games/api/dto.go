@@ -18,21 +18,30 @@ type DailyResponse struct {
 }
 
 type GameResponse struct {
-	Slug         string         `json:"slug"`
-	TargetStreak int            `json:"target_streak"`
-	DailyDone    bool           `json:"daily_done"`
-	Streak       StreakResponse `json:"streak"`
+	Slug         string `json:"slug"`
+	TargetStreak int    `json:"target_streak"`
+	MaxAttempts  int    `json:"max_attempts,omitempty"`
+	DailyDone    bool   `json:"daily_done"`
+}
+
+type GameListResponse struct {
+	Games     []GameResponse `json:"games"`
+	Streak    StreakResponse `json:"streak"`
+	DailyDone bool           `json:"daily_done"`
 }
 
 type ActiveRoundResponse struct {
-	RoundID string          `json:"round_id"`
-	Streak  int             `json:"streak"`
-	Prompt  json.RawMessage `json:"prompt"`
+	RoundID      string          `json:"round_id"`
+	Streak       int             `json:"streak"`
+	AttemptsUsed int             `json:"attempts_used,omitempty"`
+	MaxAttempts  int             `json:"max_attempts,omitempty"`
+	Prompt       json.RawMessage `json:"prompt"`
 }
 
 type GameStateResponse struct {
 	Slug         string               `json:"slug"`
 	TargetStreak int                  `json:"target_streak"`
+	MaxAttempts  int                  `json:"max_attempts,omitempty"`
 	Streak       StreakResponse       `json:"streak"`
 	Daily        DailyResponse        `json:"daily"`
 	ActiveRound  *ActiveRoundResponse `json:"active_round,omitempty"`
@@ -42,6 +51,8 @@ type StartRoundResponse struct {
 	RoundID      string          `json:"round_id"`
 	Streak       int             `json:"streak"`
 	TargetStreak int             `json:"target_streak"`
+	AttemptsUsed int             `json:"attempts_used,omitempty"`
+	MaxAttempts  int             `json:"max_attempts,omitempty"`
 	Prompt       json.RawMessage `json:"prompt"`
 }
 
@@ -51,8 +62,11 @@ type GuessRequest struct {
 
 type GuessResponse struct {
 	Correct          bool            `json:"correct"`
+	Progress         string          `json:"progress"`
 	Reveal           json.RawMessage `json:"reveal,omitempty"`
 	Streak           int             `json:"streak"`
+	AttemptsUsed     int             `json:"attempts_used,omitempty"`
+	MaxAttempts      int             `json:"max_attempts,omitempty"`
 	State            string          `json:"state"`
 	Prompt           json.RawMessage `json:"prompt,omitempty"`
 	AttemptCompleted bool            `json:"attempt_completed"`
@@ -71,34 +85,41 @@ func toStreakResponse(v app.StreakView) StreakResponse {
 	}
 }
 
-func toGameResponses(views []app.GameView) []GameResponse {
-	out := make([]GameResponse, 0, len(views))
+func toGameListResponse(view app.GameListView) GameListResponse {
+	games := make([]GameResponse, 0, len(view.Games))
 
-	for _, view := range views {
-		out = append(out, GameResponse{
-			Slug:         view.Slug,
-			TargetStreak: view.TargetStreak,
-			DailyDone:    view.DailyDone,
-			Streak:       toStreakResponse(view.Streak),
+	for _, game := range view.Games {
+		games = append(games, GameResponse{
+			Slug:         game.Slug,
+			TargetStreak: game.TargetStreak,
+			MaxAttempts:  game.MaxAttempts,
+			DailyDone:    game.DailyDone,
 		})
 	}
 
-	return out
+	return GameListResponse{
+		Games:     games,
+		Streak:    toStreakResponse(view.Streak),
+		DailyDone: view.DailyDone,
+	}
 }
 
 func toStateResponse(view app.StateView) GameStateResponse {
 	response := GameStateResponse{
 		Slug:         view.Slug,
 		TargetStreak: view.TargetStreak,
+		MaxAttempts:  view.MaxAttempts,
 		Streak:       toStreakResponse(view.Streak),
 		Daily:        DailyResponse{Attempts: view.Daily.Attempts, BestStreak: view.Daily.BestStreak},
 	}
 
 	if view.ActiveRound != nil {
 		response.ActiveRound = &ActiveRoundResponse{
-			RoundID: view.ActiveRound.RoundID,
-			Streak:  view.ActiveRound.Streak,
-			Prompt:  view.ActiveRound.Prompt,
+			RoundID:      view.ActiveRound.RoundID,
+			Streak:       view.ActiveRound.Streak,
+			AttemptsUsed: view.ActiveRound.AttemptsUsed,
+			MaxAttempts:  view.ActiveRound.MaxAttempts,
+			Prompt:       view.ActiveRound.Prompt,
 		}
 	}
 
@@ -108,8 +129,11 @@ func toStateResponse(view app.StateView) GameStateResponse {
 func toGuessResponse(result app.GuessResult) GuessResponse {
 	response := GuessResponse{
 		Correct:          result.Correct,
+		Progress:         string(result.Progress),
 		Reveal:           result.Reveal,
 		Streak:           result.Streak,
+		AttemptsUsed:     result.AttemptsUsed,
+		MaxAttempts:      result.MaxAttempts,
 		State:            result.State.String(),
 		Prompt:           result.Prompt,
 		AttemptCompleted: result.AttemptCompleted,

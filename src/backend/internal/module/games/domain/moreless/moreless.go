@@ -45,11 +45,12 @@ type ItemPool interface {
 }
 
 type Game struct {
-	pool ItemPool
+	pool   ItemPool
+	signer PhotoSigner
 }
 
-func New(pool ItemPool) *Game {
-	return &Game{pool: pool}
+func New(pool ItemPool, signer PhotoSigner) *Game {
+	return &Game{pool: pool, signer: signer}
 }
 
 func (g *Game) Slug() string { return Slug }
@@ -96,7 +97,7 @@ func (g *Game) Resume(_ context.Context, r *domain.Round) (domain.View, error) {
 		return domain.View{}, err
 	}
 
-	prompt, err := current.prompt()
+	prompt, err := current.prompt(r.DisplayID(), g.signer)
 	if err != nil {
 		return domain.View{}, err
 	}
@@ -121,17 +122,21 @@ func (g *Game) Guess(
 
 	correct := isCorrect(choice, current.Left.PriceKopeks, current.Right.PriceKopeks)
 
-	reveal, err := json.Marshal(revealPayload{RightPrice: current.Right.PriceKopeks})
+	reveal, err := json.Marshal(revealPayload{
+		RightPrice:  current.Right.PriceKopeks,
+		RightItemID: current.Right.DisplayID,
+		RightTitle:  current.Right.Title,
+	})
 	if err != nil {
 		return domain.GuessOutcome{}, fmt.Errorf("marshal reveal: %w", err)
 	}
 
 	if !correct {
-		return domain.GuessOutcome{Correct: false, Reveal: reveal}, nil
+		return domain.GuessOutcome{Correct: false, Progress: domain.ProgressLose, Reveal: reveal}, nil
 	}
 
 	if r.Streak()+1 >= targetStreak {
-		return domain.GuessOutcome{Correct: true, Reveal: reveal}, nil
+		return domain.GuessOutcome{Correct: true, Progress: domain.ProgressAdvance, Reveal: reveal}, nil
 	}
 
 	next, err := g.advance(ctx, r, current)
@@ -139,7 +144,12 @@ func (g *Game) Guess(
 		return domain.GuessOutcome{}, err
 	}
 
-	return domain.GuessOutcome{Correct: true, Reveal: reveal, Next: &next}, nil
+	return domain.GuessOutcome{
+		Correct:  true,
+		Progress: domain.ProgressAdvance,
+		Reveal:   reveal,
+		Next:     &next,
+	}, nil
 }
 
 func (g *Game) advance(ctx context.Context, r *domain.Round, current state) (domain.View, error) {
@@ -220,7 +230,7 @@ func (g *Game) commit(r *domain.Round, s state) (domain.View, error) {
 		return domain.View{}, fmt.Errorf("marshal moreless state: %w", err)
 	}
 
-	prompt, err := s.prompt()
+	prompt, err := s.prompt(r.DisplayID(), g.signer)
 	if err != nil {
 		return domain.View{}, err
 	}

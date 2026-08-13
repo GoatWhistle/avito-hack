@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Field,
@@ -5,6 +6,7 @@ import {
   FieldGroup,
   FieldLabel,
   Input,
+  Select,
 } from '#/components/ui'
 import { DESCRIPTION_MAX, TITLE_MAX } from '#/features/items/lib'
 import { useFieldErrors } from '#/features/items/forms'
@@ -19,6 +21,24 @@ interface ItemFormFieldsProps {
 export function ItemFormFields({ form }: ItemFormFieldsProps) {
   const { t } = useTranslation('items')
   const toErrors = useFieldErrors()
+
+  const categoryOptions = useMemo(
+    () =>
+      itemCategories.map((category) => ({
+        value: category,
+        label: t(`category.${category}`),
+      })),
+    [t],
+  )
+
+  const conditionOptions = useMemo(
+    () =>
+      itemConditions.map((condition) => ({
+        value: condition,
+        label: t(`condition.${condition}`),
+      })),
+    [t],
+  )
 
   return (
     <FieldGroup>
@@ -100,25 +120,15 @@ export function ItemFormFields({ form }: ItemFormFieldsProps) {
             <FieldLabel htmlFor={field.name}>
               {t('fields.category')}
             </FieldLabel>
-            <select
+            <Select
               id={field.name}
               name={field.name}
               value={field.state.value}
+              options={categoryOptions}
               aria-invalid={field.state.meta.errors.length > 0}
               onBlur={field.handleBlur}
-              onChange={(event) =>
-                field.handleChange(
-                  event.target.value as (typeof itemCategories)[number],
-                )
-              }
-              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-            >
-              {itemCategories.map((category) => (
-                <option key={category} value={category}>
-                  {t(`category.${category}`)}
-                </option>
-              ))}
-            </select>
+              onValueChange={field.handleChange}
+            />
             <FieldError
               errors={toErrors(field.state.meta.errors, 'category')}
             />
@@ -166,25 +176,15 @@ export function ItemFormFields({ form }: ItemFormFieldsProps) {
             <FieldLabel htmlFor={field.name}>
               {t('fields.condition')}
             </FieldLabel>
-            <select
+            <Select
               id={field.name}
               name={field.name}
               value={field.state.value}
+              options={conditionOptions}
               aria-invalid={field.state.meta.errors.length > 0}
               onBlur={field.handleBlur}
-              onChange={(event) =>
-                field.handleChange(
-                  event.target.value as (typeof itemConditions)[number],
-                )
-              }
-              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-            >
-              {itemConditions.map((condition) => (
-                <option key={condition} value={condition}>
-                  {t(`condition.${condition}`)}
-                </option>
-              ))}
-            </select>
+              onValueChange={field.handleChange}
+            />
             <FieldError
               errors={toErrors(field.state.meta.errors, 'condition')}
             />

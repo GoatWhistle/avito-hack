@@ -22,28 +22,37 @@ func NewListGamesHandler(registry *domain.Registry, progress ProgressRepository)
 	return &ListGamesHandler{registry: registry, progress: progress}
 }
 
-func (h *ListGamesHandler) Handle(ctx context.Context, q ListGamesQuery) ([]GameView, error) {
+func (h *ListGamesHandler) Handle(ctx context.Context, q ListGamesQuery) (GameListView, error) {
+	streak, err := h.progress.Streak(ctx, q.UserID)
+	if err != nil {
+		return GameListView{}, err
+	}
+
+	anyDaily, err := h.progress.DailyAny(ctx, q.UserID, q.ClientDay)
+	if err != nil {
+		return GameListView{}, err
+	}
+
 	games := h.registry.All()
 	out := make([]GameView, 0, len(games))
 
 	for _, game := range games {
-		streak, err := h.progress.Streak(ctx, q.UserID, game.Slug())
-		if err != nil {
-			return nil, err
-		}
-
-		daily, err := h.progress.Daily(ctx, q.UserID, game.Slug(), q.ClientDay)
-		if err != nil {
-			return nil, err
+		daily, dailyErr := h.progress.Daily(ctx, q.UserID, game.Slug(), q.ClientDay)
+		if dailyErr != nil {
+			return GameListView{}, dailyErr
 		}
 
 		out = append(out, GameView{
 			Slug:         game.Slug(),
 			TargetStreak: game.TargetStreak(),
+			MaxAttempts:  domain.MaxAttemptsOf(game),
 			DailyDone:    daily.Attempts > 0,
-			Streak:       toStreakView(streak),
 		})
 	}
 
-	return out, nil
+	return GameListView{
+		Games:     out,
+		Streak:    toStreakView(streak),
+		DailyDone: anyDaily.Attempts > 0,
+	}, nil
 }

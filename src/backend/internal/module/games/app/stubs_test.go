@@ -27,10 +27,18 @@ func (t *stubTx) WithTx(ctx context.Context, fn func(context.Context) error) err
 }
 
 type stubRounds struct {
-	byDisplayID map[string]*domain.Round
-	active      *domain.Round
-	saved       []*domain.Round
-	saveErr     error
+	byDisplayID  map[string]*domain.Round
+	active       *domain.Round
+	saved        []*domain.Round
+	saveErr      error
+	lockedRounds []string
+	lockedGames  []string
+}
+
+func (r *stubRounds) LockUserGame(_ context.Context, userID uuid.UUID, gameSlug string) error {
+	r.lockedGames = append(r.lockedGames, userID.String()+"/"+gameSlug)
+
+	return nil
 }
 
 func newStubRounds() *stubRounds {
@@ -57,6 +65,12 @@ func (r *stubRounds) ByDisplayID(_ context.Context, displayID string) (*domain.R
 	return round, nil
 }
 
+func (r *stubRounds) ByDisplayIDForUpdate(ctx context.Context, displayID string) (*domain.Round, error) {
+	r.lockedRounds = append(r.lockedRounds, displayID)
+
+	return r.ByDisplayID(ctx, displayID)
+}
+
 func (r *stubRounds) ActiveByUser(_ context.Context, _ uuid.UUID, _ string) (*domain.Round, error) {
 	if r.active == nil {
 		return nil, domain.ErrRoundNotFound
@@ -71,15 +85,23 @@ type progressKey struct {
 	day    domain.Day
 }
 
+type dayKey struct {
+	userID uuid.UUID
+	day    domain.Day
+}
+
 type stubProgress struct {
-	daily   map[progressKey]domain.DailyProgress
-	streaks map[string]domain.Streak
+	daily         map[progressKey]domain.DailyProgress
+	dailyAny      map[dayKey]domain.DailyProgress
+	streaks       map[uuid.UUID]domain.Streak
+	lockedStreaks []string
 }
 
 func newStubProgress() *stubProgress {
 	return &stubProgress{
-		daily:   map[progressKey]domain.DailyProgress{},
-		streaks: map[string]domain.Streak{},
+		daily:    map[progressKey]domain.DailyProgress{},
+		dailyAny: map[dayKey]domain.DailyProgress{},
+		streaks:  map[uuid.UUID]domain.Streak{},
 	}
 }
 
@@ -104,26 +126,48 @@ func (p *stubProgress) SaveDaily(
 	return nil
 }
 
-func (p *stubProgress) Streak(_ context.Context, userID uuid.UUID, slug string) (domain.Streak, error) {
-	return p.streaks[userID.String()+"/"+slug], nil
-}
-
-func (p *stubProgress) SaveStreak(
+func (p *stubProgress) DailyAny(
 	_ context.Context,
 	userID uuid.UUID,
-	slug string,
-	streak domain.Streak,
+	day domain.Day,
+) (domain.DailyProgress, error) {
+	return p.dailyAny[dayKey{userID: userID, day: day}], nil
+}
+
+func (p *stubProgress) SaveDailyAny(
+	_ context.Context,
+	userID uuid.UUID,
+	day domain.Day,
+	progress domain.DailyProgress,
 ) error {
-	p.streaks[userID.String()+"/"+slug] = streak
+	p.dailyAny[dayKey{userID: userID, day: day}] = progress
+
+	return nil
+}
+
+func (p *stubProgress) Streak(_ context.Context, userID uuid.UUID) (domain.Streak, error) {
+	return p.streaks[userID], nil
+}
+
+func (p *stubProgress) StreakForUpdate(ctx context.Context, userID uuid.UUID) (domain.Streak, error) {
+	p.lockedStreaks = append(p.lockedStreaks, userID.String())
+
+	return p.Streak(ctx, userID)
+}
+
+func (p *stubProgress) SaveStreak(_ context.Context, userID uuid.UUID, streak domain.Streak) error {
+	p.streaks[userID] = streak
 
 	return nil
 }
 
 type scriptedGame struct {
-	slug    string
-	target  int
-	correct bool
-	err     error
+	slug     string
+	target   int
+	correct  bool
+	progress domain.Progress
+	next     bool
+	err      error
 }
 
 func (g *scriptedGame) Slug() string      { return g.slug }
@@ -153,13 +197,24 @@ func (g *scriptedGame) Guess(
 	}
 
 	outcome := domain.GuessOutcome{
-		Correct: g.correct,
-		Reveal:  json.RawMessage(`{"truth":42}`),
+		Correct:  g.correct,
+		Progress: g.progress,
+		Reveal:   json.RawMessage(`{"truth":42}`),
 	}
 
-	if g.correct {
+	if g.correct || g.next {
 		outcome.Next = &domain.View{Prompt: json.RawMessage(`{"question":"next"}`)}
 	}
 
 	return outcome, nil
 }
+
+type attemptGame struct {
+	scriptedGame
+
+	maxAttempts  int
+	attemptsUsed int
+}
+
+func (g *attemptGame) MaxAttempts() int                 { return g.maxAttempts }
+func (g *attemptGame) AttemptsUsed(_ *domain.Round) int { return g.attemptsUsed }

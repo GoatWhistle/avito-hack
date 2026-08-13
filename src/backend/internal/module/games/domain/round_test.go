@@ -72,6 +72,33 @@ func TestRoundAdvanceReachesTargetAndWins(t *testing.T) {
 	assert.False(t, round.IsActive())
 }
 
+func TestRoundWinWithoutStreak(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, time.March, 14, 12, 0, 0, 0, time.UTC)
+	round := domain.NewRound(uuid.New(), "bukovki", now)
+
+	round.Win(now.Add(time.Minute))
+
+	assert.Equal(t, domain.StateWon, round.State())
+	assert.False(t, round.IsActive())
+	assert.Equal(t, 0, round.Streak(), "winning must not fabricate a streak")
+	assert.Equal(t, 0, round.BestStreak())
+	assert.Equal(t, now.Add(time.Minute), round.UpdatedAt())
+}
+
+func TestRoundAdvanceWithoutTargetNeverWins(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, time.March, 14, 12, 0, 0, 0, time.UTC)
+	round := domain.NewRound(uuid.New(), "bukovki", now)
+
+	round.Advance(0, now)
+
+	assert.Equal(t, 1, round.Streak())
+	assert.Equal(t, domain.StateActive, round.State())
+}
+
 func TestRoundLose(t *testing.T) {
 	t.Parallel()
 

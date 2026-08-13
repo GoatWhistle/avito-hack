@@ -13,12 +13,13 @@ import (
 
 // @Id listGames
 // @Summary Список мини-игр
-// @Description Все зарегистрированные мини-игры с прогрессом текущего пользователя:
-// @Description выполнен ли дневной норматив и на какой неделе серия. Новая игра
-// @Description появляется здесь автоматически после регистрации в реестре.
+// @Description Все зарегистрированные мини-игры с прогрессом текущего пользователя.
+// @Description Недельная серия одна на все мини-игры и лежит в корне ответа, а у каждой
+// @Description игры остаётся только признак `daily_done` — играли ли в неё сегодня.
+// @Description Новая игра появляется здесь автоматически после регистрации в реестре.
 // @Tags Games
 // @Produce json
-// @Success 200 {array} GameResponse "Мини-игры"
+// @Success 200 {object} GameListResponse "Мини-игры"
 // @Failure 401 {object} apierr.ErrorEnvelope
 // @Failure 500 {object} apierr.ErrorEnvelope
 // @Security bearerAuth
@@ -31,7 +32,7 @@ func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	views, err := h.deps.ListGames.Handle(r.Context(), app.ListGamesQuery{
+	view, err := h.deps.ListGames.Handle(r.Context(), app.ListGamesQuery{
 		UserID:    actor.ID,
 		ClientDay: h.today(),
 	})
@@ -41,12 +42,12 @@ func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.OK(w, toGameResponses(views))
+	httpx.OK(w, toGameListResponse(view))
 }
 
 // @Id getGameState
 // @Summary Состояние мини-игры
-// @Description Недельная серия, дневной прогресс и активный раунд, если он есть.
+// @Description Общая недельная серия, дневной прогресс этой игры и активный раунд, если он есть.
 // @Description Активный раунд отдаётся вместе с текущим вопросом, поэтому клиент
 // @Description может продолжить игру после перезагрузки страницы. Скрытая цена
 // @Description в вопрос никогда не попадает.
@@ -79,4 +80,34 @@ func (h *Handlers) GetState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.OK(w, toStateResponse(view))
+}
+
+// @Id getGameHiddenPhoto
+// @Summary Фото скрытой стороны раунда
+// @Description Отдаёт фотографию правого объявления по одноразовому подписанному токену
+// @Description из вопроса. Публичный идентификатор скрытого объявления клиенту не
+// @Description раскрывается, поэтому его цену нельзя подсмотреть через каталог.
+// @Tags Games
+// @Produce json
+// @Param token path string true "Подписанный токен фото из поля prompt.right.photo_token"
+// @Success 302 "Редирект на файл фотографии"
+// @Failure 404 {object} apierr.ErrorEnvelope
+// @Security bearerAuth
+// @Security []
+// @Router /api/v1/games/photo/{token} [get]
+func (h *Handlers) HiddenPhoto(w http.ResponseWriter, r *http.Request) {
+	actor, _ := auth.ActorFrom(r.Context()) //nolint:errcheck // the signed token carries the round binding
+
+	url, err := h.deps.HiddenPhoto.Handle(r.Context(), app.HiddenPhotoQuery{
+		UserID: actor.ID,
+		Token:  chi.URLParam(r, "token"),
+	})
+	if err != nil {
+		apierr.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Cache-Control", "private, no-store")
+	http.Redirect(w, r, url, http.StatusFound)
 }

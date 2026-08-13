@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '#/components/ui'
 import { findGameDefinition } from '#/features/games/registry'
+import { GAMES_PATH, GameScreenShell } from './GameScreenShell'
 
 export function GamePlayScreen() {
   const { t } = useTranslation('games')
@@ -13,7 +14,7 @@ export function GamePlayScreen() {
     return (
       <section className="flex flex-col items-center gap-3 py-24 text-center">
         <p className="text-sm font-medium">{t('empty.title')}</p>
-        <Button variant="ghost" render={<Link to="/pet/games" />}>
+        <Button variant="ghost" render={<Link to={GAMES_PATH} />}>
           <ArrowLeft className="size-4" aria-hidden="true" />
           {t('title')}
         </Button>
@@ -22,29 +23,16 @@ export function GamePlayScreen() {
   }
 
   const Game = definition.component
+  const Help = definition.help
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 py-4 sm:px-6">
-      <header className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('title')}
-          render={<Link to="/pet/games" />}
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-        </Button>
-        <div className="flex min-w-0 flex-col">
-          <h1 className="truncate text-xl font-semibold">
-            {t(`${definition.slug}.name` as const)}
-          </h1>
-          <p className="truncate text-xs text-muted-foreground">
-            {t(`${definition.slug}.description` as const)}
-          </p>
-        </div>
-      </header>
-
+    <GameScreenShell
+      title={t(`${definition.slug}.name` as const)}
+      subtitle={t(`${definition.slug}.description` as const)}
+      backLabel={t('back')}
+      help={<Help />}
+    >
       <Game />
-    </div>
+    </GameScreenShell>
   )
 }
