@@ -126,7 +126,7 @@ services:
       PET_FLUSH_INTERVAL: ${PET_FLUSH_INTERVAL:-15s}
       PET_FLUSH_BATCH_SIZE: ${PET_FLUSH_BATCH_SIZE:-100}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.0-flash-exp:free}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemma-4-26b-a4b-it:free}
     user: "65532:65532"
     volumes:
       - uploads:/data/uploads

@@ -60,7 +60,7 @@ type Config struct {
 	PetFlushBatchSize int64         `env:"PET_FLUSH_BATCH_SIZE" envDefault:"100"`
 
 	OpenRouterAPIKey string `env:"OPENROUTER_API_KEY"`
-	OpenRouterModel  string `env:"OPENROUTER_MODEL" envDefault:"google/gemini-2.0-flash-exp:free"`
+	OpenRouterModel  string `env:"OPENROUTER_MODEL" envDefault:"google/gemma-4-26b-a4b-it:free"`
 
 	MetricsToken string `env:"METRICS_TOKEN"`
 }
