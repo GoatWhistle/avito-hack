@@ -9,6 +9,7 @@ interface GameLoopOptions {
   lottieContainerRef: RefObject<HTMLDivElement | null>
   disposedRef: RefObject<boolean>
   paletteRef: RefObject<GamePalette | null>
+  scaleRef: RefObject<number>
   onStatusChange: (status: GameStatus) => void
   onGameOverRef: RefObject<(score: number, collected: number[]) => void>
 }
@@ -19,6 +20,7 @@ export const useGameLoop = ({
   lottieContainerRef,
   disposedRef,
   paletteRef,
+  scaleRef,
   onStatusChange,
   onGameOverRef,
 }: GameLoopOptions): void => {
@@ -35,20 +37,26 @@ export const useGameLoop = ({
     disposedRef.current = false
 
     let dpr = 0
+    let renderScale = 0
+    let appliedScale = 0
     let mediaQuery: MediaQueryList | null = null
 
     const onDprChange = () => {
       if (disposedRef.current) return
+      dpr = 0
       syncCanvasSize()
     }
 
     const syncCanvasSize = () => {
-      const next = window.devicePixelRatio || 1
-      if (next === dpr) return
+      const nextDpr = window.devicePixelRatio || 1
+      const nextScale = scaleRef.current || 1
+      if (nextDpr === dpr && nextScale === appliedScale) return
 
-      dpr = next
-      canvas.width = Math.round(GAME_WIDTH * dpr)
-      canvas.height = Math.round(GAME_HEIGHT * dpr)
+      dpr = nextDpr
+      appliedScale = nextScale
+      renderScale = dpr * nextScale
+      canvas.width = Math.round(GAME_WIDTH * renderScale)
+      canvas.height = Math.round(GAME_HEIGHT * renderScale)
 
       mediaQuery?.removeEventListener('change', onDprChange)
       mediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`)
@@ -74,9 +82,11 @@ export const useGameLoop = ({
         accumulator -= FIXED_DT
       }
 
+      if ((scaleRef.current || 1) !== appliedScale) syncCanvasSize()
+
       const palette = paletteRef.current
       if (palette) {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0)
         renderer.render(ctx, game, palette)
       }
 
@@ -111,6 +121,7 @@ export const useGameLoop = ({
     lottieContainerRef,
     disposedRef,
     paletteRef,
+    scaleRef,
     onStatusChange,
     onGameOverRef,
   ])

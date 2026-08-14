@@ -6,6 +6,7 @@ export {
   useChangeItemStatus,
   useCreateItem,
   useUpdateItem,
+  useViewItem,
 } from './useItemMutations'
 export { useDismissable } from './useDismissable'
 export { usePhotoUpload } from './usePhotoUpload'

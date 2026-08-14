@@ -9,9 +9,11 @@ const (
 	pixelsPerScore = 10.0
 )
 
-const safetyFactor = 3.0
+const safetyFactor = 2.0
 
 const graceSeconds = 2.0
+
+const RoundTTL = 5 * time.Minute
 
 const maxScorePerSecond = int(
 	(springVelocity / 2.0) * framesPerSec / pixelsPerScore * safetyFactor,
@@ -35,6 +37,10 @@ func MaxPlausibleScore(elapsed time.Duration) int {
 	}
 
 	return int(limit)
+}
+
+func RoundExpired(elapsed time.Duration) bool {
+	return elapsed > RoundTTL
 }
 
 func CountsTowardStreak(score int) bool {

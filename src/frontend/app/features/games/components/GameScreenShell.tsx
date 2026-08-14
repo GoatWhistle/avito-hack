@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
+import { cn } from '#/lib/utils'
 import type { ReactNode } from 'react'
 
 export const GAMES_PATH = '/pet/games'
@@ -10,6 +11,7 @@ interface GameScreenShellProps {
   subtitle?: string
   backLabel: string
   help?: ReactNode
+  wide?: boolean
   children: ReactNode
 }
 
@@ -18,10 +20,16 @@ export function GameScreenShell({
   subtitle,
   backLabel,
   help,
+  wide = false,
   children,
 }: GameScreenShellProps) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-4 sm:px-6">
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-6xl flex-col px-3 sm:px-6',
+        wide ? 'gap-2 py-2' : 'gap-4 py-4',
+      )}
+    >
       <header className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -41,7 +49,12 @@ export function GameScreenShell({
 
       {help ? (
         <div className="relative flex flex-col gap-4">
-          <div className="flex min-w-0 flex-col gap-4 xl:mx-auto xl:w-full xl:max-w-3xl">
+          <div
+            className={cn(
+              'flex min-w-0 flex-col gap-4',
+              wide ? 'w-full' : 'xl:mx-auto xl:w-full xl:max-w-3xl',
+            )}
+          >
             {children}
           </div>
           <div className="flex flex-col gap-3 xl:absolute xl:end-0 xl:top-0 xl:w-64">

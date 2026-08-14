@@ -32,6 +32,7 @@ export function GamePlayScreen() {
       subtitle={t(`${definition.slug}.description` as const)}
       backLabel={t('back')}
       help={<Help />}
+      wide={definition.wide}
     >
       <Game />
     </GameScreenShell>

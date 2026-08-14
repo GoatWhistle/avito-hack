@@ -13,6 +13,9 @@ import { useGameLoop } from './useGameLoop'
 import { usePalette } from './usePalette'
 import { RACCOON_JUMP_SLUG, useRaccoonJumpRound } from './useRaccoonJumpRound'
 
+const MAX_SCALE = 2
+const VERTICAL_MARGIN = 16
+
 export function RaccoonJumpScreen() {
   const { t } = useTranslation('games')
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -26,6 +29,7 @@ export function RaccoonJumpScreen() {
   const [status, setStatus] = useState<GameStatus>('idle')
   const [finalScore, setFinalScore] = useState(0)
   const [scale, setScale] = useState(1)
+  const scaleRef = useRef(1)
 
   const round = useRaccoonJumpRound()
   const stateQuery = useGameStateQuery(RACCOON_JUMP_SLUG)
@@ -54,16 +58,31 @@ export function RaccoonJumpScreen() {
     if (!frame) return
 
     const measure = () => {
-      const available = frame.clientWidth
-      if (!available) return
-      setScale(Math.min(1, available / GAME_WIDTH))
+      const availableWidth = frame.clientWidth
+      if (!availableWidth) return
+
+      const viewportHeight = window.innerHeight
+      const offsetTop = frame.getBoundingClientRect().top
+      const availableHeight = viewportHeight - offsetTop - VERTICAL_MARGIN
+
+      const widthScale = availableWidth / GAME_WIDTH
+      const heightScale =
+        availableHeight > 0 ? availableHeight / GAME_HEIGHT : widthScale
+
+      const next = Math.min(MAX_SCALE, widthScale, heightScale)
+      scaleRef.current = next
+      setScale(next)
     }
 
     measure()
 
     const observer = new ResizeObserver(measure)
     observer.observe(frame)
-    return () => observer.disconnect()
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [])
 
   useGameLoop({
@@ -72,6 +91,7 @@ export function RaccoonJumpScreen() {
     lottieContainerRef,
     disposedRef,
     paletteRef,
+    scaleRef,
     onStatusChange: setStatus,
     onGameOverRef,
   })
@@ -138,32 +158,37 @@ export function RaccoonJumpScreen() {
       style={{ height: GAME_HEIGHT * scale }}
     >
       <div
-        ref={surfaceRef}
-        className="relative origin-top"
-        style={{
-          width: GAME_WIDTH,
-          height: GAME_HEIGHT,
-          transform: `scale(${scale})`,
-        }}
+        className="relative"
+        style={{ width: GAME_WIDTH * scale, height: GAME_HEIGHT * scale }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchStart}
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
       >
-        <canvas
-          ref={canvasRef}
-          role="img"
-          aria-label={t('raccoonjump.name')}
-          className="absolute left-0 top-0 h-full w-full rounded-xl ring-1 ring-border"
+        <div
+          ref={surfaceRef}
+          className="absolute left-0 top-0 origin-top-left"
+          style={{
+            width: GAME_WIDTH,
+            height: GAME_HEIGHT,
+            transform: `scale(${scale})`,
+          }}
         >
-          {t('raccoonjump.description')}
-        </canvas>
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label={t('raccoonjump.name')}
+            className="absolute left-0 top-0 h-full w-full rounded-xl ring-1 ring-border"
+          >
+            {t('raccoonjump.description')}
+          </canvas>
+
+          <RaccoonJumpPlayer containerRef={lottieContainerRef} status={status} />
+        </div>
 
         <p role="status" aria-live="polite" className="sr-only">
           {status === 'gameover' ? t('raccoonjump.score', { score: finalScore }) : ''}
         </p>
-
-        <RaccoonJumpPlayer containerRef={lottieContainerRef} status={status} />
 
         <RaccoonJumpOverlays
           status={status}

@@ -15,6 +15,7 @@ import { AppLayout, Aurora } from '#/features/layout'
 import { CrashScreen, NotFoundScreen } from '#/features/errors'
 import { fallbackLocale, resources } from '#/i18n/resources'
 import { themeColors } from '#/tokens'
+import { routeTransitionKey } from '#/route-transition-key'
 import type { PropsWithChildren } from 'react'
 
 import './app.css'
@@ -80,7 +81,7 @@ function RouteTransition() {
   const { pathname } = useLocation()
 
   return (
-    <div key={pathname} className="route-transition">
+    <div key={routeTransitionKey(pathname)} className="route-transition">
       <Outlet />
     </div>
   )

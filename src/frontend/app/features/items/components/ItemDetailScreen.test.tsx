@@ -9,6 +9,7 @@ const listPhotos = vi.fn()
 const changeStatus = vi.fn()
 const addFavorite = vi.fn()
 const removeFavorite = vi.fn()
+const view = vi.fn()
 const favoritesList = vi.fn()
 
 vi.mock('#/features/items/repository', () => ({
@@ -18,6 +19,7 @@ vi.mock('#/features/items/repository', () => ({
     changeStatus: (id: string, action: string) => changeStatus(id, action),
     addFavorite: (id: string) => addFavorite(id),
     removeFavorite: (id: string) => removeFavorite(id),
+    view: (id: string) => view(id),
   },
 }))
 
@@ -39,6 +41,7 @@ beforeEach(() => {
   favoritesList.mockResolvedValue({ items: [] })
   addFavorite.mockResolvedValue(undefined)
   removeFavorite.mockResolvedValue(undefined)
+  view.mockResolvedValue(undefined)
 })
 
 describe('ItemDetailScreen', () => {
@@ -105,6 +108,26 @@ describe('ItemDetailScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Неизвестная ошибка',
     )
+  })
+
+  it('registers a view once for a foreign item', async () => {
+    getById.mockResolvedValue(makeItem({ owner_id: 'user-2' }))
+    renderWithProviders(<ItemDetailScreen itemId="item-1" />)
+
+    await screen.findByRole('heading', { name: 'Велосипед Stels', level: 1 })
+
+    await waitFor(() => {
+      expect(view).toHaveBeenCalledWith('item-1')
+    })
+    expect(view).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not register a view for the owner own item', async () => {
+    renderWithProviders(<ItemDetailScreen itemId="item-1" />)
+
+    await screen.findByRole('heading', { name: 'Велосипед Stels', level: 1 })
+
+    expect(view).not.toHaveBeenCalled()
   })
 
   it('shows the favorite toggle for a foreign item instead of owner actions', async () => {

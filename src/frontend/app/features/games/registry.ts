@@ -25,6 +25,7 @@ export interface GameDefinition {
   icon: LucideIcon
   component: ComponentType
   help: ComponentType
+  wide?: boolean
 }
 
 export const gameDefinitions: GameDefinition[] = [
@@ -48,6 +49,7 @@ export const gameDefinitions: GameDefinition[] = [
     icon: Rabbit,
     component: RaccoonJumpScreen,
     help: RaccoonJumpHelp,
+    wide: true,
   },
 ]
 

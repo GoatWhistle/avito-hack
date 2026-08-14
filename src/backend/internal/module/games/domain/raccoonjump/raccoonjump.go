@@ -74,6 +74,18 @@ func (g *Game) Guess(_ context.Context, r *domain.Round, move json.RawMessage) (
 
 	elapsed := g.now().Sub(time.UnixMilli(s.StartedAtUnixMilli))
 
+	if RoundExpired(elapsed) {
+		s.Finished = true
+		s.Score = 0
+		s.Collected = make([]int, 0)
+
+		if _, err := g.commit(r, s); err != nil {
+			return domain.GuessOutcome{}, err
+		}
+
+		return domain.GuessOutcome{Progress: domain.ProgressLose}, nil
+	}
+
 	if score > MaxPlausibleScore(elapsed) {
 		return domain.GuessOutcome{}, ErrImplausibleScore
 	}

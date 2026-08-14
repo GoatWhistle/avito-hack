@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { itemRepository } from '#/features/items/repository'
+import { petQueryKey, summaryTodayQueryKey } from '#/features/pet/hooks'
 import { favoriteKeys, itemKeys } from './query-keys'
 import type {
   CreateItemRequest,
@@ -34,6 +35,19 @@ export const useUpdateItem = (id: string) => {
       void queryClient.invalidateQueries({
         queryKey: [...itemKeys.all, 'mine'],
       })
+    },
+  })
+}
+
+export const useViewItem = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: ['items', 'view'],
+    mutationFn: (id: string) => itemRepository.view(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: petQueryKey })
+      void queryClient.invalidateQueries({ queryKey: summaryTodayQueryKey })
     },
   })
 }

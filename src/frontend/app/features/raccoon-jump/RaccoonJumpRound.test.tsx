@@ -169,7 +169,9 @@ describe('RaccoonJumpScreen server round', () => {
     await play()
     await finishRun(frames)
 
-    expect(await screen.findByText('Собранные объявления')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Объявления за ваш результат'),
+    ).toBeInTheDocument()
     expect(await screen.findByText('Велосипед Stels')).toBeInTheDocument()
     expect(await screen.findByText('Новый рекорд!')).toBeInTheDocument()
 

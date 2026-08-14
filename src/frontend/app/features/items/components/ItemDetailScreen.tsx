@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { Button } from '#/components/ui'
 import { useSession } from '#/features/auth/session'
 import { FavoriteButton } from '#/features/favorites/components'
 import { useFavoriteIds } from '#/features/favorites/hooks'
-import { useItemPhotosQuery, useItemQuery } from '#/features/items/hooks'
+import {
+  useItemPhotosQuery,
+  useItemQuery,
+  useViewItem,
+} from '#/features/items/hooks'
 import { formatDate, formatPrice, isFavoritable } from '#/features/items/lib'
 import { itemCategories, itemConditions } from '#/features/items/types'
 import { ItemSourceBadge } from './ItemSourceBadge'
@@ -39,6 +43,19 @@ export function ItemDetailScreen({ itemId }: ItemDetailScreenProps) {
 
   const itemQuery = useItemQuery(itemId)
   const photosQuery = useItemPhotosQuery(itemId)
+  const viewItem = useViewItem()
+  const viewedRef = useRef<string | null>(null)
+
+  const loadedItem = itemQuery.data
+  const viewerId = user?.id
+
+  useEffect(() => {
+    if (!loadedItem) return
+    if (viewedRef.current === loadedItem.id) return
+    if (viewerId && viewerId === loadedItem.owner_id) return
+    viewedRef.current = loadedItem.id
+    viewItem.mutate(loadedItem.id)
+  }, [loadedItem, viewerId, viewItem])
 
   if (itemQuery.isPending) return <ItemsSkeleton count={2} />
 

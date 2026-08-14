@@ -5,3 +5,5 @@ import (
 )
 
 var ErrImplausibleScore = domainerr.NewInvalid("score", "reported score is not achievable for this round")
+
+var ErrRoundExpired = domainerr.NewInvalid("round", "round has expired and can no longer be submitted")

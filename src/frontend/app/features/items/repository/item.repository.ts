@@ -73,6 +73,10 @@ export class ItemRepository {
     return response.data
   }
 
+  async view(id: string) {
+    await this.httpClient.post(`${BASE}/${id}/view`)
+  }
+
   async changeStatus(id: string, action: ItemStatusAction) {
     const response = await this.httpClient.post<Item>(`${BASE}/${id}/status`, {
       action,

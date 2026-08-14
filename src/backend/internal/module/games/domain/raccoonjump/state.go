@@ -37,13 +37,11 @@ type promptCollectible struct {
 }
 
 type promptPayload struct {
-	Seed            uint32              `json:"seed"`
-	MaxScore        int                 `json:"max_score"`
-	MinStreakScore  int                 `json:"min_streak_score"`
-	ScorePerSecond  int                 `json:"max_score_per_second"`
-	Collectibles    []promptCollectible `json:"collectibles"`
-	BestScore       int                 `json:"best_score"`
-	StartedAtMillis int64               `json:"started_at_unix_milli"`
+	Seed           uint32              `json:"seed"`
+	MaxScore       int                 `json:"max_score"`
+	MinStreakScore int                 `json:"min_streak_score"`
+	Collectibles   []promptCollectible `json:"collectibles"`
+	BestScore      int                 `json:"best_score"`
 }
 
 type listingPayload struct {
@@ -86,13 +84,11 @@ func (s state) prompt() (json.RawMessage, error) {
 	}
 
 	payload := promptPayload{
-		Seed:            s.Seed,
-		MaxScore:        MaxScore,
-		MinStreakScore:  MinStreakScore,
-		ScorePerSecond:  maxScorePerSecond,
-		Collectibles:    collectibles,
-		BestScore:       s.BestScore,
-		StartedAtMillis: s.StartedAtUnixMilli,
+		Seed:           s.Seed,
+		MaxScore:       MaxScore,
+		MinStreakScore: MinStreakScore,
+		Collectibles:   collectibles,
+		BestScore:      s.BestScore,
 	}
 
 	encoded, err := json.Marshal(payload)

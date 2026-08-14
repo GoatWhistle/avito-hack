@@ -102,7 +102,7 @@
     "newBest": "New best!",
     "counted": "The day is counted toward your streak",
     "notCounted": "Score {{count}} points to count the day",
-    "listingsTitle": "Listings you collected",
+    "listingsTitle": "Listings for your score",
     "saving": "Saving your score…",
     "saveFailed": "Could not save your score",
     "retrySave": "Retry",

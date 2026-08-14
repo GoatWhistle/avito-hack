@@ -135,6 +135,56 @@ func TestPromptNeverLeaksInternalIdentifiers(t *testing.T) {
 	assert.NotContains(t, string(prompt), "price_kopeks")
 }
 
+func TestPromptNeverLeaksScoringFormula(t *testing.T) {
+	t.Parallel()
+
+	game := newGame(&stubClock{now: testNow}, newListings(4))
+
+	_, prompt := startRound(t, game)
+
+	assert.NotContains(t, string(prompt), "max_score_per_second",
+		"the prompt must not hand the client the server's scoring rate")
+	assert.NotContains(t, string(prompt), "started_at_unix_milli",
+		"the prompt must not expose the round start time")
+}
+
+func TestGuessAfterTTLIsLostAndScoresZero(t *testing.T) {
+	t.Parallel()
+
+	clock := &stubClock{now: testNow}
+	game := newGame(clock, newListings(4))
+
+	round, _ := startRound(t, game)
+
+	clock.advance(raccoonjump.RoundTTL + time.Second)
+
+	outcome, err := submit(game, round, 300)
+	require.NoError(t, err)
+
+	assert.Equal(t, domain.ProgressLose, outcome.Progress,
+		"a submission past the TTL must not be counted as a win")
+	assert.Equal(t, 0, game.RoundScore(round),
+		"an expired round must record a zero score")
+}
+
+func TestGuessJustBeforeTTLIsAccepted(t *testing.T) {
+	t.Parallel()
+
+	clock := &stubClock{now: testNow}
+	game := newGame(clock, newListings(4))
+
+	round, _ := startRound(t, game)
+
+	clock.advance(raccoonjump.RoundTTL - time.Second)
+
+	outcome, err := submit(game, round, 300)
+	require.NoError(t, err)
+
+	assert.Equal(t, domain.ProgressWin, outcome.Progress,
+		"a realistic run within the TTL must still be accepted")
+	assert.EqualValues(t, 300, decodeReveal(t, outcome.Reveal)["score"])
+}
+
 func TestSeedsDifferBetweenRounds(t *testing.T) {
 	t.Parallel()
 

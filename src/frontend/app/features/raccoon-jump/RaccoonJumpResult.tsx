@@ -99,7 +99,7 @@ function CollectedListings({ listings }: CollectedListingsProps) {
               to={`/items/${listing.display_id}`}
               className="flex items-center gap-3 rounded-xl bg-muted/40 p-2.5 no-underline ring-1 ring-border transition-colors hover:bg-muted"
             >
-              <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+              <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
                 {listing.photo_url ? (
                   <img
                     src={listing.photo_url}
@@ -108,17 +108,17 @@ function CollectedListings({ listings }: CollectedListingsProps) {
                   />
                 ) : (
                   <ImageOff
-                    className="size-4 text-muted-foreground"
+                    className="size-5 text-muted-foreground"
                     aria-hidden="true"
                   />
                 )}
               </span>
 
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="line-clamp-2 text-xs leading-snug font-medium">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+                <span className="line-clamp-2 text-sm leading-snug font-medium">
                   {listing.title}
                 </span>
-                <span className="text-sm font-semibold tabular-nums">
+                <span className="text-base font-semibold tabular-nums">
                   {t('items:price', {
                     value: formatPrice(listing.price_kopeks, i18n.language),
                   })}

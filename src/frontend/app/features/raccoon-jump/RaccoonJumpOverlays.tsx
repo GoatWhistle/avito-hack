@@ -77,7 +77,7 @@ export function RaccoonJumpOverlays({
   if (status === 'gameover') {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto rounded-xl bg-background/70 p-4 backdrop-blur-sm">
-        <div className="game-card-enter flex w-full max-w-[19rem] flex-col items-center gap-4 rounded-2xl bg-card p-5 text-center shadow-lg ring-1 ring-border">
+        <div className="game-card-enter flex w-full max-w-md flex-col items-center gap-4 rounded-2xl bg-card p-5 text-center shadow-lg ring-1 ring-border">
           <h2 className="text-xl font-semibold text-card-foreground">
             {t('games:raccoonjump.gameOver')}
           </h2>
