@@ -47,12 +47,10 @@
 | [docs/CASE.md](docs/CASE.md) | Разбор кейса и продуктовое обоснование |
 | [docs/API.md](docs/API.md) | Спецификация HTTP API и WebSocket с примерами `curl` |
 | [docs/openapi.yaml](docs/openapi.yaml) | Машиночитаемый контракт API, OpenAPI 3.1 |
-| [deploy/README.md](deploy/README.md) | Деплой на VPS с HTTPS |
 
 ---
 
 ## Быстрый старт
-Проект опубликован и вы можете ознакомится с ним по ссылке: http://avito.studentfeed.ru/
 
 Нужны только **Docker** и **Docker Compose v2**. Ни Go, ни Node.js локально не требуются —
 всё собирается в контейнерах.
